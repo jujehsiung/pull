@@ -1,0 +1,251 @@
+/* ---------------------------------------------------------------------------
+   SHOWROOM INTAKE — light, utilitarian (PRD §12 /i/{token}).
+
+   The shell classes (.intake-wrap, .intake-card, .field-grid, .field, .rate-option,
+   .chip, .success, .label-preview) come from globals.css, where they were built for
+   exactly this screen. This module only adds what the global sheet does not carry:
+   the page frame, validation states and the rate tags. All values are design tokens.
+--------------------------------------------------------------------------- */
+
+.page {
+  min-height: 100dvh;
+  background: var(--paper);
+  padding-bottom: 40px;
+}
+
+.inner {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 56px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--line);
+}
+
+.topMeta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hero {
+  padding: clamp(28px, 5vw, 48px) 0 0;
+}
+
+.heroTitle {
+  margin: 12px 0 0;
+  font-size: clamp(28px, 5vw, 42px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+}
+
+.heroLead {
+  margin: 14px 0 0;
+  max-width: 560px;
+  font-size: clamp(15px, 1.8vw, 17px);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.shipTo {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.shipTo b {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* ── validation states ─────────────────────────────────────────────────── */
+.warning {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #e6d9b8;
+  border-radius: 10px;
+  background: #fbf7ea;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.error {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #e3c3c0;
+  border-radius: 10px;
+  background: #fbf2f1;
+}
+
+.errorTitle {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+
+.errorText {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.optional {
+  color: var(--muted-2);
+  font-family: var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── rates ─────────────────────────────────────────────────────────────── */
+.ratesCard {
+  margin-top: 18px;
+  padding: clamp(18px, 3vw, 26px);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.ratesHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rateList {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.rateList > li {
+  /* .rate-option already provides the card row; keep long service names inside the box */
+  min-width: 0;
+}
+
+.rateList .rate-main,
+.ratesHead > div {
+  min-width: 0;
+}
+
+/* At 375px a long carrier/service name must wrap rather than push the price off-screen. */
+.rateList :global(.rate-name),
+.rateList :global(.rate-meta) {
+  overflow-wrap: anywhere;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+
+.tagCheapest {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ── label issued (locked) ─────────────────────────────────────────────── */
+.lockedCard {
+  margin-top: 22px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: clamp(18px, 3vw, 26px);
+}
+
+.lockedGrid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.labelKey {
+  color: var(--muted-2);
+  text-transform: uppercase;
+}
+
+.labelValue {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.lockedNote {
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* ── footer ────────────────────────────────────────────────────────────── */
+.foot {
+  margin-top: 34px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+@media (max-width: 760px) {
+  .heroTitle {
+    font-size: 30px;
+  }
+
+  .lockedGrid {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .labelKey {
+    margin-top: 8px;
+  }
+}

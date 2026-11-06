@@ -1,0 +1,663 @@
+/* ---------------------------------------------------------------------------
+   CLIENT BOARD — the dark lookbook surface (PRD FR-9).
+
+   Mirrors the approved reference at public/preview/client.html, but the layout
+   lives here rather than in globals.css: the global .look-grid is hidden below
+   760px in favour of the swipe deck, and this page is a 2-up grid on a phone.
+   Every colour / type value is a token from globals.css; nothing is restyled
+   globally.
+--------------------------------------------------------------------------- */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--dark);
+  color: var(--dark-text);
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+}
+
+/* ── top bar ─────────────────────────────────────────────────────────────
+   The sticky shell is the global .client-top; these only keep a long client
+   name from widening the page at 375px. */
+.topName {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dark-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.topCount {
+  flex: none;
+  color: var(--dark-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── hero ──────────────────────────────────────────────────────────────── */
+.hero .title {
+  margin-top: 14px;
+}
+
+.hero .leadLine {
+  margin-top: 14px;
+  max-width: 600px;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dark-line);
+}
+
+.meta {
+  color: var(--dark-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── brand sections ────────────────────────────────────────────────────── */
+.brandHeading {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dark-text);
+}
+
+/* ── look grid ───────────────────────────────────────────────────────────
+   2-up on a phone, 3-up then 4-up as the reference shows. minmax(0,1fr) is
+   what guarantees no horizontal scroll from a long image or tag. */
+.lookGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .lookGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (min-width: 980px) {
+  .lookGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+/* A look whose crop never landed still occupies its tile — no layout shift. */
+.missing {
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+  background: var(--dark-2);
+  border-bottom: 1px solid var(--dark-line);
+}
+
+.missingText {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+/* ── empty + footer ────────────────────────────────────────────────────── */
+.empty {
+  border-top: 1px solid var(--dark-line);
+  padding: 40px 0 72px;
+}
+
+.footer {
+  border-top: 1px solid var(--dark-line);
+  margin-top: 8px;
+  padding: 26px 0 calc(38px + env(safe-area-inset-bottom));
+}
+
+.footerInner {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+}
+
+.footerText {
+  color: var(--dark-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   REVIEW (FR-10 / FR-11)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* card status: written out as text on the chip, plus a hint on the card itself */
+.cardPassed img {
+  opacity: 0.5;
+  filter: grayscale(0.35);
+}
+
+.statusChip {
+  position: absolute;
+  top: 32px;
+  left: 8px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+
+.statusApproved {
+  background: var(--dark-ok);
+  color: #10240f;
+}
+
+.statusPassed {
+  background: rgba(179, 38, 30, 0.92);
+  color: #fff;
+}
+
+/* controls flow under the image inside the card — not an overlay, so notes and 44px targets fit */
+.controls {
+  padding: 10px;
+  border-top: 1px solid var(--dark-line);
+  background: var(--dark-2);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reviewRow {
+  display: flex;
+  gap: 6px;
+}
+
+.reviewForm,
+.starForm {
+  flex: 1;
+  display: flex;
+}
+
+.reviewBtn {
+  flex: 1;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--dark-line);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--dark-text);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.reviewBtn:hover {
+  border-color: #4a4a50;
+}
+
+.reviewBtn:focus-visible,
+.starBtn:focus-visible,
+.noteInput:focus-visible,
+.noteSave:focus-visible,
+.submitLink:focus-visible,
+.confirmBtn:focus-visible,
+.backLink:focus-visible {
+  outline: 2px solid var(--dark-ok);
+  outline-offset: 2px;
+}
+
+.reviewBtn:disabled,
+.starBtn:disabled,
+.noteSave:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* black text on the light-green pill stays AA; the label ("✓ approve") carries the meaning too */
+.reviewBtnApprove[aria-pressed="true"] {
+  background: var(--dark-ok);
+  border-color: transparent;
+  color: #10240f;
+  font-weight: 600;
+}
+
+.reviewBtnPass[aria-pressed="true"] {
+  background: rgba(179, 38, 30, 0.92);
+  border-color: transparent;
+  color: #fff;
+}
+
+.starsRow {
+  display: flex;
+  gap: 6px;
+}
+
+.starBtn {
+  flex: 1;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--dark-line);
+  background: rgba(0, 0, 0, 0.45);
+  color: #6b6b72;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starBtn[aria-pressed="true"] {
+  background: var(--dark-ok);
+  border-color: transparent;
+  color: #10240f;
+}
+
+.noteForm {
+  display: flex;
+  gap: 6px;
+}
+
+.noteInput {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 10px;
+  background: var(--dark-2);
+  border: 1px solid var(--dark-line);
+  border-radius: 10px;
+  color: var(--dark-text);
+  font-family: var(--font);
+  font-size: 13px;
+}
+
+.noteInput::placeholder {
+  color: #5f5f66;
+}
+
+.noteSave {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--dark-line);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--dark-text);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* locked-card summary (FR-11) */
+.readOnly {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.readOnlyRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.readOnlyLabel {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+.readOnlyValue {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark-text);
+}
+
+.readOnlyStars {
+  color: var(--dark-ok);
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.readOnlyNote {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dark-muted);
+  overflow-wrap: anywhere;
+}
+
+/* submitted banner */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-top: 6px;
+  padding: 14px 0;
+  border-top: 1px solid var(--dark-line);
+}
+
+.bannerText {
+  color: var(--dark-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* sticky review bar */
+.submitBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 25;
+  margin-top: 20px;
+  border-top: 1px solid var(--dark-line);
+  background: color-mix(in srgb, var(--dark) 92%, transparent);
+  backdrop-filter: blur(14px);
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+}
+
+.submitInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+.counts b {
+  color: var(--dark-text);
+  font-weight: 500;
+}
+
+.submitLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-pill);
+  background: var(--dark-text);
+  color: var(--dark);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SUMMARY PAGE — /b/[token]/review
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.summaryTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--dark-line);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+.backLink:hover {
+  color: var(--dark-text);
+}
+
+.summary {
+  padding: clamp(26px, 5vw, 48px) 0 64px;
+}
+
+.summaryTitle {
+  margin-top: 14px;
+  font-size: clamp(30px, 6.4vw, 52px);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 500;
+}
+
+.summaryLead {
+  margin-top: 14px;
+  max-width: 560px;
+  color: var(--dark-muted);
+  font-size: clamp(15px, 1.8vw, 17px);
+  line-height: 1.55;
+}
+
+.countGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid var(--dark-line);
+}
+
+.countCell .n {
+  font-size: clamp(26px, 7vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+}
+
+.countCell .l {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+.summarySection {
+  border-top: 1px solid var(--dark-line);
+  padding: 20px 0;
+}
+
+.summarySectionTitle {
+  margin: 0 0 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dark-text);
+}
+
+.summaryLook {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--dark-line);
+}
+
+.summaryThumb {
+  width: 64px;
+  height: 86px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--dark-2);
+  display: block;
+}
+
+.summaryLookBody {
+  min-width: 0;
+}
+
+.summaryLookHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.summaryLookNo {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark-text);
+}
+
+.summaryStars {
+  color: var(--dark-ok);
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.summaryNote {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--dark-muted);
+  overflow-wrap: anywhere;
+}
+
+.summaryMeta {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+.summaryEmpty {
+  margin: 0;
+  padding: 6px 0;
+  color: var(--dark-muted);
+  font-size: 13px;
+}
+
+.confirmForm {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.confirmBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: var(--dark-text);
+  color: var(--dark);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.55;
+}
+
+.confirmNote {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dark-muted);
+}
+
+.lockedBox {
+  margin-top: 22px;
+  border: 1px solid var(--dark-line);
+  border-radius: var(--r-md);
+  background: var(--dark-2);
+  padding: 16px 18px;
+}
+
+.lockedBox p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--dark-muted);
+}
+
+.lockedBox p + p {
+  margin-top: 6px;
+}
+
+/* utility */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+

@@ -1,0 +1,53 @@
+{
+  "name": "pull-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "check": "node scripts/check-env.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "agent:check": "node scripts/agent-check.mjs",
+    "mail:test": "node scripts/send-test-email.mjs",
+    "media:test": "node scripts/media-check.mjs",
+    "db:connect": "node scripts/connect-neon.mjs",
+    "ocr:check": "node scripts/ocr-check.mjs",
+    "demo:reset": "node scripts/reset-demo.mjs",
+    "demo:seed": "node scripts/seed-demo.mjs",
+    "demo:check": "node scripts/demo-check.mjs",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
+    "@zoowork-ai/sdk": "^0.14.0",
+    "cloudinary": "2.11.0",
+    "drizzle-orm": "0.45.4",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "resend": "6.37.0",
+    "tesseract.js": "7.0.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "drizzle-kit": "0.31.11",
+    "tailwindcss": "4.3.5",
+    "typescript": "^5.9.0"
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}

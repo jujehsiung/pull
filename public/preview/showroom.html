@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>PULL — send a label · CELINE</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="nav">
+  <div class="container nav-inner">
+    <a class="wordmark" href="index.html">PULL</a>
+    <span class="mono" style="color:var(--muted);font-size:11px;letter-spacing:.14em">LABEL REQUEST</span>
+    <a class="btn btn-ghost btn-sm" href="client.html">Client view</a>
+  </div>
+</div>
+
+<main class="intake-wrap">
+  <div class="intake-head">
+    <div>
+      <p class="eyebrow">PULL · LABEL REQUEST</p>
+      <h1 class="display" style="font-size:clamp(30px,4.4vw,44px);margin-top:10px">CELINE — 2 looks</h1>
+    </div>
+    <span class="chip">FROM JUJE</span>
+  </div>
+
+  <p class="lead" style="margin-top:18px">We’ll send a prepaid label and arrange the pickup. Tell us the
+    parcel and where to collect it — it takes about a minute.</p>
+
+  <div class="chips" style="margin-top:14px">
+    <span class="chip">LOOK 27 · AW26</span>
+    <span class="chip">LOOK 31 · AW26</span>
+    <span class="chip">RETURN BY 16 NOV</span>
+  </div>
+
+  <form id="intake" class="intake-card" novalidate>
+    <h2 class="h3" style="margin:0 0 4px">1 · The parcel</h2>
+    <p class="small" style="margin-bottom:14px">Approximate is fine — we’ll round up.</p>
+    <div class="field-grid">
+      <div class="field"><label for="l">Length (cm)</label><input id="l" type="number" min="10" max="200" value="40" required /></div>
+      <div class="field"><label for="w">Width (cm)</label><input id="w" type="number" min="10" max="200" value="30" required /></div>
+      <div class="field"><label for="h">Height (cm)</label><input id="h" type="number" min="2" max="200" value="12" required /></div>
+      <div class="field"><label for="kg">Weight (kg)</label><input id="kg" type="number" min="0.2" max="50" step="0.1" value="2.4" required /></div>
+      <div class="field full"><label for="note">Anything fragile?</label><input id="note" placeholder="e.g. hat box inside — handle flat" /></div>
+    </div>
+
+    <h2 class="h3" style="margin:26px 0 4px">2 · Pickup</h2>
+    <p class="small" style="margin-bottom:14px">Where the courier should collect.</p>
+    <div class="field-grid">
+      <div class="field full"><label for="street">Street address</label><input id="street" placeholder="12 Rue de la Paix" required /></div>
+      <div class="field"><label for="city">City</label><input id="city" value="Paris" required /></div>
+      <div class="field"><label for="zip">Postcode</label><input id="zip" placeholder="75002" required /></div>
+      <div class="field"><label for="country">Country</label>
+        <select id="country"><option>France</option><option>Italy</option><option>United Kingdom</option><option>United States</option></select>
+      </div>
+      <div class="field"><label for="contact">Contact name</label><input id="contact" placeholder="Camille" required /></div>
+      <div class="field"><label for="phone">Phone</label><input id="phone" placeholder="+33 1 42 00 00 00" required /></div>
+      <div class="field full"><label for="window">Preferred pickup window</label>
+        <select id="window"><option>Tomorrow, 9:00–13:00</option><option>Tomorrow, 13:00–18:00</option><option>Any time this week</option></select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit" style="margin-top:22px;width:100%">See shipping options</button>
+    <p class="small" id="formHint" style="margin-top:10px;color:var(--muted-2)">No account needed. We only use this to price the label.</p>
+  </form>
+
+  <!-- rates -->
+  <section id="ratesCard" class="intake-card" hidden>
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <p class="eyebrow">SHIPPO · LIVE RATES</p>
+        <h2 class="h3" style="margin:8px 0 2px">Pick a service</h2>
+        <p class="small">Paris → New York · 2.4 kg · 40×30×12 cm</p>
+      </div>
+      <span class="chip">TEST MODE</span>
+    </div>
+
+    <div role="radiogroup" aria-label="Shipping service" style="margin-top:16px">
+      <button type="button" class="rate-option" role="radio" aria-checked="false" data-rate="fedex-express" data-price="109.03">
+        <div class="rate-main"><div class="rate-name">FedEx Express</div><div class="rate-meta">2 DAYS · SIGNATURE REQUIRED</div></div>
+        <div class="rate-price">$109.03</div>
+      </button>
+      <button type="button" class="rate-option" role="radio" aria-checked="true" data-rate="ups-ground" data-price="62.40">
+        <div class="rate-main"><div class="rate-name">UPS Ground</div><div class="rate-meta">4 DAYS · TRACKED</div></div>
+        <div class="rate-price">$62.40</div>
+      </button>
+      <button type="button" class="rate-option" role="radio" aria-checked="false" data-rate="dhl-economy" data-price="48.10">
+        <div class="rate-main"><div class="rate-name">DHL Economy Select</div><div class="rate-meta">6 DAYS · TRACKED</div></div>
+        <div class="rate-price">$48.10</div>
+      </button>
+    </div>
+
+    <button class="btn btn-primary" id="buyLabel" type="button" style="margin-top:18px;width:100%">Create prepaid label — <span id="chosenPrice">$62.40</span></button>
+    <p class="small" style="margin-top:10px">The label comes back to your email, attached to this request. The courier is booked for your window.</p>
+  </section>
+
+  <!-- success -->
+  <section id="successCard" class="intake-card" hidden>
+    <div class="success">
+      <span class="tick">✓</span>
+      <h2 class="h3" style="margin:12px 0 4px">Label created</h2>
+      <p class="small" style="margin:0 0 2px">Attached to the email thread with Juje. Print it and hand the parcel to the courier.</p>
+      <div class="label-preview" aria-label="Label preview">
+        <span>TRACKING</span><span id="tracking">1Z999AA10123456784</span>
+        <span>CARRIER</span><span id="carrierLabel">UPS Ground</span>
+        <span>FROM</span><span>12 Rue de la Paix, Paris</span>
+        <span>TO</span><span>Juje Studio, New York</span>
+        <span>WEIGHT</span><span>2.4 kg</span>
+        <span>COST</span><span id="costLabel">$62.40</span>
+      </div>
+    </div>
+    <a class="btn btn-ghost" href="index.html" style="margin-top:18px;width:100%">Back to PULL</a>
+  </section>
+
+  <p class="small" style="margin-top:28px;color:var(--muted-2)">PULL · sample trafficking · labels by Shippo</p>
+</main>
+
+<script>
+  const form = document.getElementById('intake');
+  const ratesCard = document.getElementById('ratesCard');
+  const successCard = document.getElementById('successCard');
+  const hint = document.getElementById('formHint');
+  const chosenPrice = document.getElementById('chosenPrice');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const required = ['street', 'city', 'zip', 'contact', 'phone'];
+    const missing = required.filter(id => !document.getElementById(id).value.trim());
+    const badDims = ['l', 'w', 'h', 'kg'].filter(id => !(Number(document.getElementById(id).value) > 0));
+    if (missing.length || badDims.length) {
+      hint.textContent = 'Please fill the highlighted fields — we need a street, city, contact and a parcel size.';
+      hint.style.color = 'var(--danger)';
+      return;
+    }
+    hint.textContent = 'Pricing with Shippo…';
+    hint.style.color = 'var(--muted)';
+    setTimeout(() => {
+      ratesCard.hidden = false;
+      ratesCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      hint.textContent = 'Rates are for this parcel only. No account needed.';
+      hint.style.color = 'var(--muted-2)';
+    }, 550);
+  });
+
+  document.querySelectorAll('.rate-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.rate-option').forEach(b => b.setAttribute('aria-checked', 'false'));
+      btn.setAttribute('aria-checked', 'true');
+      chosenPrice.textContent = '$' + btn.dataset.price;
+    });
+  });
+
+  document.getElementById('buyLabel').addEventListener('click', () => {
+    const chosen = document.querySelector('.rate-option[aria-checked="true"]');
+    const name = chosen.querySelector('.rate-name').textContent;
+    const price = chosen.dataset.price;
+    const rand = Math.random().toString(36).slice(2, 12).toUpperCase();
+    document.getElementById('tracking').textContent = '1Z' + rand;
+    document.getElementById('carrierLabel').textContent = name;
+    document.getElementById('costLabel').textContent = '$' + price;
+    ratesCard.hidden = true;
+    successCard.hidden = false;
+    successCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+</script>
+</body>
+</html>
