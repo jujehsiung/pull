@@ -14,6 +14,7 @@ const LINKS = [
   { label: "Board", href: "/board" },
   { label: "Client page", href: "/client" },
   { label: "Request emails", href: "/requests" },
+  { label: "Suggest looks", href: "/suggest-looks" },
   { label: "Studio", href: "/canvas" },
 ]
 

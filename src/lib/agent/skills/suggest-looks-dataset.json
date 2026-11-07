@@ -1,0 +1,774 @@
+{
+  "skill": "suggest-looks",
+  "version": 1,
+  "client": "Timothée Chalamet",
+  "brief": "Actor and red-carpet fixture. The brief: looks that continue the client's custom-tailoring story and its darker, sculptural off-duty register.",
+  "researchedAt": "2026-11-07T16:56:43.139Z",
+  "sources": [
+    {
+      "kind": "red carpet",
+      "label": "Vogue: Timothée Chalamet style file",
+      "url": "https://www.voguehk.com/en/article/celebrity/timothee-chalamet-style-file/",
+      "note": "Every red-carpet look 2018–2026 with house credits"
+    },
+    {
+      "kind": "instagram",
+      "label": "Vogue: Chrome Hearts × Chalamet courtside wardrobe",
+      "url": "https://www.vogue.com/slideshow/timothee-chalamet-chrome-hearts-new-york-knicks-wardrobe",
+      "note": "The custom Chrome Hearts partnership"
+    },
+    {
+      "kind": "editorial",
+      "label": "Vogue: the custom suit for the 2025 Vanity Fair Oscar Party",
+      "url": "https://www.vogue.com/article/timothee-chalamet-wears-a-custom-suit-made-by-his-best-friend-to-the-2025-vanity-fair-oscar-party",
+      "note": "Haider Ackermann custom tailoring"
+    },
+    {
+      "kind": "red carpet",
+      "label": "Vogue: Oscars 2025 menswear report",
+      "url": "https://www.vogue.com/article/oscars-2025-men-best-dressed",
+      "note": "The Givenchy by Sarah Burton look in context"
+    },
+    {
+      "kind": "editorial",
+      "label": "Vogue: the Paris brown suit",
+      "url": "https://www.vogue.com/article/timothee-chalamet-paris-marty-supreme-premiere-brown-suit",
+      "note": "Marty Supreme press tailoring"
+    },
+    {
+      "kind": "red carpet",
+      "label": "Variety: custom Timberland at the Golden Globes",
+      "url": "https://variety.com/2026/shopping/news/timothee-chalamet-golden-globes-timberland-boots-buy-online-1236629442/",
+      "note": "Footwear provenance"
+    }
+  ],
+  "evidence": [
+    {
+      "brand": "Tom Ford",
+      "association": "client",
+      "note": "Most-worn house since 2025, designed by Haider Ackermann",
+      "moments": [
+        {
+          "date": "2025-12-16",
+          "occasion": "A24 Marty Supreme New York premiere",
+          "outfit": "Tom Ford by Haider Ackermann"
+        },
+        {
+          "date": "2025-03-02",
+          "occasion": "Vanity Fair Oscar Party",
+          "outfit": "Tom Ford by Haider Ackermann"
+        },
+        {
+          "date": "2025-01-05",
+          "occasion": "82nd Golden Globe Awards",
+          "outfit": "Tom Ford by Haider Ackermann"
+        }
+      ]
+    },
+    {
+      "brand": "Givenchy",
+      "association": "client",
+      "note": "Custom tailoring, twice",
+      "moments": [
+        {
+          "date": "2025-03-02",
+          "occasion": "97th Academy Awards",
+          "outfit": "Sarah Burton for Givenchy"
+        },
+        {
+          "date": "2024-02-12",
+          "occasion": "Dune: Part Two Paris premiere",
+          "outfit": "custom Givenchy"
+        }
+      ]
+    },
+    {
+      "brand": "Prada",
+      "association": "client",
+      "note": "Press-tour staple, from 2020 through 2025",
+      "moments": [
+        {
+          "date": "2025-01-17",
+          "occasion": "A Complete Unknown Rome premiere",
+          "outfit": "Prada (with True Religion)"
+        },
+        {
+          "date": "2024-02-25",
+          "occasion": "Dune: Part Two New York premiere",
+          "outfit": "Prada"
+        },
+        {
+          "date": "2024-02-06",
+          "occasion": "Dune 2 Mexico City red carpet",
+          "outfit": "Prada"
+        },
+        {
+          "date": "2020-02-09",
+          "occasion": "92nd Academy Awards",
+          "outfit": "Prada with Cartier jewels"
+        }
+      ]
+    },
+    {
+      "brand": "Louis Vuitton",
+      "association": "client",
+      "note": "Custom Virgil Abloh and Oscars tailoring",
+      "moments": [
+        {
+          "date": "2022-03-27",
+          "occasion": "94th Academy Awards",
+          "outfit": "Louis Vuitton"
+        },
+        {
+          "date": "2019-10-03",
+          "occasion": "The King London premiere",
+          "outfit": "Louis Vuitton sequinned hoodie"
+        },
+        {
+          "date": "2018-11-04",
+          "occasion": "Hollywood Film Awards",
+          "outfit": "custom Louis Vuitton by Virgil Abloh"
+        }
+      ]
+    },
+    {
+      "brand": "Alexander McQueen",
+      "association": "client",
+      "note": "The suit that made the red carpet a fashion story",
+      "moments": [
+        {
+          "date": "2019-01-13",
+          "occasion": "Critics' Choice Awards",
+          "outfit": "brush-stroke suit by Alexander McQueen"
+        },
+        {
+          "date": "2022-03-27",
+          "occasion": "Vanity Fair Oscar Party",
+          "outfit": "Alexander McQueen"
+        },
+        {
+          "date": "2018-10-13",
+          "occasion": "BFI London Film Festival",
+          "outfit": "floral Alexander McQueen suit"
+        }
+      ]
+    },
+    {
+      "brand": "Berluti",
+      "association": "client",
+      "note": "Oscars 2018",
+      "moments": [
+        {
+          "date": "2018-03-04",
+          "occasion": "90th Academy Awards",
+          "outfit": "Berluti"
+        }
+      ]
+    },
+    {
+      "brand": "Bottega Veneta",
+      "association": "client",
+      "note": "Dune and A Complete Unknown press",
+      "moments": [
+        {
+          "date": "2025-02-16",
+          "occasion": "EE BAFTA Film Awards",
+          "outfit": "Bottega Veneta"
+        },
+        {
+          "date": "2024-02-14",
+          "occasion": "Dune: Part Two London photocall",
+          "outfit": "Bottega Veneta"
+        }
+      ]
+    },
+    {
+      "brand": "Chrome Hearts",
+      "association": "client",
+      "note": "Custom, courtside and on the carpet",
+      "moments": [
+        {
+          "date": "2025-02-23",
+          "occasion": "Screen Actors Guild Awards",
+          "outfit": "custom Chrome Hearts"
+        },
+        {
+          "date": "2025-02-14",
+          "occasion": "Berlinale, A Complete Unknown premiere",
+          "outfit": "Chrome Hearts"
+        }
+      ]
+    },
+    {
+      "brand": "Loewe",
+      "association": "client",
+      "note": "Off-duty texture",
+      "moments": [
+        {
+          "date": "2023-11-18",
+          "occasion": "Tokyo arrival",
+          "outfit": "Avellano and Loewe"
+        }
+      ]
+    },
+    {
+      "brand": "Chanel",
+      "association": "client",
+      "note": "Paris premiere",
+      "moments": [
+        {
+          "date": "2025-01-15",
+          "occasion": "A Complete Unknown Paris premiere",
+          "outfit": "Chanel"
+        }
+      ]
+    },
+    {
+      "brand": "Hermès",
+      "association": "client",
+      "note": "Mexico City photocall",
+      "moments": [
+        {
+          "date": "2024-02-05",
+          "occasion": "Dune 2 Mexico City photocall",
+          "outfit": "Hermès"
+        }
+      ]
+    },
+    {
+      "brand": "Gucci",
+      "association": "client",
+      "note": "Seoul premiere",
+      "moments": [
+        {
+          "date": "2024-02-22",
+          "occasion": "Dune: Part Two Seoul premiere",
+          "outfit": "Gucci"
+        }
+      ]
+    },
+    {
+      "brand": "Celine",
+      "association": "client",
+      "note": "Golden Globes 2024",
+      "moments": [
+        {
+          "date": "2024-01-07",
+          "occasion": "81st Golden Globe Awards",
+          "outfit": "Celine"
+        }
+      ]
+    },
+    {
+      "brand": "Thom Browne",
+      "association": "client",
+      "note": "Little Women press",
+      "moments": [
+        {
+          "date": "2019-12-16",
+          "occasion": "Little Women London photocall",
+          "outfit": "pink corduroy suit by Thom Browne"
+        }
+      ]
+    },
+    {
+      "brand": "Stella McCartney",
+      "association": "client",
+      "note": "Colour suits",
+      "moments": [
+        {
+          "date": "2020-01-08",
+          "occasion": "National Board of Review gala",
+          "outfit": "white Stella McCartney suit"
+        },
+        {
+          "date": "2021-10-17",
+          "occasion": "Dune London photocall",
+          "outfit": "Stella McCartney"
+        }
+      ]
+    },
+    {
+      "brand": "Helmut Lang",
+      "association": "client",
+      "note": "CinemaCon 2023",
+      "moments": [
+        {
+          "date": "2023-04-25",
+          "occasion": "CinemaCon, Dune: Part Two",
+          "outfit": "Helmut Lang"
+        }
+      ]
+    },
+    {
+      "brand": "Vivienne Westwood",
+      "association": "client",
+      "note": "Bones and All Rome",
+      "moments": [
+        {
+          "date": "2022-11-12",
+          "occasion": "Bones and All Rome photocall",
+          "outfit": "Vivienne Westwood"
+        }
+      ]
+    },
+    {
+      "brand": "Off-White",
+      "association": "client",
+      "note": "Spirit Awards 2018",
+      "moments": [
+        {
+          "date": "2018-03-03",
+          "occasion": "Film Independent Spirit Awards",
+          "outfit": "Off-White shirt"
+        }
+      ]
+    },
+    {
+      "brand": "JUUN.J",
+      "association": "client",
+      "note": "Seoul press conference",
+      "moments": [
+        {
+          "date": "2024-02-21",
+          "occasion": "Dune: Part Two Seoul press conference",
+          "outfit": "JUUN.J"
+        }
+      ]
+    },
+    {
+      "brand": "Doni Nahmias",
+      "association": "client",
+      "note": "London promo, 2025",
+      "moments": [
+        {
+          "date": "2025-12-11",
+          "occasion": "BBC Radio Studios, London",
+          "outfit": "Doni Nahmias"
+        }
+      ]
+    },
+    {
+      "brand": "Timberland",
+      "association": "client",
+      "note": "Custom boots",
+      "moments": [
+        {
+          "date": "2026-01",
+          "occasion": "Golden Globes",
+          "outfit": "custom Timberland boots"
+        }
+      ]
+    },
+    {
+      "brand": "Cartier",
+      "association": "client",
+      "note": "Jewellery on the Oscars red carpet",
+      "moments": [
+        {
+          "date": "2020-02-09",
+          "occasion": "92nd Academy Awards",
+          "outfit": "Cartier jewels"
+        }
+      ]
+    }
+  ],
+  "collections": [
+    {
+      "brand": "Prada",
+      "season": "Spring 2026 menswear",
+      "association": "client",
+      "url": "https://www.vogue.com/fashion-shows/spring-2026-menswear/prada",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2026-menswear/prada/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:55:50.059Z",
+      "fetchMs": 2036,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/68581a8012b0a4a0378f88fd/master/w_1280%2Cc_limit/00001-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/68581a80f7512f99fdbc7809/master/w_1280%2Cc_limit/00002-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/68581a8166cd504e0b8ffeeb/master/w_1280%2Cc_limit/00003-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/68581a83b7c112f712e2933b/master/w_1280%2Cc_limit/00004-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/68581a83ae38062f5d6bfcb8/master/w_1280%2Cc_limit/00005-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/68581a845803776be3fbd594/master/w_1280%2Cc_limit/00006-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/68581a8642c4a50855ef5ca7/master/w_1280%2Cc_limit/00007-prada-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/68581a86cc1a7a7e72959898/master/w_1280%2Cc_limit/00008-prada-spring-2026-menswear-credit-gorunway.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Louis Vuitton",
+      "season": "Spring 2026 menswear",
+      "association": "client",
+      "url": "https://www.vogue.com/fashion-shows/spring-2026-menswear/louis-vuitton",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2026-menswear/louis-vuitton/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:55:55.649Z",
+      "fetchMs": 5519,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/685b17c47bbb6cff946e9209/master/w_1280%2Cc_limit/00001-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/685b17c4ce8c07f4e0b8e70e/master/w_1280%2Cc_limit/00002-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/685b17c52913f046ade8044b/master/w_1280%2Cc_limit/00003-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/685b17c8d4068e5cd787bf8b/master/w_1280%2Cc_limit/00004-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/685b17c934d5f5e3e109f4c7/master/w_1280%2Cc_limit/00005-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/685b17cac0f32b56a3761bbb/master/w_1280%2Cc_limit/00006-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/685b17cb08cc020e174b0ee0/master/w_1280%2Cc_limit/00007-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/685b17cfd200c6f807e7cab3/master/w_1280%2Cc_limit/00008-louis-vuitton-spring-2026-menswear-credit-gorunway.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Tom Ford",
+      "season": "Spring 2025 menswear",
+      "association": "client",
+      "url": "https://www.vogue.com/fashion-shows/spring-2025-menswear/tom-ford",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2025-menswear/tom-ford/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:55:55.755Z",
+      "fetchMs": 102,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/6679a1b8752727e8834e9470/master/w_1280%2Cc_limit/00001-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/6679a1b955d795ef1e2c44e8/master/w_1280%2Cc_limit/00002-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/6679a1b9864d57ad82088fed/master/w_1280%2Cc_limit/00003-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/6679a1bcfa441df0316f021a/master/w_1280%2Cc_limit/00004-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/6679a1bd6c43794baed17e56/master/w_1280%2Cc_limit/00005-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/6679a1bd4d99b482abd17d52/master/w_1280%2Cc_limit/00006-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/6679a1c0f867e59dbb3cf195/master/w_1280%2Cc_limit/00007-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/6679a1c1af0be131632898da/master/w_1280%2Cc_limit/00008-tom-ford-spring-2025-menswear-credit-adam-peter-johnson-brand.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Berluti",
+      "season": "Spring 2026 menswear",
+      "association": "client",
+      "url": "https://www.vogue.com/fashion-shows/spring-2026-menswear/berluti",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2026-menswear/berluti/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:55:57.803Z",
+      "fetchMs": 2045,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/685abaf483570e1d145f683c/master/w_1280%2Cc_limit/00001-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/685abaf364e7336a806a58b8/master/w_1280%2Cc_limit/00002-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/685abaf4278949302452d389/master/w_1280%2Cc_limit/00003-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/685abaf6d4068e5cd787bf1a/master/w_1280%2Cc_limit/00004-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/685abaf65dfcb9e50e392c25/master/w_1280%2Cc_limit/00005-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/685abaf797fb6d1c1513df6f/master/w_1280%2Cc_limit/00006-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/685abaf983570e1d145f683e/master/w_1280%2Cc_limit/00007-berluti-spring-2026-menswear-credit-brand.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/685abaf9a2bdde3ac64946f9/master/w_1280%2Cc_limit/00008-berluti-spring-2026-menswear-credit-brand.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Loewe",
+      "season": "Spring 2025 menswear",
+      "association": "client",
+      "url": "https://www.vogue.com/fashion-shows/spring-2025-menswear/loewe",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2025-menswear/loewe/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:56:00.030Z",
+      "fetchMs": 2208,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/6676c4bc4f41fd3e597fe1f9/master/w_1280%2Cc_limit/00001-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/6676c4bcfe36e73d377fc95d/master/w_1280%2Cc_limit/00002-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/6676c4bcd473863109004678/master/w_1280%2Cc_limit/00003-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/6676c4be49ef77abda0cb054/master/w_1280%2Cc_limit/00004-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/6676c4bf6b8ecadcf24064ff/master/w_1280%2Cc_limit/00005-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/6676c4bfa97f0b1762dbdca5/master/w_1280%2Cc_limit/00006-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/6676c4c12fb59a513c2f78cd/master/w_1280%2Cc_limit/00007-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/6676c4c13045ed48016f9cd5/master/w_1280%2Cc_limit/00008-loewe-spring-2025-menswear-credit-gorunway.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Givenchy",
+      "season": "Fall 2024 menswear",
+      "association": "client",
+      "url": "https://www.vogue.com/fashion-shows/fall-2024-menswear/givenchy",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/fall-2024-menswear/givenchy/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:56:01.618Z",
+      "fetchMs": 1585,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/65a809fe3ccf4196fa133a81/master/w_1280%2Cc_limit/00001-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/65a809fee2e3f1b05644d228/master/w_1280%2Cc_limit/00002-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/65a809ff34ff598611ac58a0/master/w_1280%2Cc_limit/00003-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/65a80a04f3edba371804a859/master/w_1280%2Cc_limit/00004-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/65a80a05a1aabee5ed057b11/master/w_1280%2Cc_limit/00005-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/65a80a050c1d6d8dc6a00361/master/w_1280%2Cc_limit/00006-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/65a80a08d16f65b9dda08630/master/w_1280%2Cc_limit/00007-givenchy-fall-2024-mens-credit-brand.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/65a80a0a64cae4d1d428cdd9/master/w_1280%2Cc_limit/00008-givenchy-fall-2024-mens-credit-brand.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Rick Owens",
+      "season": "Spring 2026 menswear",
+      "association": "tangential",
+      "url": "https://www.vogue.com/fashion-shows/spring-2026-menswear/rick-owens",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2026-menswear/rick-owens/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:56:02.835Z",
+      "fetchMs": 1207,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/685dbe1ffac0f7b7c1513618/master/w_1280%2Cc_limit/00001-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/685dbe21fac0f7b7c151361a/master/w_1280%2Cc_limit/00002-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/685dbe219c62ebeb5c7a5805/master/w_1280%2Cc_limit/00003-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/685dbe237a846ddc08b299ec/master/w_1280%2Cc_limit/00004-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/685dbe24fdd99feaceff793a/master/w_1280%2Cc_limit/00005-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/685dbe24c9f98a18842fa0d0/master/w_1280%2Cc_limit/00006-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/685dbe26fdd99feaceff793c/master/w_1280%2Cc_limit/00007-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/685dbe282f382ffb08fbb4f3/master/w_1280%2Cc_limit/00008-rick-owens-spring-2026-menswear-credit-owenscorp.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Yohji Yamamoto",
+      "season": "Spring 2026 menswear",
+      "association": "tangential",
+      "url": "https://www.vogue.com/fashion-shows/spring-2026-menswear/yohji-yamamoto",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2026-menswear/yohji-yamamoto/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:56:04.628Z",
+      "fetchMs": 1763,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/685d994a814e802d7a2ef13a/master/w_1280%2Cc_limit/00001-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/685d994cb51b08207e454bb3/master/w_1280%2Cc_limit/00002-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/685d9946e88bf1ad5e670103/master/w_1280%2Cc_limit/00003-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/685d995121487034305b7feb/master/w_1280%2Cc_limit/00004-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/685d995a450be9e1937566c7/master/w_1280%2Cc_limit/00005-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/685d995663c5368ea28e9851/master/w_1280%2Cc_limit/00006-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/685d995b3a3edb6cbd96aad8/master/w_1280%2Cc_limit/00007-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/685d99607a846ddc08b29893/master/w_1280%2Cc_limit/00008-yohji-yamamoto-spring-2026-menswear-credit-gorunway.jpg"
+        }
+      ]
+    },
+    {
+      "brand": "Dries Van Noten",
+      "season": "Spring 2026 menswear",
+      "association": "tangential",
+      "url": "https://www.vogue.com/fashion-shows/spring-2026-menswear/dries-van-noten",
+      "slideshowUrl": "https://www.vogue.com/fashion-shows/spring-2026-menswear/dries-van-noten/slideshow/collection",
+      "credit": "Vogue Runway",
+      "fetchedAt": "2026-11-07T16:56:07.728Z",
+      "fetchMs": 3010,
+      "looks": [
+        {
+          "lookNo": 1,
+          "image": "https://assets.vogue.com/photos/685d48e29c16fca7fa4829db/master/w_1280%2Cc_limit/00001-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 2,
+          "image": "https://assets.vogue.com/photos/685d48e149f9a6f3076a1c81/master/w_1280%2Cc_limit/00002-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 3,
+          "image": "https://assets.vogue.com/photos/685d48e1b000963cfc283f72/master/w_1280%2Cc_limit/00003-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 4,
+          "image": "https://assets.vogue.com/photos/685d48e57a846ddc08b295fe/master/w_1280%2Cc_limit/00004-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 5,
+          "image": "https://assets.vogue.com/photos/685d48e5e3144db3682c4027/master/w_1280%2Cc_limit/00005-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 6,
+          "image": "https://assets.vogue.com/photos/685d48e52fff1ba4644f9e2a/master/w_1280%2Cc_limit/00006-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 7,
+          "image": "https://assets.vogue.com/photos/685d48e96c626e632734b49b/master/w_1280%2Cc_limit/00007-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        },
+        {
+          "lookNo": 8,
+          "image": "https://assets.vogue.com/photos/685d48e9450be9e19375608c/master/w_1280%2Cc_limit/00008-dries-van-noten-spring-2026-menswear-credit-gorunway.jpg"
+        }
+      ]
+    }
+  ]
+}

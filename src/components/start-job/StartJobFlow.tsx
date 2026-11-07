@@ -319,7 +319,16 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
           {suggested.length ? (
             <p className="text-[13px] leading-snug text-muted-foreground">
               <span className="agent-mark">{suggested.length} looks</span> suggested from{" "}
-              {[...new Set(suggested.map((look) => look.brand))].join(", ")}.
+              {[...new Set(suggested.map((look) => look.brand))].join(", ")}.{" "}
+              <a
+                href="/suggest-looks"
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                See the researched skill — provenance and trace
+              </a>
+              .
             </p>
           ) : null}
 
