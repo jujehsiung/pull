@@ -42,7 +42,7 @@ export function LookGrid({ jobId, boards, hidden }: { jobId: string; boards: Boa
             <h2 className="brand-name" style={{ margin: 0 }}>
               {board.brand}
             </h2>
-            <span className="mono" style={{ color: "var(--muted-2)" }}>
+            <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
               {board.looks.length} LOOK{board.looks.length === 1 ? "" : "S"}
             </span>
           </div>
@@ -153,7 +153,7 @@ function LookCard({ look, jobId, isHidden = false }: { look: LookView; jobId: st
         </div>
 
         <div className="row" style={{ justifyContent: "space-between" }}>
-          <span className="mono" style={{ fontSize: 10, color: look.readSource === "image" ? "var(--ok)" : "var(--muted-2)" }}>
+          <span className="mono" style={{ fontSize: 10, color: look.readSource === "image" ? "var(--ok)" : "var(--muted-foreground-soft)" }}>
             {SOURCE_LABEL[look.readSource] ?? look.readSource}
             {look.confidence !== null ? ` · ${Math.round(Number(look.confidence))}%` : ""}
           </span>

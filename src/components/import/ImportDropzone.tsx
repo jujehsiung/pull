@@ -140,7 +140,7 @@ export function ImportDropzone({
   const [items, setItems] = useState<ImportItem[]>([])
   const [rejects, setRejects] = useState<string[]>([])
   const [dragging, setDragging] = useState(false)
-  const [loadingSamples, setLoadingSamples] = useState(false)
+  const [loadingSamples, setLoadingSamples] = useState<null | "ocr" | "menswear">(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<ImportBatchResult | null>(null)
@@ -344,17 +344,20 @@ export function ImportDropzone({
     setSubmitError(null)
   }, [commit])
 
-  const loadSamples = useCallback(async () => {
-    if (loadingSamples || result) return
-    setLoadingSamples(true)
-    try {
-      addFiles(await loadSampleFiles())
-    } catch (error) {
-      setRejects([messageOf(error)])
-    } finally {
-      setLoadingSamples(false)
-    }
-  }, [addFiles, loadingSamples, result])
+  const loadSamples = useCallback(
+    async (set: "ocr" | "menswear") => {
+      if (loadingSamples || result) return
+      setLoadingSamples(set)
+      try {
+        addFiles(await loadSampleFiles(set))
+      } catch (error) {
+        setRejects([messageOf(error)])
+      } finally {
+        setLoadingSamples(null)
+      }
+    },
+    [addFiles, loadingSamples, result],
+  )
 
   const buildBoards = useCallback(async () => {
     if (submitting || result) return
@@ -431,7 +434,7 @@ export function ImportDropzone({
         <span
           role="status"
           className="mono"
-          style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-2)" }}
+          style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-foreground-soft)" }}
         >
           {items.length} OF {MAX_FILES}
           {readyCount ? ` · ${readyCount} READY` : ""}
@@ -458,8 +461,8 @@ export function ImportDropzone({
               gap: 10,
               padding: "clamp(24px, 4vw, 44px) 20px",
               borderRadius: "var(--r-md)",
-              border: `1px dashed ${dragging ? "var(--accent)" : "var(--line-strong)"}`,
-              background: dragging ? "var(--accent-soft)" : "var(--card)",
+              border: `1px dashed ${dragging ? "var(--brand)" : "var(--line-strong)"}`,
+              background: dragging ? "var(--accent)" : "var(--card)",
               textAlign: "center",
               transition: "border-color 150ms ease, background 150ms ease",
             }}
@@ -482,11 +485,23 @@ export function ImportDropzone({
                 <button
                   type="button"
                   className="btn btn-ghost"
-                  onClick={() => void loadSamples()}
-                  disabled={loadingSamples}
+                  onClick={() => void loadSamples("ocr")}
+                  disabled={Boolean(loadingSamples)}
                   style={{ minHeight: 44 }}
                 >
-                  {loadingSamples ? "Loading samples…" : "Use the 10 sample looks"}
+                  {loadingSamples === "ocr" ? "Loading samples…" : "Use the 10 sample looks"}
+                </button>
+              ) : null}
+              {showSampleButton ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => void loadSamples("menswear")}
+                  disabled={Boolean(loadingSamples)}
+                  style={{ minHeight: 44 }}
+                  title="Real AW26 men's runway looks — no caption text, so the look number is read from the filename"
+                >
+                  {loadingSamples === "menswear" ? "Loading menswear…" : "Use 60 menswear looks"}
                 </button>
               ) : null}
             </div>
@@ -563,7 +578,7 @@ export function ImportDropzone({
                   {submitError}
                 </p>
               ) : null}
-              <p className="small" style={{ color: "var(--muted-2)" }}>
+              <p className="small" style={{ color: "var(--muted-foreground-soft)" }}>
                 Building the boards does not publish anything. Review and edit every look on the job
                 page before you press Publish.
               </p>
@@ -580,7 +595,7 @@ function BuildSummary({ result }: { result: ImportBatchResult }) {
     <div className="card" aria-live="polite">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <p className="eyebrow">{result.alreadyImported ? "Boards already built" : "Boards built"}</p>
-        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-2)" }}>
+        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-foreground-soft)" }}>
           {result.counts.images} LOOKS · {result.boards.length} BOARDS
         </span>
       </div>
@@ -692,7 +707,7 @@ function ImportTile({
           style={{
             fontSize: 9,
             letterSpacing: ".08em",
-            color: failed ? "var(--danger)" : "var(--muted)",
+            color: failed ? "var(--danger)" : "var(--muted-foreground)",
           }}
         >
           {phaseLabel(item)}
@@ -708,7 +723,7 @@ function ImportTile({
               style={{
                 fontSize: 9,
                 letterSpacing: ".08em",
-                color: item.parsed.readSource === "image" ? "var(--accent)" : "var(--muted-2)",
+                color: item.parsed.readSource === "image" ? "var(--brand)" : "var(--muted-foreground-soft)",
               }}
             >
               {item.parsed.readSource === "image"

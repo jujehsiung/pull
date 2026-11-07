@@ -63,7 +63,7 @@ export default function SetupPage() {
         <Link className="wordmark" href="/">
           PULL
         </Link>
-        <span className="mono" style={{ color: "var(--muted)", fontSize: 11, letterSpacing: ".14em" }}>
+        <span className="mono" style={{ color: "var(--muted-foreground)", fontSize: 11, letterSpacing: ".14em" }}>
           STACK SETUP
         </span>
         <Link className="btn btn-ghost btn-sm" href="/trace">

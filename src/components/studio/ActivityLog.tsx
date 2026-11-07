@@ -16,7 +16,7 @@ const ACTOR_LABEL: Record<string, string> = {
 }
 
 function actorColour(actor: string): string {
-  if (actor === "agent") return "var(--accent)"
+  if (actor === "agent") return "var(--brand)"
   if (actor === "client") return "var(--ok)"
   return "var(--ink-2)"
 }
@@ -56,7 +56,7 @@ export async function ActivityLog({ jobId }: { jobId: string }) {
     <section className="card" style={{ padding: 20 }} aria-label="Activity log">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
         <p className="eyebrow">ACTIVITY</p>
-        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-2)" }}>
+        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-foreground-soft)" }}>
           {header}
         </span>
       </div>
@@ -80,7 +80,7 @@ export async function ActivityLog({ jobId }: { jobId: string }) {
             >
               <span
                 className="mono"
-                style={{ fontSize: 10, color: "var(--muted-2)", fontVariantNumeric: "tabular-nums" }}
+                style={{ fontSize: 10, color: "var(--muted-foreground-soft)", fontVariantNumeric: "tabular-nums" }}
               >
                 {timeLabel(row.at)}
               </span>
@@ -105,7 +105,7 @@ export async function ActivityLog({ jobId }: { jobId: string }) {
                 </div>
                 <span
                   className="mono"
-                  style={{ display: "block", marginTop: 2, fontSize: 9, color: "var(--muted-2)", letterSpacing: ".04em" }}
+                  style={{ display: "block", marginTop: 2, fontSize: 9, color: "var(--muted-foreground-soft)", letterSpacing: ".04em" }}
                 >
                   {row.kind}
                 </span>
@@ -115,7 +115,7 @@ export async function ActivityLog({ jobId }: { jobId: string }) {
         </ol>
       )}
 
-      <p className="small" style={{ marginTop: 14, color: "var(--muted-2)" }}>
+      <p className="small" style={{ marginTop: 14, color: "var(--muted-foreground-soft)" }}>
         Newest first · agent and human actions in one timeline (FR-22).
       </p>
     </section>

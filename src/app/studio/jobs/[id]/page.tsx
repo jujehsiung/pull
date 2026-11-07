@@ -29,7 +29,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   return (
     <div className="stack" style={{ gap: 26 }}>
       <div>
-        <Link href="/studio" className="mono" style={{ color: "var(--muted)" }}>
+        <Link href="/studio" className="mono" style={{ color: "var(--muted-foreground)" }}>
           ← DASHBOARD
         </Link>
         <header style={{ marginTop: 16 }}>
@@ -50,7 +50,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         <section aria-label="Waiting for images">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
             <p className="eyebrow">WAITING FOR IMAGES</p>
-            <span className="mono" style={{ color: "var(--muted-2)", fontSize: 10 }}>
+            <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
               NOTHING SORTED YET
             </span>
           </div>
@@ -81,7 +81,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
                 <h2 className="brand-name" style={{ margin: 0 }}>
                   {board.brand}
                 </h2>
-                <span className="mono" style={{ color: "var(--muted-2)", fontSize: 10 }}>
+                <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
                   {board.looks.length} LOOK{board.looks.length === 1 ? "" : "S"}
                 </span>
               </div>
@@ -104,7 +104,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
                       loading="lazy"
                       style={{ display: "block", width: "100%", aspectRatio: "3 / 4", objectFit: "cover", borderRadius: 8 }}
                     />
-                    <p className="mono" style={{ fontSize: 10, letterSpacing: ".08em", margin: "8px 2px 2px", color: "var(--muted)" }}>
+                    <p className="mono" style={{ fontSize: 10, letterSpacing: ".08em", margin: "8px 2px 2px", color: "var(--muted-foreground)" }}>
                       LOOK {look.lookNo}
                       {look.season ? ` · ${look.season}` : ""}
                     </p>

@@ -120,16 +120,40 @@ export function uploadToCloudinary(
 }
 
 /** The FR-4 acceptance set, served from public/fixtures/looks (copied from ../agent-board). */
-export async function loadSampleFiles(): Promise<File[]> {
-  const manifestResponse = await fetch("/fixtures/looks/manifest.json", { cache: "no-store" })
+/**
+ * The fixture sets a demo can load in one click.
+ *
+ * `ocr` is the PRD FR-4 acceptance set: 10 synthetic screenshots that PRINT their
+ * own caption, so Act 1 can prove the look number was read off the pixels.
+ * `menswear` is real runway photography (public/fixtures/menswear, see
+ * scripts/fetch-menswear.mjs) — no caption text, so it lands as
+ * `readSource: "filename"`. Use it when the board has to look like a real
+ * client's, and keep the OCR set for the moment you have to prove the reading.
+ */
+export type SampleSetId = "ocr" | "menswear"
+
+const SAMPLE_SETS: Record<SampleSetId, { manifest: string; dir: string }> = {
+  ocr: { manifest: "/fixtures/looks/manifest.json", dir: "/fixtures/looks" },
+  menswear: { manifest: "/fixtures/menswear/manifest.json", dir: "/fixtures/menswear" },
+}
+
+export async function loadSampleFiles(set: SampleSetId = "ocr"): Promise<File[]> {
+  const { manifest: manifestUrl, dir } = SAMPLE_SETS[set]
+  const manifestResponse = await fetch(manifestUrl, { cache: "no-store" })
   if (!manifestResponse.ok) throw new Error("The sample fixture set is not being served.")
-  const manifest = (await manifestResponse.json()) as { files?: string[] }
-  const names = Array.isArray(manifest.files) ? manifest.files : []
+  const manifest = (await manifestResponse.json()) as {
+    files?: (string | { file?: string })[]
+  }
+  // `files` is a list of names in the FR-4 set, and may carry per-image records
+  // (brand/credit) elsewhere. Accept either shape.
+  const names = (Array.isArray(manifest.files) ? manifest.files : [])
+    .map((entry) => (typeof entry === "string" ? entry : entry?.file))
+    .filter((name): name is string => Boolean(name))
   if (names.length === 0) throw new Error("The sample fixture manifest is empty.")
 
   const files: File[] = []
   for (const name of names) {
-    const response = await fetch(`/fixtures/looks/${encodeURIComponent(name)}`, { cache: "no-store" })
+    const response = await fetch(`${dir}/${encodeURIComponent(name)}`, { cache: "no-store" })
     if (!response.ok) throw new Error(`Could not load the sample ${name}.`)
     const blob = await response.blob()
     files.push(new File([blob], name, { type: blob.type || "image/png" }))

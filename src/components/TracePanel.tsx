@@ -48,7 +48,7 @@ export function TracePanel({ jobId, initialSteps }: { jobId: string; initialStep
   return (
     <div className="stack" style={{ gap: 10 }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
-        <span className="mono" style={{ color: live ? "var(--ok)" : "var(--muted-2)", fontSize: 10, letterSpacing: ".12em" }}>
+        <span className="mono" style={{ color: live ? "var(--ok)" : "var(--muted-foreground-soft)", fontSize: 10, letterSpacing: ".12em" }}>
           {live ? "● LIVE" : "○ PAUSED"}
         </span>
         <button className="btn btn-ghost btn-sm" onClick={() => setLive((value) => !value)}>

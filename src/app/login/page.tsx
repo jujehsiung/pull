@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <Link href="/" className="wordmark">
           PULL
         </Link>
-        <span className="mono" style={{ color: "var(--muted-2)" }}>
+        <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
           STUDIO
         </span>
       </header>

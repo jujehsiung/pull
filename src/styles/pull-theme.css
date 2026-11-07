@@ -1,0 +1,227 @@
+/*
+ * PULL — an EVA theme. Values only; no component is forked.
+ *
+ * Apply with <html data-eva-theme="pull">. The dark block is
+ * `data-mode="dark"` and is NOT used by the app yet — it exists because an
+ * incomplete theme is a defect: every token the contract declares but a theme
+ * omits silently falls back to the kit's Dark EVA (Unit-01) default, so a
+ * sidebar or a chart sits in the wrong palette while nothing errors. (Same
+ * rule muen.css learned and records in its own header.)
+ *
+ * WHAT THIS THEME IS
+ *   Pull's own palette, extracted from the reference in src/app/globals.css
+ *   (augment.framer.media): warm off-white paper, near-black ink, one olive
+ *   accent used sparingly, hairline rules, editorial photography.
+ *
+ * TWO SURFACES, ONE PALETTE
+ *   The app has a light editorial studio and a dark lookbook that clients open
+ *   from a link. The dark lookbook is NOT "dark mode": it is a fixed dark
+ *   material that stays dark inside a light page. Those tokens are the
+ *   --dark* family below, declared once and never re-declared in the dark
+ *   block, so they stay put in either mode. `--inverse` keeps its EVA meaning
+ *   (the opposite of the current page), which is a different job.
+ *
+ * RULES
+ *   1. Components never carry a hex. They reference a token.
+ *   2. `--accent` is a SELECTION SURFACE, not the brand colour. Pull's olive
+ *      lives on `--brand`. (This is the same correction muen.css records: a
+ *      theme that puts the brand on --accent breaks every hover/selected state
+ *      in the kit.)
+ *   3. Values here are contrast-checked by `npm run tokens:check`
+ *      (scripts/check-tokens.mjs). Do not hand-edit a value past the gate —
+ *      change it here, then run the check.
+ */
+
+[data-eva-theme="pull"] {
+  color-scheme: light;
+
+  /* ── surfaces + text ──────────────────────────────────────────────────── */
+  --background: #f9f9f8; /* paper */
+  --foreground: #0a0a0a; /* ink */
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --muted: #f2f2f1; /* paper-2 — a surface, never text */
+  --muted-foreground: #6b6a66; /* 5.14:1 on paper — AA */
+  /* Pull's second text tier (eyebrows, meta, fine print). The reference used
+     #8f8b85, which is 3.22:1 on paper and FAILS AA on every one of its 37 use
+     sites. Raised to the lightest value that clears AA on paper, the muted
+     surface and white — the tier no longer reads much lighter than
+     --muted-foreground, so that hierarchy is carried by size, weight and
+     tracking (11px mono, uppercase, 0.16em) instead of by value. */
+  --muted-foreground-soft: #706b64; /* 5.01 / 4.71 / 5.28 — AA everywhere */
+  --border: #e6e3e3;
+  --input: #d5d2cd;
+  --ring: #465907; /* olive, 7.40:1 on paper */
+
+  /* ── action ───────────────────────────────────────────────────────────── */
+  /* Pull's primary action is ink, not a colour: the olive is reserved for
+     emphasis (the step numbers, the selected state, the focus ring). */
+  --primary: #0a0a0a;
+  --primary-foreground: #f9f9f8;
+  --secondary: #f2f2f1;
+  --secondary-foreground: #0a0a0a;
+  --tertiary: #b3261e;
+  --tertiary-foreground: #ffffff;
+  --tertiary-text: #b3261e; /* destructive ink on a tinted surface — 6.20:1 */
+
+  /* ── brand ────────────────────────────────────────────────────────────── */
+  --brand: #465907; /* the one accent: olive */
+  --link: #465907;
+  /* Pull extra: the second ink, for headings that sit under the primary one.
+     (Named --ink-soft to match the same extra in hand-me-up.css.) */
+  --ink-soft: #2c2c2b;
+
+  /* Selection surface + its ink. EVA contract: --accent is where a chosen
+     row sits, never the brand fill. */
+  --accent: #eceee2; /* olive-soft: selected rate card, dropzone hover */
+  --accent-foreground: #2c2c2b; /* 11.91:1 on --accent */
+
+  /* ── feedback (status only, never an action) ──────────────────────────── */
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --success: #2f6b3a;
+  --success-foreground: #ffffff;
+  --warning: #8a5a00;
+  --warning-foreground: #ffffff;
+  --info: #1f5fa8;
+  --info-foreground: #ffffff;
+
+  /* ── inverse: the opposite of this page (EVA semantics) ───────────────── */
+  --inverse: #0a0a0a;
+  --inverse-foreground: #f9f9f8;
+
+  /* ── the lookbook material — always dark, in either mode ──────────────── */
+  /* Read the header: these are NOT dark-mode tokens. They are the dark board
+     a client opens from a link, sitting inside a light page. */
+  --dark: #0b0b0c;
+  --dark-2: #121214;
+  --dark-3: #17171a;
+  --dark-line: #26262a;
+  --dark-line-strong: #33333a;
+  --dark-text: #f4f4f2; /* 17.86:1 on --dark */
+  --dark-muted: #8f8f95; /* 6.12:1 on --dark — AA */
+  --dark-ok: #8fd98f; /* 11.70:1 on --dark */
+
+  /* ── sidebar (the kit renders one; the studio does not use it yet) ────── */
+  --sidebar: #f2f2f1;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-accent: #eceee2;
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border: #e6e3e3;
+  --sidebar-ring: #465907;
+
+  /* ── dataviz — olive-led, then the status families ────────────────────── */
+  --chart-1: #465907;
+  --chart-2: #7d8f3a;
+  --chart-3: #b3a06a;
+  --chart-4: #2f6b3a;
+  --chart-5: #b3261e;
+  --chart-6: #4a4a46;
+  --chart-7: #8f8b85;
+  --chart-8: #c9c4b6;
+  --chart-9: #2c2c2b;
+  --chart-10: #e6e3e3;
+
+  /* ── shape + type ─────────────────────────────────────────────────────── */
+  /* 0.875rem = 14px = Pull's --r-md, the card radius. The kit derives
+     sm .6 / md .8 / lg 1 / xl 1.4 from this, so the geometric scale is
+     8.4 / 11.2 / 14 / 19.6 / 25.2 px. Pull's legacy 8 / 14 / 22 px stays
+     available as --r-sm/--r-md/--r-lg for the sheets written before this
+     pass (see pull-bridge.css). */
+  /* 2026-11-06 — the references (vende.framer.media, Dover Street Market) carry
+     no radius at all: square thumbnails, square buttons. Because the kit derives
+     every rounded-* utility from this one token, zeroing it squares the whole
+     component set at once. */
+  --radius: 0rem;
+  --radius-pill: 999px; /* Pull extra: the pill is the house button shape */
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── material ─────────────────────────────────────────────────────────── */
+  /* Shadows exist in the light scope (the reference floats the dark "shot"
+     over the paper) but never in the dark scope — border only. */
+  --glow-ring-shadow: 0 0 0 1px rgb(10 10 10 / 0.06);
+  --shadow-toast: 0 8px 30px rgb(10 10 10 / 0.12), 0 2px 8px rgb(10 10 10 / 0.06);
+  --gradient-bg: none;
+  --segmented-track: #f2f2f1;
+  --segmented-thumb: #ffffff;
+}
+
+/* The lookbook material must not flip when the surrounding page goes dark. */
+[data-eva-theme="pull"] [data-surface="lookbook"] {
+  color-scheme: dark;
+}
+
+/*
+ * DARK — a complete set for a dark studio, unused today. The --dark* lookbook
+ * family is deliberately absent: it is fixed material, not a mode.
+ */
+[data-eva-theme="pull"][data-mode="dark"] {
+  color-scheme: dark;
+
+  --background: #0b0b0c;
+  --foreground: #f4f4f2;
+  --card: #121214;
+  --card-foreground: #f4f4f2;
+  --popover: #17171a;
+  --popover-foreground: #f4f4f2;
+  --muted: #17171a;
+  --muted-foreground: #9a9aa1; /* 7.04 / 6.69 / 6.40 */
+  --muted-foreground-soft: #8b8b93; /* 5.51 / 5.24 / 5.02 */
+  --border: #26262a;
+  --input: #33333a;
+  --ring: #a8bd4a; /* olive lifted to read on black — 9.41:1 */
+
+  --primary: #f4f4f2;
+  --primary-foreground: #0b0b0c;
+  --secondary: #17171a;
+  --secondary-foreground: #f4f4f2;
+  --tertiary: #e0485c;
+  --tertiary-foreground: #0b0b0c;
+  --tertiary-text: #e0485c;
+
+  --brand: #a8bd4a;
+  --link: #a8bd4a;
+  --accent: #1e2416;
+  --accent-foreground: #e8ecd8;
+
+  --destructive: #ff8f85;
+  --destructive-foreground: #1a0a08;
+  --success: #8fd98f;
+  --success-foreground: #0b0b0c;
+  --warning: #e8bd7a;
+  --warning-foreground: #0b0b0c;
+  --info: #8fb8ff;
+  --info-foreground: #0b0b0c;
+
+  --inverse: #f4f4f2;
+  --inverse-foreground: #0b0b0c;
+
+  --sidebar: #121214;
+  --sidebar-foreground: #f4f4f2;
+  --sidebar-accent: #1e2416;
+  --sidebar-accent-foreground: #f4f4f2;
+  --sidebar-border: #26262a;
+  --sidebar-ring: #a8bd4a;
+
+  --chart-1: #a8bd4a;
+  --chart-2: #c9d98b;
+  --chart-3: #8fd98f;
+  --chart-4: #ff8f85;
+  --chart-5: #e8bd7a;
+  --chart-6: #8fb8ff;
+  --chart-7: #b8b8be;
+  --chart-8: #8f8f95;
+  --chart-9: #5f5f66;
+  --chart-10: #26262a;
+
+  /* No shadows in dark scope — border only (the kit's rule, kept). */
+  --glow-ring-shadow: 0 0 0 1px rgb(232 236 216 / 0.14);
+  --shadow-toast: 0 24px 48px rgb(0 0 0 / 0.55);
+  --segmented-track: #17171a;
+  --segmented-thumb: #33333a;
+}

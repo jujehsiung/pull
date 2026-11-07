@@ -9,7 +9,7 @@ export default async function NewJobPage() {
 
   return (
     <div style={{ maxWidth: 620 }}>
-      <Link href="/studio" className="mono" style={{ color: "var(--muted)" }}>
+      <Link href="/studio" className="mono" style={{ color: "var(--muted-foreground)" }}>
         ← DASHBOARD
       </Link>
       <p className="eyebrow" style={{ marginTop: 20 }}>

@@ -31,7 +31,7 @@ export default async function SettingsPage({
 
   return (
     <div style={{ maxWidth: 760 }}>
-      <Link href="/studio" className="mono" style={{ color: "var(--muted)" }}>
+      <Link href="/studio" className="mono" style={{ color: "var(--muted-foreground)" }}>
         ← JOBS
       </Link>
       <header style={{ marginTop: 16 }}>
@@ -76,7 +76,7 @@ export default async function SettingsPage({
           ))}
         </div>
         <div className="row" style={{ justifyContent: "space-between" }}>
-          <p className="small" style={{ margin: 0, color: "var(--muted-2)" }}>
+          <p className="small" style={{ margin: 0, color: "var(--muted-foreground-soft)" }}>
             Address now on file:{" "}
             {address.street1
               ? [address.name, address.street1, address.street2, address.city, address.state, address.zip, address.country]

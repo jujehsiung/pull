@@ -67,7 +67,7 @@ export default async function RequestsPage({
   return (
     <div className="stack" style={{ gap: 24 }}>
       <div>
-        <Link href={`/studio/jobs/${job.id}`} className="mono" style={{ color: "var(--muted)" }}>
+        <Link href={`/studio/jobs/${job.id}`} className="mono" style={{ color: "var(--muted-foreground)" }}>
           ← {job.title.toUpperCase()}
         </Link>
         <header className="row" style={{ justifyContent: "space-between", alignItems: "flex-end", marginTop: 14 }}>
@@ -77,7 +77,7 @@ export default async function RequestsPage({
               One email per brand
             </h1>
           </div>
-          <span className="mono" style={{ color: "var(--muted-2)", fontSize: 10 }}>
+          <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
             {requests.length} BRANDS · {approvedCount} APPROVED · {sentCount} SENT
           </span>
         </header>
@@ -137,7 +137,7 @@ export default async function RequestsPage({
                   <p className="brand-name" style={{ margin: 0 }}>
                     {request.brand}
                   </p>
-                  <span className="mono" style={{ color: "var(--muted-2)", fontSize: 10 }}>
+                  <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
                     {MODE_LABEL[request.shippingMode] ?? request.shippingMode}
                     {request.email?.toEmail ? ` · ${request.email.toEmail}` : " · CONTACT MISSING"}
                     {request.status === "sent" ? " · REQUEST SENT" : ""}
@@ -147,7 +147,7 @@ export default async function RequestsPage({
               </div>
 
               {request.intakeToken && request.shippingMode === "needs_label" && (
-                <p className="mono" style={{ marginTop: 10, wordBreak: "break-all", color: "var(--muted)" }}>
+                <p className="mono" style={{ marginTop: 10, wordBreak: "break-all", color: "var(--muted-foreground)" }}>
                   INTAKE {publicIntakePath(request.intakeToken)}
                 </p>
               )}

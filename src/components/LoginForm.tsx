@@ -43,7 +43,7 @@ export function LoginForm() {
         </p>
       )}
 
-      <p className="small" style={{ color: "var(--muted-2)" }}>
+      <p className="small" style={{ color: "var(--muted-foreground-soft)" }}>
         One address can sign in to this demo. The link expires in 15 minutes.
       </p>
     </form>

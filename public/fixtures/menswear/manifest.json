@@ -1,0 +1,550 @@
+{
+  "note": "Real men's runway looks, AW26, crawled from Vogue Runway. Editorial images (Conde Nast) — demo fixtures, keep the repo private. Filenames follow the parser convention, so no caption text is required.",
+  "season": "AW26",
+  "source": "https://www.vogue.com/fashion-shows/fall-2026-menswear",
+  "fetchedAt": "2026-11-07T01:24:54.952Z",
+  "files": [
+    "louis_vuitton_look_1_aw26.jpg",
+    "louis_vuitton_look_2_aw26.jpg",
+    "louis_vuitton_look_3_aw26.jpg",
+    "louis_vuitton_look_4_aw26.jpg",
+    "louis_vuitton_look_5_aw26.jpg",
+    "louis_vuitton_look_6_aw26.jpg",
+    "louis_vuitton_look_7_aw26.jpg",
+    "louis_vuitton_look_8_aw26.jpg",
+    "louis_vuitton_look_9_aw26.jpg",
+    "louis_vuitton_look_10_aw26.jpg",
+    "prada_look_1_aw26.jpg",
+    "prada_look_2_aw26.jpg",
+    "prada_look_3_aw26.jpg",
+    "prada_look_4_aw26.jpg",
+    "prada_look_5_aw26.jpg",
+    "prada_look_6_aw26.jpg",
+    "prada_look_7_aw26.jpg",
+    "prada_look_8_aw26.jpg",
+    "prada_look_9_aw26.jpg",
+    "prada_look_10_aw26.jpg",
+    "dior_homme_look_1_aw26.jpg",
+    "dior_homme_look_2_aw26.jpg",
+    "dior_homme_look_3_aw26.jpg",
+    "dior_homme_look_4_aw26.jpg",
+    "dior_homme_look_5_aw26.jpg",
+    "dior_homme_look_6_aw26.jpg",
+    "dior_homme_look_7_aw26.jpg",
+    "dior_homme_look_8_aw26.jpg",
+    "dior_homme_look_9_aw26.jpg",
+    "dior_homme_look_10_aw26.jpg",
+    "saint_laurent_look_1_aw26.jpg",
+    "saint_laurent_look_2_aw26.jpg",
+    "saint_laurent_look_3_aw26.jpg",
+    "saint_laurent_look_4_aw26.jpg",
+    "saint_laurent_look_5_aw26.jpg",
+    "saint_laurent_look_6_aw26.jpg",
+    "saint_laurent_look_7_aw26.jpg",
+    "saint_laurent_look_8_aw26.jpg",
+    "saint_laurent_look_9_aw26.jpg",
+    "saint_laurent_look_10_aw26.jpg",
+    "martine_rose_look_1_aw26.jpg",
+    "martine_rose_look_2_aw26.jpg",
+    "martine_rose_look_3_aw26.jpg",
+    "martine_rose_look_4_aw26.jpg",
+    "martine_rose_look_5_aw26.jpg",
+    "martine_rose_look_6_aw26.jpg",
+    "martine_rose_look_7_aw26.jpg",
+    "martine_rose_look_8_aw26.jpg",
+    "martine_rose_look_9_aw26.jpg",
+    "martine_rose_look_10_aw26.jpg",
+    "hed_mayner_look_1_aw26.jpg",
+    "hed_mayner_look_2_aw26.jpg",
+    "hed_mayner_look_3_aw26.jpg",
+    "hed_mayner_look_4_aw26.jpg",
+    "hed_mayner_look_5_aw26.jpg",
+    "hed_mayner_look_6_aw26.jpg",
+    "hed_mayner_look_7_aw26.jpg",
+    "hed_mayner_look_8_aw26.jpg",
+    "hed_mayner_look_9_aw26.jpg",
+    "hed_mayner_look_10_aw26.jpg"
+  ],
+  "assets": [
+    {
+      "file": "louis_vuitton_look_1_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 1,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_2_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 2,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_3_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 3,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_4_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 4,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_5_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 5,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_6_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 6,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_7_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 7,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_8_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 8,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_9_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 9,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "louis_vuitton_look_10_aw26.jpg",
+      "brand": "Louis Vuitton",
+      "lookNo": 10,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/louis-vuitton"
+    },
+    {
+      "file": "prada_look_1_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 1,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_2_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 2,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_3_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 3,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_4_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 4,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_5_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 5,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_6_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 6,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_7_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 7,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_8_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 8,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_9_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 9,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "prada_look_10_aw26.jpg",
+      "brand": "Prada",
+      "lookNo": 10,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/prada"
+    },
+    {
+      "file": "dior_homme_look_1_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 1,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_2_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 2,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_3_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 3,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_4_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 4,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_5_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 5,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_6_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 6,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_7_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 7,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_8_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 8,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_9_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 9,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "dior_homme_look_10_aw26.jpg",
+      "brand": "Dior Homme",
+      "lookNo": 10,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/dior-homme"
+    },
+    {
+      "file": "saint_laurent_look_1_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 1,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_2_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 2,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_3_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 3,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_4_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 4,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_5_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 5,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_6_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 6,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_7_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 7,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_8_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 8,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_9_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 9,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "saint_laurent_look_10_aw26.jpg",
+      "brand": "Saint Laurent",
+      "lookNo": 10,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/saint-laurent"
+    },
+    {
+      "file": "martine_rose_look_1_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 1,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_2_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 2,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_3_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 3,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_4_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 4,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_5_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 5,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_6_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 6,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_7_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 7,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_8_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 8,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_9_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 9,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "martine_rose_look_10_aw26.jpg",
+      "brand": "Martine Rose",
+      "lookNo": 10,
+      "season": "AW26",
+      "credit": "brand",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/martine-rose"
+    },
+    {
+      "file": "hed_mayner_look_1_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 1,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_2_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 2,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_3_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 3,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_4_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 4,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_5_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 5,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_6_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 6,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_7_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 7,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_8_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 8,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_9_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 9,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    },
+    {
+      "file": "hed_mayner_look_10_aw26.jpg",
+      "brand": "Hed Mayner",
+      "lookNo": 10,
+      "season": "AW26",
+      "credit": "gorunway",
+      "sourcePage": "https://www.vogue.com/fashion-shows/fall-2026-menswear/hed-mayner"
+    }
+  ]
+}

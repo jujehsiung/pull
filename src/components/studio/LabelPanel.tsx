@@ -44,7 +44,7 @@ function RateRow({ requestId, rate, chosen }: { requestId: string; rate: IntakeR
       style={{
         marginTop: 0,
         borderColor: chosen ? "var(--ink)" : undefined,
-        background: chosen ? "var(--accent-soft)" : undefined,
+        background: chosen ? "var(--accent)" : undefined,
       }}
     >
       <div className="rate-main" style={{ minWidth: 0 }}>
@@ -104,7 +104,7 @@ export async function LabelPanel({ requestId }: { requestId: string }) {
               : "Waiting for the showroom to enter the parcel and pickup details. Rates will appear here."}
           </p>
           {intakeUrl && request.shippingMode !== "showroom_ships" ? (
-            <p className="mono" style={{ marginTop: 10, wordBreak: "break-all", color: "var(--muted)" }}>
+            <p className="mono" style={{ marginTop: 10, wordBreak: "break-all", color: "var(--muted-foreground)" }}>
               INTAKE {intakeUrl}
             </p>
           ) : null}
@@ -134,7 +134,7 @@ export async function LabelPanel({ requestId }: { requestId: string }) {
                   {formatMoney(chosenRate.amount, chosenRate.currency)} · {formatDays(chosenRate.days)}
                 </p>
                 {!purchaseGate.enabled ? (
-                  <p className="small" role="note" style={{ marginTop: 8, color: "var(--muted)" }}>
+                  <p className="small" role="note" style={{ marginTop: 8, color: "var(--muted-foreground)" }}>
                     {purchaseGate.reason}
                   </p>
                 ) : (
@@ -150,7 +150,7 @@ export async function LabelPanel({ requestId }: { requestId: string }) {
                 </form>
               </>
             ) : (
-              <p className="small" style={{ margin: 0, color: "var(--muted)" }}>
+              <p className="small" style={{ margin: 0, color: "var(--muted-foreground)" }}>
                 Choose a service above to enable the purchase. The showroom never buys the label.
               </p>
             )}

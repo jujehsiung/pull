@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { AgentTrace } from "@/components/AgentTrace"
+import { AgentProviderBadge } from "@/components/AgentProviderBadge"
 import type { AgentStep } from "@/lib/agent/trace"
 
 export const metadata = { title: "PULL — agent trace" }
@@ -90,9 +91,10 @@ export default function TracePage() {
         <Link className="wordmark" href="/">
           PULL
         </Link>
-        <span className="mono" style={{ color: "var(--muted)", fontSize: 11, letterSpacing: ".14em" }}>
+        <span className="mono" style={{ color: "var(--muted-foreground)", fontSize: 11, letterSpacing: ".14em" }}>
           AGENT TRACE
         </span>
+        <AgentProviderBadge hint="The backend that produced these steps. server-side only." />
         <Link className="btn btn-ghost btn-sm" href="/setup">
           Stack setup
         </Link>

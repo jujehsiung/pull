@@ -35,7 +35,7 @@
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted-2);
+  color: var(--muted-foreground-soft);
 }
 
 .banner {
@@ -100,7 +100,7 @@
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted-2);
+  color: var(--muted-foreground-soft);
   padding: 8px 10px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
@@ -140,7 +140,7 @@
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted-2);
+  color: var(--muted-foreground-soft);
 }
 
 .chips {
@@ -158,15 +158,15 @@
   border: 1px solid var(--line);
   border-radius: var(--r-pill);
   padding: 2px 7px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   white-space: nowrap;
 }
 
 .tagDemo {
   border-style: dashed;
-  color: var(--accent);
-  border-color: var(--accent-soft);
-  background: var(--accent-soft);
+  color: var(--brand);
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .tagWarn {
@@ -185,7 +185,7 @@
 }
 
 .address {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   max-width: 250px;
   overflow-wrap: anywhere;
@@ -259,7 +259,7 @@
 .button:focus-visible,
 .textarea:focus-visible,
 .fileInput:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -278,7 +278,7 @@
 .tableFootnote {
   margin: 14px 0 0;
   font-size: 12px;
-  color: var(--muted-2);
+  color: var(--muted-foreground-soft);
 }
 
 /* ── edit form ─────────────────────────────────────────────────────────── */
@@ -332,13 +332,13 @@
 
 .fileInput {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   max-width: 100%;
 }
 
 .fileNote {
   font-size: 12px;
-  color: var(--muted-2);
+  color: var(--muted-foreground-soft);
 }
 
 .previewSummary {
@@ -354,7 +354,7 @@
 .previewMeta {
   margin: 0 0 12px;
   font-size: 12px;
-  color: var(--muted-2);
+  color: var(--muted-foreground-soft);
 }
 
 .warnList {
@@ -406,7 +406,7 @@
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .sample {

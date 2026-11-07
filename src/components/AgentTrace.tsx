@@ -27,7 +27,7 @@ export function AgentTrace({
     >
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <p className="eyebrow">{title}</p>
-        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-2)" }}>
+        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-foreground-soft)" }}>
           {steps.length} STEPS · {formatMs(total)} {failed ? `· ${failed} FAILED` : ""}
         </span>
       </div>
@@ -72,7 +72,7 @@ export function AgentTrace({
         ))}
       </ol>
 
-      <p className="small" style={{ marginTop: 16, color: "var(--muted-2)" }}>
+      <p className="small" style={{ marginTop: 16, color: "var(--muted-foreground-soft)" }}>
         {ok} ok{failed ? ` · ${failed} failed` : ""} — persisted per job, so it survives a refresh and is
         the audit trail for what the agent did.
       </p>

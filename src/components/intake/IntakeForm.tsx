@@ -277,7 +277,7 @@ export function IntakeForm({
         >
           {pending ? "Getting rates…" : rates.length > 0 ? "Get rates again" : "See shipping options"}
         </button>
-        <p id="intake-hint" className="small" style={{ marginTop: 10, color: "var(--muted-2)" }}>
+        <p id="intake-hint" className="small" style={{ marginTop: 10, color: "var(--muted-foreground-soft)" }}>
           No account needed. We only use this to price the label — nothing is bought or charged here.
         </p>
       </form>

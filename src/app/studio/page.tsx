@@ -62,7 +62,7 @@ export default async function DashboardPage() {
               >
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
                   <div style={{ minWidth: 0 }}>
-                    <span className="mono" style={{ color: "var(--muted-2)" }}>
+                    <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
                       {job.clientName.toUpperCase()}
                     </span>
                     <h2 className="h3" style={{ margin: "6px 0 0" }}>

@@ -21,17 +21,26 @@
     "demo:reset": "node scripts/reset-demo.mjs",
     "demo:seed": "node scripts/seed-demo.mjs",
     "demo:check": "node scripts/demo-check.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "tokens:check": "node scripts/check-tokens.mjs",
+    "agent:swap": "node scripts/swap-provider.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
     "@zoowork-ai/sdk": "^0.14.0",
+    "class-variance-authority": "^0.7.1",
     "cloudinary": "2.11.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "drizzle-orm": "0.45.4",
+    "lucide-react": "^1.70.0",
     "next": "16.4.5",
+    "radix-ui": "^1.8.1",
     "react": "19.3.1",
+    "react-day-picker": "^10.0.2",
     "react-dom": "19.3.1",
     "resend": "6.37.0",
+    "tailwind-merge": "^3.7.0",
     "tesseract.js": "7.0.0",
     "zod": "4.6.7"
   },

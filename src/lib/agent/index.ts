@@ -24,17 +24,30 @@ export function activeProvider(): ProviderName {
   const forced = env().AGENT_PROVIDER as ProviderName | undefined
   if (forced && forced !== "deterministic") {
     const provider = PROVIDERS[forced as Exclude<ProviderName, "deterministic">]
-    if (provider) return provider.name
+    // Only honour a forced provider that is actually configured. Returning it
+    // regardless would make the status badge claim a backend the app cannot
+    // reach — a lie that only surfaces as a thrown error mid-demo.
+    if (provider?.available()) return provider.name
   }
   if (zoowork.available()) return "zoowork"
   if (deepseek.available()) return "deepseek"
   return "deterministic"
 }
 
+/** Set when AGENT_PROVIDER names a backend that has no credentials. */
+function forcedWarning(): string | null {
+  const forced = env().AGENT_PROVIDER
+  if (!forced || forced === "deterministic") return null
+  const provider = PROVIDERS[forced as Exclude<ProviderName, "deterministic">]
+  if (!provider || provider.available()) return null
+  return `AGENT_PROVIDER=${forced} is set but not configured — running the fallback instead`
+}
+
 export function agentStatus() {
   return {
     active: activeProvider(),
     forced: env().AGENT_PROVIDER ?? null,
+    warning: forcedWarning(),
     deepseek: {
       configured: deepseek.available(),
       model: env().DEEPSEEK_MODEL ?? "deepseek-chat",

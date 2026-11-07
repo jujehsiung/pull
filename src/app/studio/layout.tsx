@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { requireStylist } from "@/lib/auth"
 import { signOut } from "@/server/actions/auth"
+import { AgentProviderBadge } from "@/components/AgentProviderBadge"
 
 export const metadata = { title: "PULL — dashboard" }
 
@@ -16,7 +17,8 @@ export default async function StudioLayout({ children }: { children: React.React
             PULL
           </Link>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
-            <span className="mono" style={{ color: "var(--muted-2)" }}>
+            <AgentProviderBadge />
+            <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
               {stylist.email}
             </span>
             <form action={signOut}>

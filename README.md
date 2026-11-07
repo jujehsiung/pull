@@ -32,3 +32,28 @@ npm run agent:check                      # inference backend reachable, no token
 
 The agent is traced through `src/lib/agent/tracer.ts` → `events` table → `/trace` and the job page.
 Nothing the agent does is silent (PRD §7.1, FR-23).
+
+## Agent provider — DeepSeek now, ZooWork on the day
+
+The agent runs on **one** backend at a time, chosen by `AGENT_PROVIDER`. Precedence when unset:
+`zoowork > deepseek > deterministic`.
+
+```sh
+npm run agent:swap deepseek     # today — DeepSeek Platform (pre-credit)
+npm run agent:swap zoowork      # when the Managed Agents key lands
+npm run agent:swap auto         # remove the override, let precedence decide
+```
+
+The swap is a config change, never a code change — both providers satisfy the same
+`AgentProvider` contract (`src/lib/agent/providers/types.ts`) and every call is traced under
+`<provider>.run`, so `/trace` shows which backend produced each step.
+
+**A forced provider that has no credentials is not pretended to be live.** `activeProvider()` honours
+`AGENT_PROVIDER` only when that provider is actually configured; otherwise the app runs the
+fallback and `agentStatus().warning` says so. The badge in the studio header and on `/trace` renders
+that state in amber (“DETERMINISTIC FALLBACK · forced: deepseek”) so a missing key is visible before
+a demo, not discovered mid-run.
+
+DeepSeek: set `DEEPSEEK_API_KEY` (and optionally `DEEPSEEK_MODEL`, default `deepseek-chat`).
+ZooWork: set `ZOOWORK_API_KEY` **and** `ZOOWORK_ENABLED=true`; Agent tasks draw on the
+organization's prepaid balance, so the provider refuses to create or start an Agent without it.

@@ -1,67 +1,42 @@
 @import "tailwindcss";
+@import "../styles/eva/theme.css";
+@import "../styles/pull-theme.css";
+@import "../styles/pull-bridge.css";
 
 /* ---------------------------------------------------------------------------
-   PULL — design system extracted from the Augment reference
-   (augment.framer.media): warm off-white paper, near-black ink, mono eyebrows,
-   editorial photography, big tight display type, hairline rules, pill buttons,
-   and a DARK product surface used as the "screenshot".
+   PULL — app sheets.
+
+   TOKENS live in src/styles/pull-theme.css (EVA contract: --background,
+   --card, --muted, --muted-foreground, --brand, --accent, --ring…). The kit's
+   @theme mapping is in src/styles/eva/theme.css, so Tailwind utilities exist:
+   bg-background · text-foreground · text-muted-foreground · text-brand ·
+   border-border · ring-ring · font-mono.
+
+   The raw names still used below (--paper, --ink, --line, --ok, --mono, --r-*)
+   are DEPRECATED aliases resolved by src/styles/pull-bridge.css. New rules
+   reference semantic tokens only.
 --------------------------------------------------------------------------- */
-
-
-:root {
-  /* paper + ink */
-  --paper: #f9f9f8;
-  --paper-2: #f2f2f1;
-  --card: #ffffff;
-  --ink: #0a0a0a;
-  --ink-2: #2c2c2b;
-  --muted: #6b6a66;
-  --muted-2: #8f8b85;
-  --line: #e6e3e3;
-  --line-strong: #d5d2cd;
-
-  /* one accent, used sparingly — olive from the reference */
-  --accent: #465907;
-  --accent-soft: #eceee2;
-  --ok: #2f6b3a;
-  --danger: #b3261e;
-
-  /* the dark product surface */
-  --dark: #0b0b0c;
-  --dark-2: #121214;
-  --dark-3: #17171a;
-  --dark-line: #26262a;
-  --dark-text: #f4f4f2;
-  --dark-muted: #8f8f95;
-  --dark-ok: #8fd98f;
-
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 22px;
-  --r-pill: 999px;
-
-  --font: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  --container: 1180px;
-  --gutter: clamp(20px, 4vw, 48px);
-}
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
-button { font: inherit; cursor: pointer; }
-::selection { background: var(--accent); color: #fff; }
+/* Buttons do not inherit the page font from the UA stylesheet, so the family is
+   inherited explicitly — but ONLY the family. `font: inherit` is a shorthand: it
+   also reset size, weight and line-height, and because this rule is unlayered it
+   beat Tailwind's @layer utilities on every kit <Button>, flattening them to the
+   inherited 16px/400 body text. They read as labels because they WERE labels. */
+button { font-family: inherit; cursor: pointer; }
+::selection { background: var(--brand); color: #fff; }
 
 /* ── type ─────────────────────────────────────────────────────────────── */
 .display {
@@ -71,7 +46,7 @@ button { font: inherit; cursor: pointer; }
   font-weight: 500;
   margin: 0;
 }
-.display em { font-style: normal; color: var(--muted-2); }
+.display em { font-style: normal; color: var(--muted-foreground-soft); }
 .h2 {
   font-size: clamp(28px, 3.6vw, 44px);
   line-height: 1.08;
@@ -80,16 +55,16 @@ button { font: inherit; cursor: pointer; }
   margin: 0;
 }
 .h3 { font-size: 20px; line-height: 1.3; letter-spacing: -0.015em; font-weight: 500; margin: 0; }
-.lead { font-size: clamp(16px, 1.5vw, 19px); line-height: 1.55; color: var(--muted); margin: 0; }
-.body { color: var(--muted); margin: 0; }
-.small { font-size: 13px; color: var(--muted); margin: 0; }
+.lead { font-size: clamp(16px, 1.5vw, 19px); line-height: 1.55; color: var(--muted-foreground); margin: 0; }
+.body { color: var(--muted-foreground); margin: 0; }
+.small { font-size: 13px; color: var(--muted-foreground); margin: 0; }
 
 .eyebrow {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin: 0;
 }
 .eyebrow.on-dark { color: var(--dark-muted); }
@@ -99,6 +74,10 @@ button { font: inherit; cursor: pointer; }
 .container { width: 100%; max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
 .section { padding: clamp(64px, 9vw, 120px) 0; border-top: 1px solid var(--line); }
 .section.tight { padding: clamp(48px, 6vw, 80px) 0; }
+/* A solo hero carries the fold on type alone, so it runs larger than the
+   in-page display size — the headline has to occupy the width the
+   illustration used to. */
+.hero .display { font-size: clamp(44px, 7.2vw, 94px); }
 .section.no-rule { border-top: 0; }
 .grid { display: grid; gap: clamp(20px, 3vw, 40px); }
 .split { grid-template-columns: 1.05fr 0.95fr; align-items: center; }
@@ -125,7 +104,7 @@ button { font: inherit; cursor: pointer; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 46px; padding: 0 22px;
-  border-radius: var(--r-pill);
+  border-radius: 0; /* the references have no radius */
   border: 1px solid transparent;
   font-size: 14px; font-weight: 500;
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
@@ -140,95 +119,34 @@ button { font: inherit; cursor: pointer; }
 .btn-on-dark-ghost { border-color: var(--dark-line); color: var(--dark-text); background: transparent; }
 
 /* ── hero ─────────────────────────────────────────────────────────────── */
-.hero { padding: clamp(56px, 8vw, 104px) 0 clamp(48px, 6vw, 84px); }
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  border: 1px solid var(--line-strong); border-radius: var(--r-pill);
-  padding: 6px 12px 6px 8px; font-family: var(--mono); font-size: 11px;
-  letter-spacing: 0.08em; color: var(--ink-2); background: var(--card);
+.hero { padding: clamp(56px, 8vw, 104px) 0 clamp(28px, 3vw, 44px); }
+/* Hero-only page: the fold IS the page, so the block fills it and centres its
+   content instead of leaving a short page hanging off the nav. */
+.hero-solo {
+  min-height: calc(100dvh - 68px);
+  display: flex;
+  align-items: center;
+  padding-block: clamp(40px, 6vw, 80px);
 }
-.hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.hero-copy { display: flex; flex-direction: column; gap: 22px; max-width: 620px; }
+.hero-copy { display: flex; flex-direction: column; gap: 22px; max-width: 760px; }
 .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
-.hero-note { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--muted-2); }
+.hero-note { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--muted-foreground-soft); }
 
-/* the dark product "screenshot" */
-.shot {
-  background: var(--dark);
-  border-radius: var(--r-lg);
-  border: 1px solid #1d1d20;
-  overflow: hidden;
-  box-shadow: 0 40px 90px -50px rgba(10, 10, 10, 0.55), 0 2px 0 rgba(255, 255, 255, 0.5) inset;
-  color: var(--dark-text);
-}
-.shot-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; border-bottom: 1px solid var(--dark-line);
-}
-.shot-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--dark-muted); text-transform: uppercase; }
-.shot-body { padding: 18px; }
-
-/* mini board inside the shot */
-.mini-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.mini-look {
-  position: relative; border-radius: 6px; overflow: hidden;
-  aspect-ratio: 3 / 4; background: #1b1b1f;
-  outline: 1px solid transparent; outline-offset: 2px;
-}
-.mini-look img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.9); }
-.mini-look.confirmed { outline-color: var(--dark-ok); }
-.mini-look .flag {
-  position: absolute; left: 6px; top: 6px; width: 14px; height: 14px; border-radius: 50%;
-  background: var(--dark-ok); display: none;
-}
-.mini-look.confirmed .flag { display: block; }
-.mini-look .num {
-  position: absolute; left: 6px; bottom: 6px;
-  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: #fff;
-  background: rgba(0, 0, 0, 0.55); padding: 2px 5px; border-radius: 3px;
-}
-.mini-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-.mini-count { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dark-muted); text-transform: uppercase; }
-.mini-brand { font-size: 13px; letter-spacing: 0.12em; }
 
 /* ── stats ────────────────────────────────────────────────────────────── */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
 .stat .n { font-size: clamp(30px, 3.4vw, 44px); letter-spacing: -0.03em; font-weight: 500; line-height: 1; }
-.stat .l { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.stat .l { margin-top: 8px; font-size: 13px; color: var(--muted-foreground); }
 
 /* ── steps ────────────────────────────────────────────────────────────── */
 .step { border-top: 1px solid var(--line); padding-top: 20px; }
-.step .n { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; color: var(--accent); }
+.step .n { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; color: var(--brand); }
 .step h3 { margin: 14px 0 8px; }
-.step p { margin: 0; color: var(--muted); font-size: 15px; }
+.step p { margin: 0; color: var(--muted-foreground); font-size: 15px; }
 
 /* ── cards ────────────────────────────────────────────────────────────── */
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); padding: 22px; }
 .card.dark { background: var(--dark-2); border-color: var(--dark-line); color: var(--dark-text); }
-
-/* ── quote ────────────────────────────────────────────────────────────── */
-.quote { max-width: 880px; }
-.quote blockquote {
-  margin: 0; font-size: clamp(22px, 2.6vw, 32px); line-height: 1.28;
-  letter-spacing: -0.02em; font-weight: 400;
-}
-.quote cite { display: block; margin-top: 20px; font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-
-/* ── CTA ──────────────────────────────────────────────────────────────── */
-.cta {
-  background: var(--ink); color: var(--paper);
-  border-radius: var(--r-lg); padding: clamp(40px, 6vw, 72px);
-  display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap;
-}
-.cta .h2 { color: var(--paper); max-width: 640px; }
-.cta .lead { color: #b9b8b4; max-width: 520px; }
-
-/* ── footer ───────────────────────────────────────────────────────────── */
-.footer { border-top: 1px solid var(--line); padding: 48px 0 64px; }
-.footer-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
-.footer a { color: var(--muted); font-size: 14px; display: block; margin-top: 10px; }
-.footer a:hover { color: var(--ink); }
-.footer .fine { margin-top: 40px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    CLIENT BOARD — dark, gallery-like
@@ -326,16 +244,16 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 .intake-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); padding: clamp(20px, 3vw, 28px); margin-top: 24px; }
 .field-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-foreground); }
 .field input, .field select {
   height: 46px; border: 1px solid var(--line-strong); border-radius: 10px;
   background: var(--paper); padding: 0 12px; font-size: 14px; color: var(--ink);
   font-family: var(--font); width: 100%;
 }
-.field input:focus, .field select:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.field input:focus, .field select:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: transparent; }
 .field.full { grid-column: 1 / -1; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.chip { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--line); border-radius: var(--r-pill); padding: 4px 9px; color: var(--muted); }
+.chip { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--line); border-radius: var(--r-pill); padding: 4px 9px; color: var(--muted-foreground); }
 
 .rate-option {
   display: flex; align-items: center; gap: 14px;
@@ -345,10 +263,10 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 }
 .rate-option + .rate-option { margin-top: 10px; }
 .rate-option:hover { border-color: var(--line-strong); }
-.rate-option[aria-checked="true"] { border-color: var(--ink); background: var(--accent-soft); }
+.rate-option[aria-checked="true"] { border-color: var(--ink); background: var(--accent); }
 .rate-main { flex: 1; }
 .rate-name { font-size: 15px; font-weight: 500; }
-.rate-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+.rate-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-foreground); margin-top: 3px; }
 .rate-price { font-size: 18px; letter-spacing: -0.02em; }
 
 .success {
@@ -368,17 +286,13 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   .three { grid-template-columns: 1fr 1fr; }
   .stats { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
   .look-grid { grid-template-columns: repeat(3, 1fr); }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 760px) {
   .nav-links { display: none; }
   .three { grid-template-columns: 1fr; }
   .two { grid-template-columns: 1fr; }
   .field-grid { grid-template-columns: 1fr; }
-  .mini-board { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .hero-actions .btn { flex: 1; }
-  .cta { border-radius: 0; margin-inline: calc(var(--gutter) * -1); padding: 36px var(--gutter); }
-  .footer-grid { grid-template-columns: 1fr; }
 }
 
 /* ── agent trace ──────────────────────────────────────────────────────── */
@@ -389,12 +303,75 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   background: var(--ok); box-shadow: 0 0 0 3px var(--card);
 }
 .trace-step.error::before { background: var(--danger); }
-.trace-step.running::before { background: var(--accent); animation: trace-pulse 1.2s ease-in-out infinite; }
+.trace-step.running::before { background: var(--brand); animation: trace-pulse 1.2s ease-in-out infinite; }
 @keyframes trace-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+/* A step can stay "running" for seconds; pulsing is feedback, not decoration,
+   so reduced-motion keeps the state colour and drops the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .trace-step.running::before { animation: none; opacity: .6; }
+}
 .trace-tool { font-family: var(--mono); font-size: 12px; letter-spacing: .03em; color: var(--ink); }
-.trace-meta { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-2); }
+.trace-meta { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground-soft); }
 .trace-io {
   background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px;
   padding: 10px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.5;
   white-space: pre-wrap; overflow: auto; max-height: 220px; margin: 4px 0 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ENDLESS STRIP — the full-bleed look carousel.
+   The track holds the list twice, so the loop has no seam. The drift is driven
+   in JS (LookMarquee.tsx), not by a keyframe: the strip can be grabbed and
+   slid, and it picks up from where the hand left it. Hover pauses the drift to
+   read; reduced-motion stops it dead and leaves a plain scroller.
+   ══════════════════════════════════════════════════════════════════════════ */
+.strip-frame { position: relative; }
+.strip {
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y; /* a sideways drag is ours; vertical still scrolls the page */
+  user-select: none;
+}
+.strip[data-dragging] { cursor: grabbing; }
+/* The gutter is a blur filter, not a margin: the band runs full-bleed and each
+   end sits under frosted glass, so the looks fade out of focus at the screen
+   edge instead of being cut by a hard vertical line. Width tracks the content
+   gutter — 40px at 1440, where the headline and hairline rules start — and the
+   mask softens the blur's inner boundary so the filter has no visible seam. */
+.strip-gutter {
+  position: absolute;
+  inset-block: 0;
+  z-index: 2;
+  width: clamp(24px, 2.8vw, 40px);
+  pointer-events: none;
+  backdrop-filter: blur(18px);
+}
+.strip-gutter-left {
+  left: 0;
+  mask-image: linear-gradient(to right, black 0 45%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 0 45%, transparent 100%);
+}
+.strip-gutter-right {
+  right: 0;
+  mask-image: linear-gradient(to left, black 0 45%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to left, black 0 45%, transparent 100%);
+}
+.strip-track {
+  display: flex;
+  width: max-content;
+  gap: 1px;
+  will-change: transform;
+}
+.strip-item {
+  flex: none;
+  width: clamp(180px, 21vw, 320px);
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--border);
+  -webkit-user-drag: none;
+}
+/* Reduced motion: no drift, no grab cursor — the band is a plain scroller and
+   the browser's own scroll does the moving. */
+@media (prefers-reduced-motion: reduce) {
+  .strip { overflow-x: auto; cursor: default; touch-action: auto; }
 }

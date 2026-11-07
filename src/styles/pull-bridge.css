@@ -1,0 +1,54 @@
+/*
+ * PULL — legacy token bridge. DEPRECATED, but load-bearing.
+ *
+ * The studio sheets (globals.css and the four CSS modules) were written before
+ * the EVA contract, against Pull's own raw names: --paper, --ink, --line,
+ * --ok, --r-sm, --mono… Those names are not semantic and two of them actively
+ * COLLIDE with the kit:
+ *
+ *     old Pull meaning              shadcn / EVA meaning
+ *     --muted  = a TEXT colour      --muted  = a SURFACE
+ *     --accent = the OLIVE BRAND    --accent = a SELECTION SURFACE
+ *
+ * Coexisting was impossible, so those two were migrated at the call sites
+ * (--muted → --muted-foreground, --accent → --brand, --accent-soft → --accent).
+ * Everything else is aliased here, in one place, so ~180 existing references
+ * keep working while the sheets are converted file by file.
+ *
+ * HOW TO RETIRE THIS FILE: convert one consumer (swap its raw names for the
+ * semantic token), delete that name's line here, then delete the file when the
+ * last line is gone. Do not add new names to it.
+ */
+
+[data-eva-theme="pull"] {
+  /* surfaces + text */
+  --paper: var(--background);
+  --paper-2: var(--muted-foreground);
+  --ink: var(--foreground);
+  --ink-2: var(--ink-soft);
+  --line: var(--border);
+  --line-strong: var(--input);
+
+  /* status */
+  --ok: var(--success);
+  --danger: var(--destructive);
+
+  /* Pull's old olive-on-soft pair, now the kit's selection surface */
+  --accent-soft: var(--accent);
+
+  /* type */
+  --font: var(--font-sans);
+  --mono: var(--font-mono);
+
+  /* shape — Pull's exact radii, kept for the sheets written before this pass.
+     New work uses the kit's geometric scale (rounded-sm/md/lg/xl) derived from
+     --radius: 14px. */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-pill: var(--radius-pill);
+
+  /* layout constants (not theme values — they are the page grid) */
+  --container: 1180px;
+  --gutter: clamp(20px, 4vw, 48px);
+}

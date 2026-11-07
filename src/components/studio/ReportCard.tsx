@@ -21,7 +21,7 @@ export function ReportCard({
     <section className="card" style={{ padding: 22 }} aria-label="Client review report">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <p className="eyebrow">CLIENT REPORT</p>
-        <span className="mono" style={{ color: "var(--muted-2)", fontSize: 10 }}>
+        <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
           {submittedAt
             ? `SUBMITTED ${submittedAt.toISOString().slice(0, 16).replace("T", " ")} UTC`
             : `${decided} OF ${decided + report.undecided} DECIDED`}
@@ -56,7 +56,7 @@ export function ReportCard({
                 <span className="mono">
                   {look.brand} · LOOK {look.lookNo}
                 </span>
-                {look.priority ? <span style={{ color: "var(--accent)" }}> {"★".repeat(look.priority)}</span> : null}
+                {look.priority ? <span style={{ color: "var(--brand)" }}> {"★".repeat(look.priority)}</span> : null}
               </li>
             ))}
           </ol>
@@ -69,7 +69,7 @@ export function ReportCard({
           <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 10 }}>
             {report.notes.map((note) => (
               <li key={note.id} className="small" style={{ borderLeft: "2px solid var(--line-strong)", paddingLeft: 12 }}>
-                <span className="mono" style={{ color: "var(--muted-2)" }}>
+                <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
                   {note.brand} · LOOK {note.lookNo} · {note.status}
                 </span>
                 <br />
