@@ -295,6 +295,9 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   a finished step is a green dot. There is no third colour on the canvas.
 - **The run is visible, not implied** — `Agent run · n/6` in the surface header, and each card's footer
   shows what that step cost (`1.6s`) once it has run.
+- **The assets panel is entered from the right edge of the viewport**, through a vertical tab that rides
+  with the panel — not from a button in the header. A panel you open dozens of times a session belongs to
+  the edge, where the hand already is, and a tab costs no row of chrome.
 - **The assets panel is a column, not an overlay**: above 768px the canvas gives it exactly its measured
   width and refits, so nothing hides behind it. Below 768px there is no column to give, so it slides
   over the canvas like a drawer — the one place the same panel behaves two ways, and deliberately.

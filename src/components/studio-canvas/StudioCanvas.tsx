@@ -450,15 +450,6 @@ export function StudioCanvas({
             Agent run · {done ? `${completed}/${nodes.length}` : `0/${nodes.length}`}
           </span>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAssetsOpen((open) => !open)}
-            aria-pressed={assetsOpen}
-          >
-            Assets · {assets.length}
-          </Button>
-
           <Button size="sm" className="agent-action" onClick={run} disabled={running}>
             {running ? "Running…" : "Run"}
           </Button>
@@ -537,7 +528,11 @@ export function StudioCanvas({
         ) : null}
 
         {/* The toolbox, centred at the bottom: the things you do to the canvas. */}
-        <div className="absolute bottom-4 left-1/2 z-30 -translate-x-1/2 border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)]">
+        <div
+          className={`absolute bottom-4 left-1/2 z-30 -translate-x-1/2 border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)] transition-opacity duration-300 ${
+            assetsOpen && !wide ? "pointer-events-none opacity-0" : "opacity-100"
+          }`}
+        >
           <div className="flex items-stretch">
             <div className="relative border-r border-border" data-add-menu>
               <button
@@ -598,6 +593,7 @@ export function StudioCanvas({
 
         {/* The assets panel, sliding out when the work lands. */}
         <aside
+          id="studio-assets"
           ref={panelRef}
           aria-label="Studio assets"
           className={`absolute right-0 top-0 z-20 flex h-full w-[320px] max-w-[88vw] flex-col border-l border-border bg-card shadow-[-12px_0_32px_rgba(10,10,10,0.05)] transition-transform duration-500 ease-out ${
@@ -653,6 +649,32 @@ export function StudioCanvas({
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
           {nodes.length} nodes · {edges.length} links · {order.length} in the run
         </p>
+      </div>
+
+      {/* The assets tab: sticky to the right edge of the viewport, and it rides
+          with the panel when the panel is open. */}
+      <div
+        className="fixed top-1/2 z-40 -translate-y-1/2 transition-[right] duration-500 ease-out"
+        style={{ right: assetsOpen ? panelWidth : 0 }}
+      >
+        <button
+          type="button"
+          onClick={() => setAssetsOpen((open) => !open)}
+          aria-expanded={assetsOpen}
+          aria-controls="studio-assets"
+          aria-label={assetsOpen ? "Close the studio assets" : "Open the studio assets"}
+          className="flex min-h-[92px] flex-col items-center justify-center gap-2 border border-r-0 border-border bg-card px-2 py-4 text-muted-foreground shadow-[-4px_0_16px_rgba(10,10,10,0.04)] hover:bg-muted hover:text-foreground"
+        >
+          <span
+            className="font-mono text-[10px] tabular-nums"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          >
+            {assets.length > 0 ? `Assets · ${assets.length}` : "Assets"}
+          </span>
+          {assets.length > 0 ? (
+            <span aria-hidden className="size-1.5 rounded-full bg-brand" />
+          ) : null}
+        </button>
       </div>
     </>
   )
