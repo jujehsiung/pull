@@ -10,7 +10,7 @@
  * Type: one typeface throughout, per Juje. No mono.
  */
 import { useMemo, useState, type ReactNode } from "react"
-import { Check, Plus, Sparkles, X } from "lucide-react"
+import { Check, Plus, RotateCcw, Sparkles, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -110,10 +110,11 @@ export function ReviewBoard({
   const [added, setAdded] = useState<string[]>([])
   const [sendState, setSendState] = useState<"idle" | "needs-backend">("idle")
 
-  // Removing is local to this surface — nothing is persisted, and the seeded
-  // board should come back on reload.
-  const [removed, setRemoved] = useState<string[]>([])
-  const visible = useMemo(() => looks.filter((l) => !removed.includes(l.id)), [looks, removed])
+  // Removing is a soft delete: the look leaves the board but stays in the bin until it is
+  // restored. Nothing is persisted, so the seeded board comes back on reload.
+  const [removed, setRemoved] = useState<Look[]>([])
+  const removedIds = useMemo(() => new Set(removed.map((look) => look.id)), [removed])
+  const visible = useMemo(() => looks.filter((l) => !removedIds.has(l.id)), [looks, removedIds])
   const grouped = useMemo(() => groupByBrand(visible), [visible])
   const addedLooks = useMemo(() => visible.filter((l) => added.includes(l.id)), [visible, added])
 
@@ -121,10 +122,13 @@ export function ReviewBoard({
     setAdded((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
 
   const removeLook = (look: Look) => {
-    setRemoved((current) => (current.includes(look.id) ? current : [...current, look.id]))
+    setRemoved((current) => (current.some((entry) => entry.id === look.id) ? current : [...current, look]))
     setAdded((current) => current.filter((x) => x !== look.id))
     onRemoveLook?.(look)
   }
+
+  const restoreLook = (look: Look) =>
+    setRemoved((current) => current.filter((entry) => entry.id !== look.id))
 
   return (
     <div
@@ -183,6 +187,72 @@ export function ReviewBoard({
                 {suggesting ? "Finding looks…" : "Suggest looks"}
               </Button>
             ) : null}
+
+            {/* The bin: deleting a look is soft, so anything removed can come back. */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={removed.length === 0}
+                  aria-label={
+                    removed.length
+                      ? `Deleted looks, ${removed.length} to restore`
+                      : "Deleted looks, none"
+                  }
+                >
+                  <Trash2 className="size-3.5" aria-hidden />
+                  Deleted
+                  {removed.length ? (
+                    <span className="font-mono text-[10px] text-muted-foreground">{removed.length}</span>
+                  ) : null}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[380px] p-4">
+                <p className="text-[13px] text-muted-foreground">
+                  {removed.length === 0
+                    ? "Nothing deleted yet."
+                    : `${removed.length} look${removed.length === 1 ? "" : "s"} deleted — restore any of them.`}
+                </p>
+                {removed.length ? (
+                  <ul className="mt-3 flex max-h-[320px] flex-col gap-2 overflow-y-auto">
+                    {removed.map((look) => (
+                      <li key={look.id} className="flex items-center gap-3">
+                        {look.src ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={look.src}
+                            alt={`${look.brand} look ${look.lookNo}`}
+                            className="aspect-[3/4] w-9 shrink-0 border border-border object-cover"
+                          />
+                        ) : (
+                          <span className="aspect-[3/4] w-9 shrink-0 border border-border bg-muted" />
+                        )}
+                        <span className="min-w-0 flex-1 text-[12px] leading-snug text-foreground">
+                          {look.brand}
+                          <span className="text-muted-foreground"> · Look {look.lookNo}</span>
+                        </span>
+                        <Button variant="outline" size="sm" onClick={() => restoreLook(look)}>
+                          <RotateCcw className="size-3.5" aria-hidden />
+                          Restore
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {removed.length > 1 ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={() => setRemoved([])}
+                  >
+                    Restore all
+                  </Button>
+                ) : null}
+              </PopoverContent>
+            </Popover>
 
             {/* Cart in the header: the count is always visible, the shortlist is one click away. */}
             <Popover>
