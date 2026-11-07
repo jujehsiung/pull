@@ -59,6 +59,21 @@ logged out; the existing demo data is migrated into the first workspace.
 **Done when:** a test-mode checkout produces a seat; the webhook keeps quantity in sync; a cancelled
 workspace goes read-only at period end without breaking client links.
 
+## Pricing on the landing page (proposal — confirm before launch)
+
+The product page now carries three plans, priced per seat, with an annual toggle (two months free):
+
+| plan | monthly | annual | seats |
+|---|---|---|---|
+| Solo | $29 / seat / mo | $24 / seat / mo | 1 seat |
+| Studio | $59 / seat / mo | $49 / seat / mo | per seat |
+| House | talk to us | — | custom (SSO, onboarding, named support) |
+
+Those numbers are **proposals**, not decided. They map to the seat model in Phase 2 (Stripe quantity =
+active memberships) and to the feature split that exists today (Studio gates showroom links, labels and
+the contacts book). Until Clerk and Stripe land, every paid CTA opens the demo's start-a-job dialog and
+House's "Talk to us" is a `mailto:` placeholder — both are labelled in the code.
+
 ## Phase 3 — Persist the surfaces we designed
 
 - **Client decisions + markup on the look** (`looks.client_status` exists; add `looks.markup` — a
