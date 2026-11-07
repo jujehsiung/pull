@@ -17,6 +17,8 @@ import { Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
+import { AgentRun, type AgentStep } from "./AgentRun"
+
 export interface RequestLook {
   id: string
   lookNo: number
@@ -107,6 +109,9 @@ const STATUS_LABEL: Record<Status, string> = { draft: "Draft", queued: "Approved
 
 export function RequestEmails({ job, brands }: { job: RequestJob; brands: RequestBrand[] }) {
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
+  const [run, setRun] = useState<{ steps: AgentStep[]; brands: (string | null)[] } | null>(null)
+  const [running, setRunning] = useState(false)
+  const [polishing, setPolishing] = useState<string | null>(null)
 
   const counts = useMemo(() => {
     const all = Object.values(drafts)
@@ -117,21 +122,69 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
     }
   }, [drafts])
 
+  const approvedLooks = brands.reduce((total, brand) => total + brand.looks.length, 0)
+
   const draftAll = () => {
-    setDrafts((current) => {
-      const next = { ...current }
-      for (const brand of brands) {
-        // A sent email is never rewritten; everything else is refreshed from the
-        // current approved looks, the way an idempotent draft action would.
-        if (next[brand.brand]?.status === "sent") continue
-        next[brand.brand] = {
-          ...draftFor(brand, job),
-          status: "draft",
-          polished: false,
+    if (running) return
+
+    // A sent email is never rewritten; everything else is drafted again, one
+    // card per step, so the screen fills as the agent works.
+    setDrafts((current) =>
+      Object.fromEntries(Object.entries(current).filter(([, draft]) => draft.status === "sent")),
+    )
+
+    const steps: AgentStep[] = [
+      {
+        tool: "agent.read_review",
+        note: `${approvedLooks} looks approved across ${brands.length} houses`,
+        ms: 650,
+      },
+      {
+        tool: "agent.match_contacts",
+        note: `${brands.length} showrooms matched from the contacts book`,
+        ms: 700,
+      },
+      ...brands.map((brand) => ({
+        tool: "agent.draft_email",
+        note: `${brand.brand} · ${brand.looks.length} look${brand.looks.length === 1 ? "" : "s"}`,
+        ms: 600,
+      })),
+      {
+        tool: "agent.check_addresses",
+        note: `${brands.filter((brand) => looksLikeEmail(brand.contactEmail)).length} of ${brands.length} have a showroom address`,
+        ms: 500,
+      },
+    ]
+
+    setRun({ steps, brands: [null, null, ...brands.map((brand) => brand.brand), null] })
+    setRunning(true)
+  }
+
+  const stepLanded = (step: AgentStep, index: number) => {
+    const brandName = run?.brands[index]
+    if (!brandName) return
+    const brand = brands.find((candidate) => candidate.brand === brandName)
+    if (!brand) return
+    setDrafts((current) =>
+      current[brandName] && current[brandName].status === "sent"
+        ? current
+        : { ...current, [brandName]: { ...draftFor(brand, job), status: "draft", polished: false } },
+    )
+  }
+
+  const polish = (brandName: string) => {
+    setPolishing(brandName)
+    setTimeout(() => {
+      setDrafts((current) => {
+        const draft = current[brandName]
+        if (!draft || draft.status === "sent") return current
+        return {
+          ...current,
+          [brandName]: { ...draft, body: polished(draft.body), polished: true },
         }
-      }
-      return next
-    })
+      })
+      setPolishing(null)
+    }, 700)
   }
 
   const patch = (brand: string, change: Partial<Draft>) =>
@@ -157,9 +210,15 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
               <b className="font-medium text-foreground">{counts.queued}</b> approved ·{" "}
               <b className="font-medium text-foreground">{counts.sent}</b> sent
             </span>
-            <Button variant="outline" size="sm" className="agent-action" onClick={draftAll}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="agent-action"
+              onClick={draftAll}
+              disabled={running}
+            >
               <Sparkles className="size-3.5" aria-hidden />
-              {counts.drafted ? "Redraft requests" : "Draft requests"}
+              {running ? "Drafting…" : counts.drafted ? "Redraft requests" : "Draft requests"}
             </Button>
           </div>
         </div>
@@ -170,7 +229,15 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
         approve it.
       </p>
 
-      {counts.drafted === 0 ? (
+      {run ? (
+        <AgentRun
+          steps={run.steps}
+          onStep={stepLanded}
+          onDone={() => setRunning(false)}
+        />
+      ) : null}
+
+      {counts.drafted === 0 && !run ? (
         <div className="mt-10 flex max-w-[760px] flex-col items-start gap-2 border-t border-border pt-6">
           <p className="text-[13px] text-foreground">No drafts yet.</p>
           <p className="text-[13px] text-muted-foreground">
@@ -282,13 +349,11 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                       variant="ghost"
                       size="sm"
                       className="agent-action"
-                      disabled={locked}
-                      onClick={() =>
-                        patch(brand.brand, { body: polished(draft.body), polished: true })
-                      }
+                      disabled={locked || polishing === brand.brand}
+                      onClick={() => polish(brand.brand)}
                     >
                       <Sparkles className="size-3.5" aria-hidden />
-                      Polish
+                      {polishing === brand.brand ? "Polishing…" : "Polish"}
                     </Button>
                     {draft.polished ? (
                       <span className="text-[11px] tracking-[0.02em] text-muted-foreground">

@@ -14,7 +14,6 @@ const LINKS = [
   { label: "Board", href: "/board" },
   { label: "Client page", href: "/client" },
   { label: "Request emails", href: "/requests" },
-  { label: "Client view", href: "/preview/client.html" },
   { label: "Agent trace", href: "/trace" },
 ]
 
