@@ -210,6 +210,16 @@ export function ReviewBoard({
   const restoreLook = (look: Look) =>
     setRemoved((current) => current.filter((entry) => entry.id !== look.id))
 
+  /** Remove a house from the board: every look goes to the bin, so the house can come back. */
+  const removeBrand = (brand: string, row: Look[]) => {
+    // If the chips were reading this house, they fall back to the board rather than vanishing.
+    setFocus((current) => (current === brand ? null : current))
+    setRemoved((current) => {
+      const ids = new Set(current.map((entry) => entry.id))
+      return [...current, ...row.filter((look) => !ids.has(look.id))]
+    })
+  }
+
   return (
     <div
       role={chrome === "sheet" ? "dialog" : "region"}
@@ -446,9 +456,21 @@ export function ReviewBoard({
           {grouped.map(([brand, list]) => (
             <section key={brand} className="flex flex-col gap-4">
               <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
-                <h3 className="text-[20px] font-medium leading-none tracking-[0.02em] text-foreground">
-                  {brand}
-                </h3>
+                <div className="group flex min-w-0 items-baseline gap-2">
+                  <h3 className="text-[20px] font-medium leading-none tracking-[0.02em] text-foreground">
+                    {brand}
+                  </h3>
+                  {/* Hovering the house offers to take it off the board; the looks go to the bin. */}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${brand} from the board`}
+                    title={`Remove ${brand} from the board`}
+                    onClick={() => removeBrand(brand, list)}
+                    className="inline-flex size-6 shrink-0 items-center justify-center text-muted-foreground-soft opacity-0 transition-opacity hover:text-[var(--destructive)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                  </button>
+                </div>
                 <span className="text-[10px] tracking-[0.02em] text-muted-foreground">
                   {list.length} look{list.length === 1 ? "" : "s"}
                 </span>
