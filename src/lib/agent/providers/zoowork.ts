@@ -95,9 +95,17 @@ async function readStoredAgentId(): Promise<string | undefined> {
   }
 }
 
+/**
+ * Best-effort cache only. Serverless filesystems are read-only, so a failed write must not
+ * fail the run: the Agent is still found by its labels on the next call.
+ */
 async function storeAgentId(agentId: string): Promise<void> {
-  await mkdir(dirname(AGENT_FILE), { recursive: true })
-  await writeFile(AGENT_FILE, JSON.stringify({ agentId, storedAt: new Date().toISOString() }, null, 2))
+  try {
+    await mkdir(dirname(AGENT_FILE), { recursive: true })
+    await writeFile(AGENT_FILE, JSON.stringify({ agentId, storedAt: new Date().toISOString() }, null, 2))
+  } catch {
+    // Read-only FS (production); the id is recovered by label discovery below.
+  }
 }
 
 /** An explicit alias if the operator pinned one; otherwise the platform's chat default. */
