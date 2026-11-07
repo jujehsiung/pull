@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ingestLook } from "./ingest"
 import { ReviewBoard, type Look } from "./ReviewBoard"
 
@@ -65,8 +66,6 @@ interface SuggestLooksResponse {
   totalDesigners: number
   error?: string
 }
-
-const SHOWN_PER_DESIGNER = 8
 
 /** The route relays Vogue photos same-origin so the board's canvas crop stays readable. */
 function imageSource(image: string): string {
@@ -123,6 +122,8 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [suggestMeta, setSuggestMeta] = useState<SuggestLooksResponse | null>(null)
   const [suggestTrace, setSuggestTrace] = useState<SuggestStep[]>([])
+  /** Every designer the research has returned, in the order the popup lists them. */
+  const [designerSources, setDesignerSources] = useState<ApiDesigner[]>([])
   const [designerCount, setDesignerCount] = useState(0)
   const [moreLoading, setMoreLoading] = useState(false)
   const [reserve, setReserve] = useState<Record<string, ApiLook[]>>({})
@@ -156,6 +157,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     setProgress(null)
     setSuggestMeta(null)
     setSuggestTrace([])
+    setDesignerSources([])
     setDesignerCount(0)
     setReserve({})
     setReserveNote(null)
@@ -202,6 +204,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
       setSuggested(looksFromDesigners(data.designers))
       setSuggestMeta(data)
       setSuggestTrace(data.trace)
+      setDesignerSources(data.designers)
       setDesignerCount(data.designers.length)
       setReserve(Object.fromEntries(data.designers.map((designer) => [designer.brand, designer.reserve])))
     } catch (error) {
@@ -222,6 +225,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
       const data = await runResearch(client, designerCount, 5)
       setSuggested((current) => [...current, ...looksFromDesigners(data.designers)])
       setSuggestTrace((current) => [...current, ...data.trace])
+      setDesignerSources((current) => [...current, ...data.designers])
       setDesignerCount((count) => count + data.designers.length)
       setSuggestMeta((current) =>
         current
@@ -439,42 +443,100 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
             <p className="text-[13px] leading-snug text-muted-foreground">
               <span className="agent-mark">{suggested.length} looks</span> suggested from{" "}
               {[...new Set(suggested.map((look) => look.brand))].join(", ")}.{" "}
-              <a
-                href="/suggest-looks"
-                target="_blank"
-                rel="noreferrer"
-                className="underline underline-offset-2"
-              >
-                See the researched skill — provenance and trace
-              </a>
-              .
+              {suggestMeta ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="link"
+                      className="h-auto min-h-8 px-0 text-[12px] font-normal text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    >
+                      show source
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    side="top"
+                    sideOffset={10}
+                    className="w-[min(92vw,420px)] p-0"
+                  >
+                    <div className="flex items-baseline justify-between gap-3 border-b px-4 py-3">
+                      <p className="text-[13px] font-medium">The research</p>
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        {suggestTrace.length} calls
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 border-b px-4 py-3">
+                      <p className="text-[12px] text-muted-foreground">
+                        client read as{" "}
+                        <span className="font-medium text-foreground">{suggestMeta.gender.value}</span>
+                      </p>
+                      <a
+                        href={suggestMeta.gender.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-fit font-mono text-[10px] underline underline-offset-2"
+                        style={{ color: "var(--muted-foreground-soft)" }}
+                      >
+                        {suggestMeta.gender.evidence}
+                      </a>
+                      <a
+                        href={suggestMeta.season.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 w-fit text-[12px] underline underline-offset-2"
+                      >
+                        {suggestMeta.season.label} · Vogue Runway →
+                      </a>
+                    </div>
+
+                    <ul className="flex max-h-[min(34dvh,340px)] flex-col gap-2 overflow-auto p-3 sm:max-h-[min(52vh,440px)]">
+                      {designerSources.map((designer) => (
+                        <li key={designer.slug} className="rounded-lg border bg-card p-3">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <p className="text-[13px] font-medium text-foreground">{designer.brand}</p>
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {designer.looks.length} looks
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-baseline justify-between gap-3">
+                            <span
+                              className="font-mono text-[10px]"
+                              style={{ color: "var(--muted-foreground-soft)" }}
+                            >
+                              {designer.season}
+                            </span>
+                            <a
+                              href={designer.collectionUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-mono text-[10px] text-muted-foreground underline underline-offset-2"
+                            >
+                              Vogue Runway →
+                            </a>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="border-t px-4 py-3">
+                      <a
+                        href="/suggest-looks"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-muted-foreground underline underline-offset-2"
+                      >
+                        the full researched skill
+                      </a>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : null}
             </p>
           ) : null}
 
           {suggestMeta ? (
             <div className="flex flex-col gap-2">
-              <p className="text-[12px] leading-snug text-muted-foreground">
-                client read as <b>{suggestMeta.gender.value}</b> · {suggestMeta.season.label} ·{" "}
-                {designerCount} designers × {SHOWN_PER_DESIGNER} looks ·{" "}
-                <a
-                  href={suggestMeta.season.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2"
-                >
-                  Vogue Runway season
-                </a>
-              </p>
-              <details className="text-[11px] text-muted-foreground">
-                <summary className="cursor-pointer">trace · {suggestTrace.length} calls</summary>
-                <ol className="mt-1 flex flex-col gap-1">
-                  {suggestTrace.map((step) => (
-                    <li key={step.id} className="font-mono text-[10px]">
-                      {step.tool} · {step.durationMs ?? 0} ms
-                    </li>
-                  ))}
-                </ol>
-              </details>
               {suggestMeta.hasMore ? (
                 <Button
                   variant="outline"
