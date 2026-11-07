@@ -343,6 +343,10 @@ the dark client board alike.
 - **The acts are a track, not a menu.** Three labelled steps divided by hairlines; the current one is ink
   with a brand number, the others are secondary. Every step is a link to the screen that act opens with,
   so the guide is also the fastest way to jump between acts mid-story.
+- **Act 1 opens `/board`, not `/studio`** (2026-11-07). `/studio` sits behind `requireStylist`, so a
+  logged-out visitor — a judge, a phone, a fresh browser — bounced to `/login` and the guide dead-ended
+  on its first press, and `start over` (which returns to Act 1) did the same. The public board is the
+  act's own surface; the studio is where it is made, reached from the site nav once signed in.
 - **`next` is a square control**, the same hard edge as every other button; `hide` is a text button with
   no boundary. The agent's pill is not borrowed here — nothing on this row is an agent action.
 - **Collapse, never vanish.** `hide` shrinks the row to one 44px line that names itself and restores in

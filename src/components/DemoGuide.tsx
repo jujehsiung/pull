@@ -36,10 +36,13 @@ type DemoAct = {
 
 const ACTS: DemoAct[] = [
   {
-    href: "/studio",
+    // `/board` (the public board surface), not `/studio`: the studio is behind
+    // requireStylist, so a logged-out visitor — a judge, a phone, a fresh browser —
+    // would bounce to /login and the guide would dead-end on its first press.
+    href: "/board",
     label: "board",
     title: "Act 1 · the board",
-    hint: "Import the ten looks, build the boards, publish the client link.",
+    hint: "The board a client opens from one link — imported and published in the studio.",
   },
   {
     href: "/client",
