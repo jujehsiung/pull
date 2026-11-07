@@ -91,7 +91,7 @@ export function ContactEditForm({ contact }: { contact: ContactRow }) {
               defaultValue={contact.shipsOnOwnAccount ? "true" : "false"}
             >
               <option value="true">true — showroom ships</option>
-              <option value="false">false — PULL sends a label</option>
+              <option value="false">false — Pull sends a label</option>
             </select>
           </div>
         </div>

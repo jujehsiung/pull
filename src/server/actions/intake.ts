@@ -140,7 +140,7 @@ export async function submitIntake(_previous: IntakeFormState, form: FormData): 
   if (!ctx) {
     return {
       status: "error",
-      error: "This label link is no longer valid. Ask your PULL contact for a new one.",
+      error: "This label link is no longer valid. Ask your Pull contact for a new one.",
     }
   }
   if (ctx.shipment?.labelUrl || ctx.shipment?.chosenRateId) {

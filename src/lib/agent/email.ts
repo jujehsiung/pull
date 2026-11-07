@@ -47,7 +47,7 @@ export function deterministicRequestEmail(input: RequestEmailInput): DraftedEmai
 
   return {
     provider: "deterministic",
-    subject: `PULL request — ${input.brand} · ${input.clientName} · ${input.looks.length} look${input.looks.length === 1 ? "" : "s"}`,
+    subject: `Pull request — ${input.brand} · ${input.clientName} · ${input.looks.length} look${input.looks.length === 1 ? "" : "s"}`,
     body: [
       `Hi ${input.brand} team,`,
       ``,
@@ -101,7 +101,7 @@ export async function draftRequestEmail(
           shippingMode: input.shippingMode,
           intakeLink: input.intakeLink,
           stylistName: input.stylistName ?? "Juje",
-          requiredSubjectPattern: `PULL request — ${input.brand} · ${input.clientName}`,
+          requiredSubjectPattern: `Pull request — ${input.brand} · ${input.clientName}`,
         }),
         json: true,
         maxTokens: 900,

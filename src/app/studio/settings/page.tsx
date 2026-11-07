@@ -5,10 +5,10 @@ import { users } from "@/db/schema"
 import { requireStylist } from "@/lib/auth"
 import { saveStudioForm } from "@/server/actions/studio"
 
-export const metadata = { title: "PULL — studio settings" }
+export const metadata = { title: "Pull — studio settings" }
 
 const FIELDS: { key: string; label: string; placeholder?: string; required?: boolean; wide?: boolean }[] = [
-  { key: "name", label: "Studio name", placeholder: "PULL Studio" },
+  { key: "name", label: "Studio name", placeholder: "Pull Studio" },
   { key: "street1", label: "Street", placeholder: "155 Wooster St", required: true },
   { key: "street2", label: "Floor / suite", placeholder: "Floor 3" },
   { key: "city", label: "City", placeholder: "New York", required: true },

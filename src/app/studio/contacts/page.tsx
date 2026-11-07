@@ -21,7 +21,7 @@ import { parseContactsCsv, type ParsedContactRow } from "@/components/studio/con
 import { decodeContactsPreview, PREVIEW_COOKIE } from "@/components/studio/contacts/preview-cookie"
 import styles from "@/components/studio/contacts/contacts.module.css"
 
-export const metadata = { title: "PULL — contacts" }
+export const metadata = { title: "Pull — contacts" }
 
 type ContactQuery = Record<string, string | undefined>
 

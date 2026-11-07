@@ -8,7 +8,7 @@
 import { RequestEmails, type RequestBrand } from "@/components/studio-view/RequestEmails"
 import { seededLooks } from "@/lib/fixtures"
 
-export const metadata = { title: "PULL — request emails" }
+export const metadata = { title: "Pull — request emails" }
 
 /** A demo address per house — the contacts book owns the real ones. */
 function contactFor(brand: string): string {
@@ -42,7 +42,7 @@ export default function RequestsPage() {
         shootDate: "2027-11-12",
         callInDate: "2027-11-09",
         returnDate: "2027-11-22",
-        shipTo: "PULL Studio · 12 Mercer St, New York, NY 10013",
+        shipTo: "Pull Studio · 12 Mercer St, New York, NY 10013",
       }}
       brands={brands}
     />

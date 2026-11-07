@@ -2,7 +2,7 @@ import Link from "next/link"
 import { requireStylist } from "@/lib/auth"
 import { NewJobForm } from "@/components/studio/NewJobForm"
 
-export const metadata = { title: "PULL — start a job" }
+export const metadata = { title: "Pull — start a job" }
 
 export default async function NewJobPage() {
   await requireStylist()

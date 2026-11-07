@@ -2,7 +2,7 @@ import Link from "next/link"
 import { requireStylist } from "@/lib/auth"
 import { listJobs } from "@/server/queries/jobs"
 
-export const metadata = { title: "PULL — dashboard" }
+export const metadata = { title: "Pull — dashboard" }
 
 const STATUS: Record<string, string> = {
   draft: "Draft",

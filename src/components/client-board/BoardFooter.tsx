@@ -12,7 +12,7 @@ export function BoardFooter({ lookCount, houseCount }: BoardFooterProps) {
   return (
     <footer className={styles.footer}>
       <div className={`container ${styles.footerInner}`}>
-        <span className={`mono ${styles.footerText}`}>PULL · sample trafficking</span>
+        <span className={`mono ${styles.footerText}`}>Pull · sample trafficking</span>
         <span className={`mono ${styles.footerText}`}>
           {lookCount} {lookCount === 1 ? "look" : "looks"} · {houseCount}{" "}
           {houseCount === 1 ? "house" : "houses"}

@@ -76,7 +76,7 @@ function draftFor(
 
   return {
     to: brand.contactEmail,
-    subject: `PULL request — ${brand.brand} · ${job.client} · ${brand.looks.length} look${
+    subject: `Pull request — ${brand.brand} · ${job.client} · ${brand.looks.length} look${
       brand.looks.length === 1 ? "" : "s"
     }`,
     body: `Hi ${brand.brand} PR team,

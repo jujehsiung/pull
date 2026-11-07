@@ -58,7 +58,7 @@ export function deterministicDraft(input: DraftInput): { subject: string; body: 
       ? `If you would rather not ship on your own account, fill this in and we will send a prepaid label and a pickup: ${input.intakeUrl}`
       : "Please ship on your own account — the label is not needed."
 
-  const subject = `PULL request — ${brand.toUpperCase()} · ${job.clientName} · ${looks.length} look${looks.length === 1 ? "" : "s"}`
+  const subject = `Pull request — ${brand.toUpperCase()} · ${job.clientName} · ${looks.length} look${looks.length === 1 ? "" : "s"}`
 
   const body = `Hi ${brand} PR team,
 

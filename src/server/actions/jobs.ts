@@ -162,7 +162,7 @@ export async function sendClientLink(jobId: string, to: string): Promise<ActionR
     "",
     "The link needs no account.",
     "",
-    "PULL",
+    "Pull",
   ].join("\n")
 
   const html = `

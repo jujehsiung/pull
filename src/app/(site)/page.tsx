@@ -38,7 +38,7 @@ const STEPS: HowStep[] = [
   {
     n: "01",
     title: "Read the floor",
-    body: "Drop the folder of screenshots. PULL trims the chrome, reads the look number and the season, and files every look under its house.",
+    body: "Drop the folder of screenshots. Pull trims the chrome, reads the look number and the season, and files every look under its house.",
     label: "The board — every look, filed by house",
     screen: "/landing/screen-board.png",
     alt: "The board: looks grouped by house, one shortlisted, one in a hairline grid",
@@ -127,7 +127,7 @@ export default function LandingPage() {
 
         <div className="mt-10 border-t border-border pt-6">
           <p className="max-w-[440px] text-[15px] leading-relaxed text-muted-foreground">
-            PULL reads every look, builds the boards, and sends your client one link to approve — then
+            Pull reads every look, builds the boards, and sends your client one link to approve — then
             turns those approvals into showroom requests and labels.
           </p>
         </div>

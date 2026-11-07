@@ -1,5 +1,5 @@
 /**
- * PULL demo schema — mirrors PRD §8 (prd/prd-pull-demo-3acts.md).
+ * Pull demo schema — mirrors PRD §8 (prd/prd-pull-demo-3acts.md).
  * Neon Postgres + Drizzle. One stylist, many jobs, boards → looks, requests → emails → shipments.
  */
 import {

@@ -24,7 +24,7 @@ import {
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "PULL — review & send",
+  title: "Pull — review & send",
   robots: { index: false, follow: false, nocache: true },
 }
 

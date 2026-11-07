@@ -3,7 +3,7 @@ import { AgentTrace } from "@/components/AgentTrace"
 import { AgentProviderBadge } from "@/components/AgentProviderBadge"
 import type { AgentStep } from "@/lib/agent/trace"
 
-export const metadata = { title: "PULL — sample trace" }
+export const metadata = { title: "Pull — sample trace" }
 
 const now = Date.now()
 const at = (offsetMs: number) => new Date(now - 9000 + offsetMs).toISOString()

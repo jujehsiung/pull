@@ -125,7 +125,7 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
               Private link
             </span>
             <ShareButton
-              title="Your PULL lookbook"
+              title="Your Pull lookbook"
               text="The looks Juje pulled for Dune Tour — approve what you love, pass the rest."
             />
           </div>

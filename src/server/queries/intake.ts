@@ -185,7 +185,7 @@ export function studioAddressToShippo(
 
   return {
     address: {
-      name: pick(address, "name") || "PULL studio",
+      name: pick(address, "name") || "Pull studio",
       street1,
       city,
       state: pick(address, "state", "province") || undefined,

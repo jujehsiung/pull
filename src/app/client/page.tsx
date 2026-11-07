@@ -10,7 +10,7 @@ import { ClientBoard } from "@/components/client-view/ClientBoard"
 import { seededLooks } from "@/lib/fixtures"
 
 export const metadata = {
-  title: "PULL — your looks",
+  title: "Pull — your looks",
   robots: { index: false, follow: false },
 }
 

@@ -3,7 +3,7 @@ import { requireStylist } from "@/lib/auth"
 import { signOut } from "@/server/actions/auth"
 import { AgentProviderBadge } from "@/components/AgentProviderBadge"
 
-export const metadata = { title: "PULL — dashboard" }
+export const metadata = { title: "Pull — dashboard" }
 
 /** Dashboard shell: the wordmark, who is signed in, and a way out. Nothing else competes. */
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {

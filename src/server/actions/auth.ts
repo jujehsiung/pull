@@ -28,7 +28,7 @@ export async function requestMagicLink(_prev: LoginState | null, form: FormData)
   const { subject, html } = magicLinkEmail(url)
 
   try {
-    await sendEmail({ to: email, subject, html, text: `Sign in to PULL (15 minutes): ${url}` })
+    await sendEmail({ to: email, subject, html, text: `Sign in to Pull (15 minutes): ${url}` })
   } catch (error) {
     return { status: "error", message: error instanceof Error ? error.message : "Resend rejected the email." }
   }
