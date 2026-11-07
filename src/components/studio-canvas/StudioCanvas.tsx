@@ -75,7 +75,9 @@ export function StudioCanvas({
   const [hoverEdge, setHoverEdge] = useState<string | null>(null)
   const [linkPoint, setLinkPoint] = useState<{ x: number; y: number } | null>(null)
   const [heights, setHeights] = useState<Record<string, number>>({})
-  const [portY, setPortY] = useState<Record<string, { in: Record<string, number>; out: Record<string, number> }>>({})
+  const [portPoint, setPortPoint] = useState<
+    Record<string, { in: Record<string, { x: number; y: number }>; out: Record<string, { x: number; y: number }> }>
+  >({})
 
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef({ camera, zoom })
@@ -85,7 +87,7 @@ export function StudioCanvas({
   const [wide, setWide] = useState(true)
   const dragRef = useRef<{ id: string; startX: number; startY: number; x: number; y: number } | null>(null)
   const panRef = useRef<{ startX: number; startY: number; camX: number; camY: number } | null>(null)
-  const linkRef = useRef<{ from: string; x: number; y: number } | null>(null)
+  const linkRef = useRef<{ side: "in" | "out"; nodeId: string; port: string } | null>(null)
   const runRef = useRef(false)
   const nodesRef = useRef(nodes)
   nodesRef.current = nodes
@@ -223,25 +225,33 @@ export function StudioCanvas({
     setHeights((current) => (current[id] === height ? current : { ...current, [id]: height }))
   }, [])
 
-  const onMeasurePort = useCallback((id: string, side: "in" | "out", port: string, y: number) => {
-    setPortY((current) => {
-      const node = current[id] ?? { in: {}, out: {} }
-      if (node[side][port] === y) return current
-      return { ...current, [id]: { ...node, [side]: { ...node[side], [port]: y } } }
-    })
-  }, [])
+  const onMeasurePort = useCallback(
+    (id: string, side: "in" | "out", port: string, x: number, y: number) => {
+      setPortPoint((current) => {
+        const node = current[id] ?? { in: {}, out: {} }
+        const previous = node[side][port]
+        if (previous && previous.x === x && previous.y === y) return current
+        return { ...current, [id]: { ...node, [side]: { ...node[side], [port]: { x, y } } } }
+      })
+    },
+    [],
+  )
 
   const midY = (node: CanvasNode) => node.y + (heights[node.id] ?? 120) / 2
-  const socketY = (node: CanvasNode, side: "in" | "out", port: string) =>
-    portY[node.id]?.[side]?.[port]
-  /** Absolute canvas position of a socket — the card's own y plus the row offset. */
-  const outputY = (node: CanvasNode) => {
-    const offset = socketY(node, "out", PORTS[node.kind].outputs[0]?.id ?? "")
-    return node.y + (offset ?? (heights[node.id] ?? 120) / 2)
+  const socketPoint = (node: CanvasNode, side: "in" | "out", port: string) =>
+    portPoint[node.id]?.[side]?.[port]
+  /** The circle's centre in canvas space — a wire ends on a plug, not on the card's edge. */
+  const outputPoint = (node: CanvasNode) => {
+    const point = socketPoint(node, "out", PORTS[node.kind].outputs[0]?.id ?? "")
+    return point
+      ? { x: node.x + point.x, y: node.y + point.y }
+      : { x: node.x + NODE_WIDTH, y: node.y + (heights[node.id] ?? 120) / 2 }
   }
-  const inputY = (node: CanvasNode, port: string) => {
-    const offset = socketY(node, "in", port)
-    return node.y + (offset ?? (heights[node.id] ?? 120) / 2)
+  const inputPoint = (node: CanvasNode, port: string) => {
+    const point = socketPoint(node, "in", port)
+    return point
+      ? { x: node.x + point.x, y: node.y + point.y }
+      : { x: node.x, y: node.y + (heights[node.id] ?? 120) / 2 }
   }
 
   /** What each card's sockets are fed with, so the body can show the wiring. */
@@ -356,23 +366,43 @@ export function StudioCanvas({
 
   /* ── wiring two cards ──────────────────────────────────────────────────── */
 
-  const onPortDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
+  /** Both ends can start a wire: an output pulls, an input offers. */
+  const beginLink = (event: PointerEvent<HTMLElement>, side: "in" | "out", node: CanvasNode, port: string) => {
     event.stopPropagation()
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-    // Anchor on the socket itself, not on arithmetic: the wire must leave the dot.
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const element = event.currentTarget as HTMLElement
+    // Anchor on the plug itself; find the circle inside the row if the row was pressed.
+    const circle = (element.querySelector("[data-port-id]") ?? element) as HTMLElement
+    const rect = circle.getBoundingClientRect()
     const canvasRect = canvasRef.current?.getBoundingClientRect()
     const point = canvasRect
       ? { x: rect.left + rect.width / 2 - canvasRect.left, y: rect.top + rect.height / 2 - canvasRect.top }
       : { x: 0, y: 0 }
-    linkRef.current = { from: node.id, x: node.x + NODE_WIDTH, y: outputY(node) }
+    linkRef.current = { side, nodeId: node.id, port }
     setLinkFrom(point)
+    setLinkPoint(point)
     setSnapPort(null)
   }
 
-  const portUnder = (clientX: number, clientY: number) => {
-    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-input-port]")
-    return target?.getAttribute("data-input-port") ?? null
+  const onPortDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
+    beginLink(event, "out", node, PORTS[node.kind].outputs[0]?.id ?? "image")
+  }
+
+  /** Pressing an input: unpick whatever is there, then offer a wire from that plug. */
+  const onInputDown = (event: PointerEvent<HTMLElement>, node: CanvasNode, port: string) => {
+    onDisconnect(node.id, port)
+    beginLink(event, "in", node, port)
+  }
+
+  type SocketRef = { nodeId: string; port: string; side: "in" | "out" }
+
+  const portUnder = (clientX: number, clientY: number): SocketRef | null => {
+    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-socket]")
+    const value = target?.getAttribute("data-socket")
+    if (!value) return null
+    const [nodeId, port, side] = value.split(":")
+    if (!nodeId || !port || (side !== "in" && side !== "out")) return null
+    return { nodeId, port, side }
   }
 
   const onDisconnect = useCallback((id: string, port: string) => {
@@ -383,7 +413,8 @@ export function StudioCanvas({
     if (!linkRef.current) return
     const rect = canvasRef.current?.getBoundingClientRect()
     if (rect) setLinkPoint({ x: event.clientX - rect.left, y: event.clientY - rect.top })
-    setSnapPort(portUnder(event.clientX, event.clientY))
+    const under = portUnder(event.clientX, event.clientY)
+    setSnapPort(under ? `${under.nodeId}:${under.port}` : null)
   }
 
   const onPortUp = (event: PointerEvent<HTMLElement>) => {
@@ -393,18 +424,20 @@ export function StudioCanvas({
     setLinkPoint(null)
     if (!link) return
 
-    const value = portUnder(event.clientX, event.clientY)
+    const target = portUnder(event.clientX, event.clientY)
     setSnapPort(null)
-    if (!value) return
-    const separator = value.indexOf(":")
-    const to = value.slice(0, separator)
-    const port = value.slice(separator + 1)
-    if (!to || !port || to === link.from) return
+    if (!target) return
+
+    // Pulling from an output lands on an input; offering from an input lands on an output.
+    const from = link.side === "out" ? link.nodeId : target.nodeId
+    const to = link.side === "out" ? target.nodeId : link.nodeId
+    const port = link.side === "out" ? target.port : link.port
+    if (link.side === target.side || from === to) return
 
     // An input socket takes one wire: a second one replaces the first.
     setEdges((current) => {
       const without = current.filter((edge) => !(edge.to === to && edge.port === port))
-      return [...without, { id: `e-${link.from}-${to}-${port}-${without.length}`, from: link.from, to, port }]
+      return [...without, { id: `e-${from}-${to}-${port}-${without.length}`, from, to, port }]
     })
   }
 
@@ -471,10 +504,12 @@ export function StudioCanvas({
   }
 
   const pathFor = (from: CanvasNode, to: CanvasNode, port: string) => {
-    const x1 = from.x + NODE_WIDTH
-    const y1 = outputY(from)
-    const x2 = to.x
-    const y2 = inputY(to, port)
+    const start = outputPoint(from)
+    const end = inputPoint(to, port)
+    const x1 = start.x
+    const y1 = start.y
+    const x2 = end.x
+    const y2 = end.y
     const bend = Math.max(40, Math.abs(x2 - x1) * 0.45)
     return `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`
   }
@@ -573,6 +608,7 @@ export function StudioCanvas({
                 onHeaderMove={onHeaderMove}
                 onHeaderUp={onHeaderUp}
                 onPortDown={onPortDown}
+                onInputDown={onInputDown}
                 onPortMove={onPortMove}
                 onPortUp={onPortUp}
                 onMeasure={onMeasure}
@@ -605,28 +641,28 @@ export function StudioCanvas({
 
         {/* The toolbox, centred at the bottom: the things you do to the canvas. */}
         <div
-          className={`absolute bottom-4 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)] transition-opacity duration-300 ${
+          className={`absolute bottom-4 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-border bg-card p-1 shadow-[0_8px_24px_rgba(10,10,10,0.08)] transition-opacity duration-300 ${
             assetsOpen && !wide ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
-          <div className="flex items-stretch">
-            <div className="relative border-r border-border" data-add-menu>
+          <div className="flex items-center gap-1">
+            <div className="relative" data-add-menu>
               <button
                 type="button"
                 onClick={() => setAddOpen((open) => !open)}
                 aria-expanded={addOpen}
-                className="px-3 py-1.5 text-[11px] text-foreground hover:bg-muted"
+                className="rounded-lg px-2.5 py-1.5 text-[11px] text-foreground hover:bg-muted"
               >
                 Add node
               </button>
               {addOpen ? (
-                <div className="absolute bottom-full left-0 z-30 mb-1 w-[300px] rounded-xl border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.12)]">
+                <div className="absolute bottom-full left-0 z-30 mb-1 w-[300px] rounded-xl border border-border bg-card p-1 shadow-[0_8px_24px_rgba(10,10,10,0.12)]">
                   {PALETTE.map((kind) => (
                     <button
                       key={kind}
                       type="button"
                       onClick={() => addNode(kind)}
-                      className="flex w-full items-baseline gap-3 px-2.5 py-1.5 text-left text-[11px] hover:bg-muted"
+                      className="flex w-full items-baseline gap-3 rounded-md px-2 py-1.5 text-left text-[11px] hover:bg-muted"
                     >
                       <span className="shrink-0 whitespace-nowrap text-foreground">{KIND[kind].name}</span>
                       <span className="ml-auto min-w-0 truncate whitespace-nowrap font-mono text-[9px] text-muted-foreground-soft">
@@ -638,29 +674,32 @@ export function StudioCanvas({
               ) : null}
             </div>
 
-            <button
-              type="button"
-              aria-label="Zoom out"
-              onClick={() => zoomFromCentre(-1)}
-              className="border-r border-border px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
-            >
-              −
-            </button>
-            <span className="border-r border-border px-2 py-1.5 font-mono text-[10px] tabular-nums text-foreground">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              type="button"
-              aria-label="Zoom in"
-              onClick={() => zoomFromCentre(1)}
-              className="border-r border-border px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
-            >
-              +
-            </button>
+            <div className="flex items-center rounded-lg hover:bg-muted">
+              <button
+                type="button"
+                aria-label="Zoom out"
+                onClick={() => zoomFromCentre(-1)}
+                className="rounded-l-lg px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+              >
+                −
+              </button>
+              <span className="px-1 font-mono text-[10px] tabular-nums text-foreground">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                type="button"
+                aria-label="Zoom in"
+                onClick={() => zoomFromCentre(1)}
+                className="rounded-r-lg px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+              >
+                +
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={fit}
-              className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+              className="rounded-lg px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Fit
             </button>
@@ -672,7 +711,7 @@ export function StudioCanvas({
           id="studio-assets"
           ref={panelRef}
           aria-label="Studio assets"
-          className={`absolute right-0 top-0 z-20 flex h-full w-[320px] max-w-[88vw] flex-col border-l border-border bg-card shadow-[-12px_0_32px_rgba(10,10,10,0.05)] transition-transform duration-500 ease-out ${
+          className={`absolute right-0 top-0 z-20 flex h-full w-[320px] max-w-[88vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-[-12px_0_32px_rgba(10,10,10,0.05)] transition-transform duration-500 ease-out ${
             assetsOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
@@ -682,7 +721,7 @@ export function StudioCanvas({
               type="button"
               onClick={() => setAssetsOpen(false)}
               aria-label="Close assets"
-              className="p-1 text-muted-foreground hover:text-foreground"
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
@@ -739,7 +778,7 @@ export function StudioCanvas({
           aria-expanded={assetsOpen}
           aria-controls="studio-assets"
           aria-label={assetsOpen ? "Close the studio assets" : "Open the studio assets"}
-          className="flex min-h-[92px] flex-col items-center justify-center gap-2 border border-r-0 border-border bg-card px-2 py-4 text-muted-foreground shadow-[-4px_0_16px_rgba(10,10,10,0.04)] hover:bg-muted hover:text-foreground"
+          className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-l-lg rounded-r-none border border-r-0 border-border bg-card px-2 py-4 text-muted-foreground shadow-[-4px_0_16px_rgba(10,10,10,0.04)] hover:bg-muted hover:text-foreground"
         >
           <span
             className="font-mono text-[10px] tabular-nums"

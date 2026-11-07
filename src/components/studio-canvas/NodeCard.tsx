@@ -42,9 +42,11 @@ export interface NodeCardProps {
   onPortDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
   onPortMove: (event: PointerEvent<HTMLElement>) => void
   onPortUp: (event: PointerEvent<HTMLElement>) => void
+  /** Pressing an input circle either unpicks it or starts a wire from it. */
+  onInputDown: (event: PointerEvent<HTMLElement>, node: CanvasNode, port: string) => void
   onMeasure: (id: string, height: number) => void
   /** Reports where a socket sits on the card, so wires land on the right row. */
-  onMeasurePort: (id: string, side: "in" | "out", port: string, y: number) => void
+  onMeasurePort: (id: string, side: "in" | "out", port: string, x: number, y: number) => void
 }
 
 export function NodeCard({
@@ -63,6 +65,7 @@ export function NodeCard({
   onPortDown,
   onPortMove,
   onPortUp,
+  onInputDown,
   onMeasure,
   onMeasurePort,
 }: NodeCardProps) {
@@ -74,11 +77,17 @@ export function NodeCard({
     const card = cardRef.current
     if (!card) return
     onMeasure(node.id, card.offsetHeight)
-    const cardTop = card.getBoundingClientRect().top
+    const cardRect = card.getBoundingClientRect()
     for (const element of card.querySelectorAll<HTMLElement>("[data-port-id]")) {
       const rect = element.getBoundingClientRect()
       const side = element.dataset.portSide === "out" ? "out" : "in"
-      onMeasurePort(node.id, side, element.dataset.portId ?? "", rect.top - cardTop + rect.height / 2)
+      onMeasurePort(
+        node.id,
+        side,
+        element.dataset.portId ?? "",
+        rect.left - cardRect.left + rect.width / 2,
+        rect.top - cardRect.top + rect.height / 2,
+      )
     }
   }, [node.id, onMeasure, onMeasurePort])
 
@@ -124,7 +133,7 @@ export function NodeCard({
 
       {/* The socket rail: inputs left, outputs right, one row each. */}
       {ports.inputs.length > 0 || ports.outputs.length > 0 ? (
-        <div className="flex items-start justify-between gap-3 border-b border-border py-1.5 pr-2.5">
+        <div className="flex items-start justify-between gap-3 border-b border-border py-1.5">
           <div className="flex flex-col gap-1">
             {ports.inputs.map((port) => {
               const key = `${node.id}:${port.id}`
@@ -133,36 +142,34 @@ export function NodeCard({
               return (
                 <div
                   key={port.id}
-                  data-input-port={key}
-                  data-port-id={port.id}
-                  data-port-side="in"
+                  data-socket={`${key}:in`}
                   role="button"
                   tabIndex={-1}
                   aria-label={connected ? `Unpick ${port.label}` : `${port.label} socket`}
-                  title={connected ? "Click to unpick" : "Drop a wire here"}
-                  onClick={(event) => {
-                    if (!connected) return
-                    event.stopPropagation()
-                    onDisconnect(node.id, port.id)
-                  }}
-                  className="group flex cursor-crosshair items-center gap-1.5 py-px"
+                  title={connected ? "Drag from it, or click to unpick" : "Drop a wire here"}
+                  onPointerDown={(event) => onInputDown(event, node, port.id)}
+                  onPointerMove={onPortMove}
+                  onPointerUp={onPortUp}
+                  onPointerCancel={onPortUp}
+                  className="group -ml-[5px] flex cursor-crosshair touch-none items-center gap-1.5 py-[3px]"
                 >
                   <span
-                    className={`-ml-[5px] size-2 shrink-0 border transition-colors ${
+                    data-port-id={port.id}
+                    data-port-side="in"
+                    aria-hidden
+                    className={`size-2.5 shrink-0 rounded-full border-[1.5px] transition-colors ${
                       highlight
                         ? "border-brand bg-brand"
                         : connected
-                          ? "border-success bg-success"
+                          ? "border-foreground bg-foreground"
                           : "border-border bg-card group-hover:border-foreground"
                     }`}
                   />
                   <span
                     className={`font-mono text-[9px] leading-none tracking-[0.02em] transition-colors ${
-                      highlight
+                      highlight || connected
                         ? "text-foreground"
-                        : connected
-                          ? "text-foreground"
-                          : "text-muted-foreground group-hover:text-foreground"
+                        : "text-muted-foreground group-hover:text-foreground"
                     }`}
                   >
                     {port.label}
@@ -174,21 +181,31 @@ export function NodeCard({
 
           <div className="flex flex-col items-end gap-1">
             {ports.outputs.map((port) => (
-              <div key={port.id} className="flex items-center gap-1.5">
-                <span className="font-mono text-[9px] leading-none tracking-[0.02em] text-muted-foreground">
+              <div
+                key={port.id}
+                data-socket={`${node.id}:${port.id}:out`}
+                role="button"
+                tabIndex={-1}
+                aria-label={`Drag a wire from ${port.label}`}
+                title="Drag a wire from it"
+                onPointerDown={(event) => onPortDown(event, node)}
+                onPointerMove={onPortMove}
+                onPointerUp={onPortUp}
+                onPointerCancel={onPortUp}
+                className="group -mr-[5px] flex cursor-crosshair touch-none items-center gap-1.5 py-[3px]"
+              >
+                <span className="font-mono text-[9px] leading-none tracking-[0.02em] text-muted-foreground group-hover:text-foreground">
                   {port.label}
                 </span>
                 <span
-                  data-output-port={`${node.id}:${port.id}`}
                   data-port-id={port.id}
                   data-port-side="out"
-                  role="button"
-                  aria-label={`Connect ${meta.name} ${port.label}`}
-                  onPointerDown={(event) => onPortDown(event, node)}
-                  onPointerMove={onPortMove}
-                  onPointerUp={onPortUp}
-                  onPointerCancel={onPortUp}
-                  className="relative -mr-[5px] size-2 shrink-0 cursor-crosshair border border-border bg-card before:absolute before:-inset-2 before:content-[''] hover:border-foreground hover:bg-brand"
+                  aria-hidden
+                  className={`size-2.5 shrink-0 rounded-full border-[1.5px] transition-colors ${
+                    highlightPort === `${node.id}:${port.id}`
+                      ? "border-brand bg-brand"
+                      : "border-foreground bg-card group-hover:bg-foreground"
+                  }`}
                 />
               </div>
             ))}
@@ -199,12 +216,12 @@ export function NodeCard({
       {node.kind === "upload" ? (
         <div className="p-2.5">
           {node.image ? (
-            <div className="aspect-square w-full overflow-hidden border border-border bg-muted">
+            <div className="aspect-square w-full overflow-hidden rounded-md border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={node.image} alt="" className="size-full object-cover object-top" />
             </div>
           ) : (
-            <div className="flex aspect-square w-full items-center justify-center border border-dashed border-border text-[11px] text-muted-foreground-soft">
+            <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-border text-[11px] text-muted-foreground-soft">
               drop a screenshot
             </div>
           )}
@@ -245,7 +262,7 @@ export function NodeCard({
               return image ? (
                 <div
                   key={`ref-${index}`}
-                  className="aspect-square overflow-hidden border border-border bg-muted"
+                  className="aspect-square overflow-hidden rounded-sm border border-border bg-muted"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={image} alt="" className="size-full object-cover object-top" />
@@ -253,7 +270,7 @@ export function NodeCard({
               ) : (
                 <div
                   key={`ref-${index}`}
-                  className="flex aspect-square items-center justify-center border border-dashed border-border font-mono text-[9px] text-muted-foreground-soft"
+                  className="flex aspect-square items-center justify-center rounded-sm border border-dashed border-border font-mono text-[9px] text-muted-foreground-soft"
                 >
                   {index + 1}
                 </div>
@@ -268,7 +285,7 @@ export function NodeCard({
             id={`${node.id}-model`}
             value={node.model ?? MODELS[0]}
             onChange={(event) => onChange(node.id, { model: event.target.value })}
-            className="mt-1 w-full border border-border bg-background px-1.5 py-1 text-[12px] text-foreground outline-none"
+            className="mt-1 w-full rounded-md border border-border bg-background px-1.5 py-1 text-[12px] text-foreground outline-none"
           >
             {MODELS.map((model) => (
               <option key={model} value={model}>
@@ -321,7 +338,7 @@ export function NodeCard({
                   type="button"
                   onClick={() => onChange(node.id, { factor })}
                   aria-pressed={active}
-                  className={`border px-2.5 py-1 font-mono text-[11px] ${
+                  className={`rounded-md border px-2.5 py-1 font-mono text-[11px] ${
                     active
                       ? "border-foreground bg-foreground text-background"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"

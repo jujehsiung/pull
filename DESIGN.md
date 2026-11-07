@@ -288,6 +288,10 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   to the plug (2026-11-07). The selected card is the only one that changes, to `outline-foreground/40`.
 - **Floating chrome takes the `xl` step** (8.4px) — the toolbox and the node palette are sheets above the
   canvas, so they round one step more than a card, per §5.
+- **On this page every primitive rounds** (2026-11-07) — cards `lg`, controls `md`, media frames `md`/`sm`,
+  floating chrome and the assets panel `xl`, the edge tab `lg` on its outer corners. It is the one surface
+  that should read as an **app**, not as a printed sheet; the square button rule still holds everywhere else
+  in the product. A socket stays a circle.
 - **The step number is mono, 10px, muted** (`01`…`06`) and it is the only thing on the card's left edge
   before the name. It is data, not a label, which is why it may keep its width.
 - **Sockets are rows, not a mid-line** (2026-11-07): every input is a labelled square on the card's left
