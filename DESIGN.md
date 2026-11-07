@@ -300,3 +300,8 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   over the canvas like a drawer — the one place the same panel behaves two ways, and deliberately.
 - **Type never goes below 10px effective**: `fit()` floors the zoom at 45% so a narrow frame pans
   instead of shrinking the cards into unreadability.
+- **The toolbox is centred at the bottom of the canvas**, not of the page: the things you do *to* the
+  canvas (add a node, zoom, fit) live on the canvas; the things you do *with* it (assets, run) stay in
+  the surface header. It floats, so it never takes a row from the graph, and its palette opens upward.
+- **The wheel is zoom**, anchored on the pointer: the canvas point under the cursor stays under the
+  cursor. Nothing else on this page scrolls, so the wheel is free to mean zoom.

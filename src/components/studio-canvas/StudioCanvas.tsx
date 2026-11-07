@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { X } from "lucide-react"
-import type { PointerEvent, WheelEvent } from "react"
+import type { PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
@@ -72,6 +72,8 @@ export function StudioCanvas({
   const [heights, setHeights] = useState<Record<string, number>>({})
 
   const canvasRef = useRef<HTMLDivElement | null>(null)
+  const viewRef = useRef({ camera, zoom })
+  viewRef.current = { camera, zoom }
   const panelRef = useRef<HTMLElement | null>(null)
   const [panelWidth, setPanelWidth] = useState(0)
   const [wide, setWide] = useState(true)
@@ -218,9 +220,36 @@ export function StudioCanvas({
     panRef.current = null
   }
 
-  const onWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (!event.ctrlKey && !event.metaKey) return
-    setZoom((current) => Math.min(1.6, Math.max(0.4, current - event.deltaY * 0.0015)))
+  const applyZoom = useCallback((pointX: number, pointY: number, deltaY: number) => {
+    const view = viewRef.current
+    const next = Math.min(1.8, Math.max(0.35, view.zoom * Math.exp(-deltaY * 0.0015)))
+    const scale = next / view.zoom
+    setZoom(next)
+    setCamera({
+      x: pointX - (pointX - view.camera.x) * scale,
+      y: pointY - (pointY - view.camera.y) * scale,
+    })
+  }, [])
+
+  /** Wheel zooms toward the pointer; a separate listener because React's is passive. */
+  useEffect(() => {
+    const element = canvasRef.current
+    if (!element) return
+    const onWheel = (event: globalThis.WheelEvent) => {
+      event.preventDefault()
+      const rect = element.getBoundingClientRect()
+      const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY
+      applyZoom(event.clientX - rect.left, event.clientY - rect.top, delta)
+    }
+    element.addEventListener("wheel", onWheel, { passive: false })
+    return () => element.removeEventListener("wheel", onWheel)
+  }, [applyZoom])
+
+  const zoomFromCentre = (direction: 1 | -1) => {
+    const element = canvasRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    applyZoom(rect.width / 2, rect.height / 2, direction * 120)
   }
 
   /* ── wiring two cards ──────────────────────────────────────────────────── */
@@ -338,27 +367,6 @@ export function StudioCanvas({
             Agent run · {done ? `${completed}/${nodes.length}` : `0/${nodes.length}`}
           </span>
 
-          <div className="relative" data-add-menu>
-            <Button variant="outline" size="sm" onClick={() => setAddOpen((open) => !open)} aria-expanded={addOpen}>
-              Add node
-            </Button>
-            {addOpen ? (
-              <div className="absolute right-0 top-full z-30 mt-1 w-[228px] border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)]">
-                {PALETTE.map((kind) => (
-                  <button
-                    key={kind}
-                    type="button"
-                    onClick={() => addNode(kind)}
-                    className="flex w-full items-baseline justify-between gap-2 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-muted"
-                  >
-                    <span>{KIND[kind].name}</span>
-                    <span className="font-mono text-[9px] text-muted-foreground-soft">{KIND[kind].note}</span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
           <Button
             variant="outline"
             size="sm"
@@ -381,7 +389,6 @@ export function StudioCanvas({
           onPointerMove={onCanvasMove}
           onPointerUp={onCanvasUp}
           onPointerCancel={onCanvasUp}
-          onWheel={onWheel}
           className="absolute inset-y-0 left-0 cursor-grab touch-none select-none bg-background transition-[right] duration-500 ease-out active:cursor-grabbing"
           style={{
             right: assetsOpen && wide ? panelWidth : 0,
@@ -445,34 +452,64 @@ export function StudioCanvas({
           </svg>
         ) : null}
 
-        {/* Zoom, bottom left. */}
-        <div className="absolute bottom-3 left-3 z-20 flex items-center border border-border bg-card">
-          <button
-            type="button"
-            aria-label="Zoom out"
-            onClick={() => setZoom((current) => Math.max(0.4, current - 0.1))}
-            className="px-2 py-1 text-[12px] text-muted-foreground hover:text-foreground"
-          >
-            −
-          </button>
-          <span className="border-x border-border px-2 py-1 font-mono text-[10px] tabular-nums text-foreground">
-            {Math.round(zoom * 100)}%
-          </span>
-          <button
-            type="button"
-            aria-label="Zoom in"
-            onClick={() => setZoom((current) => Math.min(1.6, current + 0.1))}
-            className="px-2 py-1 text-[12px] text-muted-foreground hover:text-foreground"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onClick={fit}
-            className="border-l border-border px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
-          >
-            Fit
-          </button>
+        {/* The toolbox, centred at the bottom: the things you do to the canvas. */}
+        <div className="absolute bottom-4 left-1/2 z-30 -translate-x-1/2 border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)]">
+          <div className="flex items-stretch">
+            <div className="relative border-r border-border" data-add-menu>
+              <button
+                type="button"
+                onClick={() => setAddOpen((open) => !open)}
+                aria-expanded={addOpen}
+                className="px-3 py-1.5 text-[11px] text-foreground hover:bg-muted"
+              >
+                Add node
+              </button>
+              {addOpen ? (
+                <div className="absolute bottom-full left-0 z-30 mb-1 w-[300px] border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.12)]">
+                  {PALETTE.map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => addNode(kind)}
+                      className="flex w-full items-baseline gap-3 px-2.5 py-1.5 text-left text-[11px] hover:bg-muted"
+                    >
+                      <span className="shrink-0 whitespace-nowrap text-foreground">{KIND[kind].name}</span>
+                      <span className="ml-auto min-w-0 truncate whitespace-nowrap font-mono text-[9px] text-muted-foreground-soft">
+                        {KIND[kind].note}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <button
+              type="button"
+              aria-label="Zoom out"
+              onClick={() => zoomFromCentre(-1)}
+              className="border-r border-border px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+            >
+              −
+            </button>
+            <span className="border-r border-border px-2 py-1.5 font-mono text-[10px] tabular-nums text-foreground">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              type="button"
+              aria-label="Zoom in"
+              onClick={() => zoomFromCentre(1)}
+              className="border-r border-border px-2.5 py-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={fit}
+              className="px-3 py-1.5 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              Fit
+            </button>
+          </div>
         </div>
 
         {/* The assets panel, sliding out when the work lands. */}
@@ -526,7 +563,7 @@ export function StudioCanvas({
 
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-6 py-2.5 md:px-10">
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
-          drag a card to move it · drag the canvas to pan · ⌘ scroll to zoom · drag a port to connect ·
+          scroll to zoom · drag a card to move it · drag the canvas to pan · drag a port to connect ·
           backspace deletes
         </p>
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
