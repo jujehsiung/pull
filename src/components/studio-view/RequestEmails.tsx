@@ -42,6 +42,8 @@ export interface RequestJob {
 type Status = "draft" | "queued" | "sent"
 
 interface Draft {
+  /** Where it goes — the showroom's PR address, editable until sent. */
+  to: string
   subject: string
   body: string
   status: Status
@@ -55,7 +57,15 @@ function formatDate(iso: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-function draftFor(brand: RequestBrand, job: RequestJob): { subject: string; body: string } {
+/** Good enough to know a human typed an address; the send action re-checks. */
+function looksLikeEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
+function draftFor(
+  brand: RequestBrand,
+  job: RequestJob,
+): { to: string; subject: string; body: string } {
   const list = brand.looks
     .slice()
     .sort((a, b) => a.lookNo - b.lookNo)
@@ -63,6 +73,7 @@ function draftFor(brand: RequestBrand, job: RequestJob): { subject: string; body
     .join("\n")
 
   return {
+    to: brand.contactEmail,
     subject: `PULL request — ${brand.brand} · ${job.client} · ${brand.looks.length} look${
       brand.looks.length === 1 ? "" : "s"
     }`,
@@ -192,8 +203,7 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                     </span>
                   </div>
                   <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
-                    {brand.contactEmail} · {brand.looks.length} look
-                    {brand.looks.length === 1 ? "" : "s"}
+                    {brand.looks.length} look{brand.looks.length === 1 ? "" : "s"}
                   </span>
                 </div>
 
@@ -211,6 +221,28 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor={`to-${brand.brand}`}
+                      className="text-[11px] tracking-[0.02em] text-muted-foreground"
+                    >
+                      To
+                    </label>
+                    <input
+                      id={`to-${brand.brand}`}
+                      type="email"
+                      value={draft.to}
+                      onChange={(event) => patch(brand.brand, { to: event.target.value })}
+                      disabled={locked}
+                      placeholder="showroom@brand.com"
+                      className="h-9 w-full border border-border bg-background px-3 text-[13px] text-foreground outline-none focus-visible:border-ring disabled:opacity-60"
+                    />
+                    {!looksLikeEmail(draft.to) ? (
+                      <span role="status" className="text-[11px] tracking-[0.02em] text-tertiary">
+                        No showroom address — the request cannot be sent until this is filled.
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="flex flex-col gap-1">
                     <label
                       htmlFor={`subject-${brand.brand}`}
@@ -281,7 +313,7 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                     </Button>
                     <Button
                       size="sm"
-                      disabled={locked || draft.status === "queued"}
+                      disabled={locked || draft.status === "queued" || !looksLikeEmail(draft.to)}
                       aria-pressed={draft.status === "queued"}
                       onClick={() => patch(brand.brand, { status: "queued", savedAt: undefined })}
                     >
@@ -289,7 +321,7 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                     </Button>
                     <Button
                       size="sm"
-                      disabled={draft.status !== "queued"}
+                      disabled={draft.status !== "queued" || !looksLikeEmail(draft.to)}
                       onClick={() => patch(brand.brand, { status: "sent", savedAt: undefined })}
                     >
                       {locked ? "Sent" : "Send"}
