@@ -483,3 +483,135 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ── The demo guide (2026-11-07) ─────────────────────────────────────────
+   A wizard bar across the top of the demo. It is chrome, so it keeps the
+   hairline and the hard corner; the live act's number is the only olive on
+   the row, and the act's name — never its instruction — carries the weight. */
+.demo-guide {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  min-height: 44px;
+  padding: 4px var(--gutter);
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+.demo-guide-mark {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground-soft);
+}
+.demo-guide-steps {
+  display: flex;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.demo-guide-steps > li + li { border-left: 1px solid var(--border); }
+.demo-guide-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.demo-guide-steps > li:first-child .demo-guide-step { padding-left: 0; }
+.demo-guide-step:hover { color: var(--foreground); }
+.demo-guide-n {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground-soft);
+}
+.demo-guide-step[aria-current="step"] { color: var(--foreground); font-weight: 500; }
+.demo-guide-step[aria-current="step"] .demo-guide-n { color: var(--brand); }
+.demo-guide-now {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 300px;
+}
+.demo-guide-title { font-size: 13px; font-weight: 500; white-space: nowrap; }
+.demo-guide-hint {
+  font-size: 13px;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.demo-guide-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.demo-guide-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--input);
+  font-size: 13px;
+  color: var(--foreground);
+}
+.demo-guide-next:hover { border-color: var(--foreground); }
+.demo-guide-hide {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  color: var(--muted-foreground-soft);
+}
+.demo-guide-hide:hover { color: var(--foreground); }
+.demo-guide-step:focus-visible,
+.demo-guide-next:focus-visible,
+.demo-guide-hide:focus-visible,
+.demo-guide-reveal:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.demo-guide-collapsed { padding: 0; }
+.demo-guide-reveal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--gutter);
+  border: 0;
+  background: none;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  text-align: left;
+}
+.demo-guide-reveal:hover { color: var(--foreground); }
+@media (max-width: 900px) {
+  .demo-guide-hint { display: none; }
+  .demo-guide-now { flex: 0 0 auto; }
+}
+@media (max-width: 640px) {
+  /* One row on a phone: the steps keep their numbers and words, the act's title
+     is already the highlighted step, and "next" falls back to its arrow. */
+  .demo-guide { gap: 0 12px; }
+  .demo-guide-mark,
+  .demo-guide-now,
+  .demo-guide-next-label { display: none; }
+  .demo-guide-step { padding: 0 9px; }
+  .demo-guide-steps > li:first-child .demo-guide-step { padding-left: 0; }
+  .demo-guide-actions { gap: 4px; }
+}
+@media (pointer: coarse) {
+  .demo-guide-step,
+  .demo-guide-next,
+  .demo-guide-hide,
+  .demo-guide-reveal { min-height: 44px; }
+}

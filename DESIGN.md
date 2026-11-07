@@ -327,3 +327,27 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   model's ceiling is part of the decision, not an error you meet after the sixth image.
 - **The wheel is zoom**, anchored on the pointer: the canvas point under the cursor stays under the
   cursor. Nothing else on this page scrolls, so the wheel is free to mean zoom.
+
+---
+
+## 10. The demo guide (2026-11-07)
+
+The hackathon demo is a script with three acts (`DEMO.md`), so the demo surfaces carry one chrome row
+above them: **the acts as a track, the act in hand named with its instruction, and the press that moves
+the story on.** It is rendered from the root layout and precedes the site header, the studio header and
+the dark client board alike.
+
+- **A guide is chrome, not content.** Hairline, hard corner, no fill of its own beyond `--card`; the live
+  act's **number** is the only olive on the row, and the act's **name** — never its instruction — carries
+  the weight. The instruction is `--muted-foreground`, one line, ellipsised, hidden below 900px.
+- **The acts are a track, not a menu.** Three labelled steps divided by hairlines; the current one is ink
+  with a brand number, the others are secondary. Every step is a link to the screen that act opens with,
+  so the guide is also the fastest way to jump between acts mid-story.
+- **`next` is a square control**, the same hard edge as every other button; `hide` is a text button with
+  no boundary. The agent's pill is not borrowed here — nothing on this row is an agent action.
+- **Collapse, never vanish.** `hide` shrinks the row to one 44px line that names itself and restores in
+  one press, remembered per browser. A guide that can be lost with no way back is a trap on stage.
+- **Not on the doors.** `/login`, `/setup`, `/design`, `/canvas` and `/trace` are not the demo and render
+  no guide. The act a route belongs to is derived from the pathname, not from state: `/b/*` and `/client`
+  are Act 2, `/i/*`, `/requests` and `/studio/jobs/*/requests` are Act 3, everything else in the guide
+  is Act 1.
