@@ -20,6 +20,7 @@ import { NodeCard } from "./NodeCard"
 import {
   INITIAL_EDGES,
   KIND,
+  MAX_REFS,
   MODELS,
   NODE_WIDTH,
   PALETTE,
@@ -53,11 +54,13 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
 export function StudioCanvas({
   uploadImage,
   sampleAssets,
+  references,
 }: {
   uploadImage: string
   sampleAssets: string[]
+  references: string[]
 }) {
-  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage))
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage, references))
   const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
@@ -81,8 +84,15 @@ export function StudioCanvas({
   const panRef = useRef<{ startX: number; startY: number; camX: number; camY: number } | null>(null)
   const linkRef = useRef<{ from: string; x: number; y: number } | null>(null)
   const runRef = useRef(false)
+  const nodesRef = useRef(nodes)
+  nodesRef.current = nodes
+  const clipboardRef = useRef<{
+    node: Omit<CanvasNode, "id" | "step" | "status" | "durationMs" | "output">
+    count: number
+  } | null>(null)
 
   const order = useMemo(() => topologicalOrder(nodes, edges), [nodes, edges])
+  const nextStep = () => Math.max(0, ...nodesRef.current.map((node) => node.step)) + 1
 
   const fit = useCallback(() => {
     const element = canvasRef.current
@@ -136,17 +146,68 @@ export function StudioCanvas({
     return () => clearTimeout(timer)
   }, [assetsOpen])
 
-  // Escape closes the add menu; backspace deletes the selected card.
+  const copySelected = useCallback(() => {
+    const node = nodesRef.current.find((candidate) => candidate.id === selected)
+    if (!node) return
+    const { kind, x, y, image, prompt, model, refs, strength, factor, filename } = node
+    clipboardRef.current = {
+      node: { kind, x, y, image, prompt, model, refs: refs ? [...refs] : undefined, strength, factor, filename },
+      count: 0,
+    }
+  }, [selected])
+
+  const pasteNode = useCallback(() => {
+    const clip = clipboardRef.current
+    if (!clip) return
+    clip.count += 1
+    const offset = 28 * clip.count
+    const created: CanvasNode = {
+      ...clip.node,
+      id: `${clip.node.kind}-${Math.random().toString(36).slice(2, 7)}`,
+      step: Math.max(0, ...nodesRef.current.map((node) => node.step)) + 1,
+      x: clip.node.x + offset,
+      y: clip.node.y + offset,
+      status: "idle",
+      refs: clip.node.refs ? [...clip.node.refs] : undefined,
+    }
+    setNodes((current) => [...current, created])
+    setSelected(created.id)
+  }, [])
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setAddOpen(false)
         return
       }
-      if (event.key !== "Backspace" && event.key !== "Delete") return
+
       const target = event.target as HTMLElement | null
-      if (target?.closest("input, textarea, select, [contenteditable='true']")) return
-      if (!selected) return
+      const typing = Boolean(target?.closest("input, textarea, select, [contenteditable='true']"))
+      const command = event.metaKey || event.ctrlKey
+
+      if (command && !typing) {
+        const key = event.key.toLowerCase()
+        if (key === "c") {
+          if (!selected) return
+          event.preventDefault()
+          copySelected()
+          return
+        }
+        if (key === "v") {
+          event.preventDefault()
+          pasteNode()
+          return
+        }
+        if (key === "d") {
+          event.preventDefault()
+          copySelected()
+          pasteNode()
+          return
+        }
+      }
+
+      if (event.key !== "Backspace" && event.key !== "Delete") return
+      if (typing || !selected) return
       event.preventDefault()
       setNodes((current) => current.filter((node) => node.id !== selected))
       setEdges((current) => current.filter((edge) => edge.from !== selected && edge.to !== selected))
@@ -154,7 +215,7 @@ export function StudioCanvas({
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [selected])
+  }, [copySelected, pasteNode, selected])
 
   const onMeasure = useCallback((id: string, height: number) => {
     setHeights((current) => (current[id] === height ? current : { ...current, [id]: height }))
@@ -282,6 +343,20 @@ export function StudioCanvas({
         ? current
         : [...current, { id: `e-${link.from}-${to}-${current.length}`, from: link.from, to }],
     )
+
+    // Wiring an image into the edit step is how it becomes a reference.
+    const source = nodes.find((node) => node.id === link.from)
+    const image = source?.image
+    if (image) {
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== to || node.kind !== "edit") return node
+          const refs = node.refs ?? []
+          if (refs.length >= MAX_REFS || refs.includes(image)) return node
+          return { ...node, refs: [...refs, image] }
+        }),
+      )
+    }
   }
 
   /* ── adding a card ─────────────────────────────────────────────────────── */
@@ -294,7 +369,15 @@ export function StudioCanvas({
     const id = `${kind}-${Math.random().toString(36).slice(2, 7)}`
     setNodes((current) => [
       ...current,
-      { id, kind, x: Math.round(center.x) - 60, y: Math.round(center.y) - 40, status: "idle", ...defaultsFor(kind) },
+      {
+        id,
+        kind,
+        step: nextStep(),
+        x: Math.round(center.x) - 60,
+        y: Math.round(center.y) - 40,
+        status: "idle",
+        ...defaultsFor(kind),
+      },
     ])
     setSelected(id)
     setAddOpen(false)
@@ -418,11 +501,11 @@ export function StudioCanvas({
               })}
             </svg>
 
-            {nodes.map((node, index) => (
+            {nodes.map((node) => (
               <NodeCard
                 key={node.id}
                 node={node}
-                index={index}
+                step={node.step}
                 selected={selected === node.id}
                 onChange={(id, patch) =>
                   setNodes((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)))
@@ -434,6 +517,7 @@ export function StudioCanvas({
                 onPortMove={onPortMove}
                 onPortUp={onPortUp}
                 onMeasure={onMeasure}
+                referencePool={references}
               />
             ))}
           </div>
@@ -563,7 +647,7 @@ export function StudioCanvas({
 
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-6 py-2.5 md:px-10">
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
-          scroll to zoom · drag a card to move it · drag the canvas to pan · drag a port to connect ·
+          ⌘C / ⌘V copies a node · scroll to zoom · drag the canvas to pan · drag a port to connect ·
           backspace deletes
         </p>
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">

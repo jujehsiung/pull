@@ -7,6 +7,8 @@ export type NodeStatus = "idle" | "running" | "done"
 export interface CanvasNode {
   id: string
   kind: NodeKind
+  /** 1-based, assigned when the card is created; it never renumbers. */
+  step: number
   x: number
   y: number
   status: NodeStatus
@@ -18,6 +20,8 @@ export interface CanvasNode {
   prompt?: string
   /** edit */
   model?: string
+  /** edit — up to MAX_REFS reference images */
+  refs?: string[]
   /** refine */
   strength?: number
   /** upscale */
@@ -60,12 +64,15 @@ export const RUN_MS: Record<NodeKind, number> = {
 }
 
 export const MODELS = ["Qwen Edit 2.1", "GPT Image"]
+/** What the edit models take, per the provider docs. */
+export const MAX_REFS = 10
 
-export function initialNodes(uploadImage: string): CanvasNode[] {
+export function initialNodes(uploadImage: string, references: string[] = []): CanvasNode[] {
   return [
     {
       id: "upload",
       kind: "upload",
+      step: 1,
       x: 40,
       y: 24,
       status: "idle",
@@ -74,6 +81,7 @@ export function initialNodes(uploadImage: string): CanvasNode[] {
     {
       id: "prompt",
       kind: "prompt",
+      step: 2,
       x: 40,
       y: 392,
       status: "idle",
@@ -83,14 +91,16 @@ export function initialNodes(uploadImage: string): CanvasNode[] {
     {
       id: "edit",
       kind: "edit",
+      step: 3,
       x: 400,
       y: 120,
       status: "idle",
       model: MODELS[0],
+      refs: [uploadImage, ...references].filter(Boolean).slice(0, 3),
     },
-    { id: "refine", kind: "refine", x: 720, y: 120, status: "idle", strength: 0.35 },
-    { id: "upscale", kind: "upscale", x: 1040, y: 120, status: "idle", factor: 2 },
-    { id: "save", kind: "save", x: 1360, y: 120, status: "idle", filename: "look-27-v1.png" },
+    { id: "refine", kind: "refine", step: 4, x: 720, y: 120, status: "idle", strength: 0.35 },
+    { id: "upscale", kind: "upscale", step: 5, x: 1040, y: 120, status: "idle", factor: 2 },
+    { id: "save", kind: "save", step: 6, x: 1360, y: 120, status: "idle", filename: "look-27-v1.png" },
   ]
 }
 

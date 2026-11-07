@@ -303,5 +303,9 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
 - **The toolbox is centred at the bottom of the canvas**, not of the page: the things you do *to* the
   canvas (add a node, zoom, fit) live on the canvas; the things you do *with* it (assets, run) stay in
   the surface header. It floats, so it never takes a row from the graph, and its palette opens upward.
+- **A step number is assigned once**, when the card is created, and never renumbers: pasting a prompt
+  makes it `07`, it does not push the pipeline to `04`. The number is the card's handle, not its rank.
+- **A limit is shown, not discovered**: the edit step reads `4 / 10` beside its reference strip, because the
+  model's ceiling is part of the decision, not an error you meet after the sixth image.
 - **The wheel is zoom**, anchored on the pointer: the canvas point under the cursor stays under the
   cursor. Nothing else on this page scrolls, so the wheel is free to mean zoom.

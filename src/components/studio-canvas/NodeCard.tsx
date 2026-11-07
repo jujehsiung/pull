@@ -11,7 +11,7 @@
 import { useEffect, useRef, type PointerEvent } from "react"
 
 import { Input } from "@/components/ui/input"
-import { KIND, MODELS, NODE_WIDTH, RUN_MS, type CanvasNode } from "./types"
+import { KIND, MAX_REFS, MODELS, NODE_WIDTH, RUN_MS, type CanvasNode } from "./types"
 
 const DOT: Record<CanvasNode["status"], string> = {
   idle: "bg-border",
@@ -21,7 +21,8 @@ const DOT: Record<CanvasNode["status"], string> = {
 
 export interface NodeCardProps {
   node: CanvasNode
-  index: number
+  /** 1-based position in the run order. */
+  step: number
   selected: boolean
   onChange: (id: string, patch: Partial<CanvasNode>) => void
   onHeaderDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
@@ -31,11 +32,13 @@ export interface NodeCardProps {
   onPortMove: (event: PointerEvent<HTMLElement>) => void
   onPortUp: (event: PointerEvent<HTMLElement>) => void
   onMeasure: (id: string, height: number) => void
+  /** Images the "+" tile can draw from. */
+  referencePool: string[]
 }
 
 export function NodeCard({
   node,
-  index,
+  step,
   selected,
   onChange,
   onHeaderDown,
@@ -45,6 +48,7 @@ export function NodeCard({
   onPortMove,
   onPortUp,
   onMeasure,
+  referencePool,
 }: NodeCardProps) {
   const meta = KIND[node.kind]
   const cardRef = useRef<HTMLElement | null>(null)
@@ -86,7 +90,7 @@ export function NodeCard({
       >
         <span className="flex items-baseline gap-2">
           <span className="font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {String(index + 1).padStart(2, "0")}
+            {String(step).padStart(2, "0")}
           </span>
           <span className="text-[12px] font-medium text-foreground">{meta.name}</span>
         </span>
@@ -129,7 +133,48 @@ export function NodeCard({
 
       {node.kind === "edit" ? (
         <div className="p-2.5">
-          <label className="block text-[11px] text-muted-foreground" htmlFor={`${node.id}-model`}>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] text-muted-foreground">References</span>
+            <span className="font-mono text-[10px] tabular-nums text-foreground">
+              {(node.refs ?? []).length} / {MAX_REFS}
+            </span>
+          </div>
+
+          <div className="mt-1.5 grid grid-cols-5 gap-1">
+            {(node.refs ?? []).map((src, index) => (
+              <div key={`${src}-${index}`} className="group relative aspect-square overflow-hidden border border-border bg-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt="" className="size-full object-cover object-top" />
+                <button
+                  type="button"
+                  aria-label={`Remove reference ${index + 1}`}
+                  onClick={() =>
+                    onChange(node.id, { refs: (node.refs ?? []).filter((_, position) => position !== index) })
+                  }
+                  className="absolute right-0 top-0 flex size-4 items-center justify-center bg-foreground/80 font-mono text-[9px] leading-none text-background opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+
+            {(node.refs ?? []).length < MAX_REFS ? (
+              <button
+                type="button"
+                aria-label="Add a reference"
+                onClick={() => {
+                  const current = node.refs ?? []
+                  const next = referencePool.find((candidate) => !current.includes(candidate))
+                  if (next) onChange(node.id, { refs: [...current, next] })
+                }}
+                className="flex aspect-square items-center justify-center border border-dashed border-border font-mono text-[12px] leading-none text-muted-foreground-soft hover:border-foreground hover:text-foreground"
+              >
+                +
+              </button>
+            ) : null}
+          </div>
+
+          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-model`}>
             Model
           </label>
           <select
@@ -144,8 +189,8 @@ export function NodeCard({
               </option>
             ))}
           </select>
-          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            2 references · image + prompt
+          <p className="mt-1.5 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
+            the prompt rides in separately
           </p>
         </div>
       ) : null}

@@ -10,12 +10,12 @@ interface FixtureRow {
 }
 
 /** The studio's walls, from the same fixtures the boards use. */
-function wallImages(): string[] {
+function wallImages(limit = 12): string[] {
   try {
     const path = join(process.cwd(), "public", "fixtures", "menswear", "manifest.json")
     const manifest = JSON.parse(readFileSync(path, "utf8")) as { assets?: FixtureRow[] }
     return (manifest.assets ?? [])
-      .slice(0, 8)
+      .slice(0, limit)
       .map((row) => `/fixtures/menswear/${encodeURIComponent(row.file)}`)
   } catch {
     return []
@@ -34,7 +34,11 @@ export default function StudioPage() {
 
   return (
     <main>
-      <StudioCanvas uploadImage={images[0] ?? ""} sampleAssets={images.slice(1, 5)} />
+      <StudioCanvas
+        uploadImage={images[0] ?? ""}
+        sampleAssets={images.slice(1, 5)}
+        references={images.slice(0, 12)}
+      />
     </main>
   )
 }
