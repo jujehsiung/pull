@@ -84,13 +84,72 @@ House's "Talk to us" is a `mailto:` placeholder — both are labelled in the cod
   downloadable from the board.
 - **Contacts:** agent categorisation + showroom matching + phonebook (`.vcf`) import beside CSV.
 
-## Phase 4 — Product hardening
+## Phase 4 — Compose a look (image generation)
+
+The stylist builds a look from pieces across houses — the LV jacket with the Prada trousers — sees it
+as a still, and pulls exactly those pieces. This is the feature no sample-trafficking tool has: the
+board stops being a record of what exists and becomes a proposal.
+
+**What a "piece" is** — the decision the whole feature hangs on. Three options, in order of cost:
+
+1. **The client's rings** (cheapest, already built): a circled piece on an approved look *is* a piece.
+   But a client only circles what they want, so the tray would be thin.
+2. **The agent tags each look at ingest** (recommended): one pass over the trimmed look → pieces with
+   a kind (`jacket`, `trousers`, `shirt`, `shoes`, `bag`, `accessory`) and a crop box, stored on the
+   look. Every look then contributes pieces to the tray, and a client's ring attaches to whichever
+   piece it overlaps.
+3. **Manual crop** in the UI: reliable, but it makes the stylist do the work the agent should.
+
+**Pipeline** (one generation per request, all of it traced):
+
+```
+picked pieces (crops + house + kind)  →  prompt assembled
+  →  image edit model with the crops as references
+  →  result uploaded (Cloudinary)
+  →  compositions row + a trace step: image.compose
+    { model, pieces: [lv:jacket, prada:trousers], prompt, ms }
+```
+
+**Model** — a thin `ImageProvider` interface with both behind it, so the choice is config, not a
+rewrite:
+
+| | Qwen Image Edit 2.1 | GPT-image |
+|---|---|---|
+| multi-reference compositing | strong, built for it | weaker at "use *this* jacket" |
+| instruction following | good | better |
+| cost / access | cheap; Alibaba DashScope, or RunningHub's workflow API (the studio already uses it) | pricier; OpenAI API |
+| verdict | **default** | fallback / quality pass |
+
+Recommendation: **Qwen Edit 2.1 through RunningHub** if that account exists (the studio's other image
+work runs there, so one key and one trace pattern), DashScope direct otherwise.
+
+**Where it lives in the app**
+
+- A **Compose** screen under the job: left, a pieces tray from the approved looks grouped by house;
+  right, the canvas. "Generate" is an agent action (solid green pill) and plays a real run —
+  `pieces.selected` → `image.compose` → `cloudinary.upload`.
+- A composition is itself a **board look**: approve it and it joins the client's link for sign-off,
+  with its source pieces cited underneath (LV jacket · Prada trousers).
+- Purge/retry per generation; each keeps its model, prompt and references for reproducibility.
+
+**Data model:** `look_pieces` (`look_id`, `kind`, `bbox`, `confidence`), `compositions`
+(`job_id`, `piece_ids`, `prompt`, `model`, `result_public_id`, `status`, `created_by`).
+
+**Risks / open:** designer IP — compositions are an internal sales aid, never published as the
+houses' product; keep the citation under every composed image. Cost per generation is small but
+unbounded if left open — cap per job and per month. Latency is seconds, so it must run as a
+background step with the trace visible, not a blocking modal.
+
+**Open questions:** RunningHub or DashScope for Qwen? Do compositions go to the client for approval,
+or stay internal? Do pieces come only from *approved* looks, or from every ingested look?
+
+## Phase 5 — Product hardening
 
 Client-link lifecycle (rotate/revoke, expiry, open counts) · verified sending domain and bounces ·
 PII/subprocessor decisions (PRISM, Cloudinary, Resend) and retention · error tracking · accessibility
 pass on the public pages · rate limits already exist.
 
-## Phase 5 — Go live
+## Phase 6 — Go live
 
 Prod Vercel project · Neon prod branch · Clerk prod instance · Stripe live keys · custom domain +
 `PUBLIC_BASE_URL` · Resend DNS (`DNS-RESEND.md`) · `/setup` green on the deployment · pricing page,
@@ -105,6 +164,7 @@ terms, privacy, support inbox.
 | `jobs.workspace_id` (replaces `user_id`) | data scoped to a studio |
 | `looks.markup` | circled pieces travel with the approval |
 | `stripe_events` | webhook idempotency |
+| `look_pieces`, `compositions` | the styling tool — pieces and generated looks |
 | `workspaces.plan / seat_count / stripe_*` | entitlements and billing |
 
 ## Open questions for juje
