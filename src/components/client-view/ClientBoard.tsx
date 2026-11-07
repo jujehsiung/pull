@@ -72,10 +72,10 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
           <div className="flex min-w-0 flex-col gap-1">
             <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Your looks</p>
             <h1 className="min-w-0 text-[clamp(30px,3.4vw,46px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
-              {job.title}
+              {job.client}
             </h1>
             <p className="text-[12px] tracking-[0.02em] text-muted-foreground">
-              {job.client} · Due {formatDue(job.dueDate)}
+              {job.title} · Due {formatDue(job.dueDate)}
             </p>
             <p className="mt-1 text-[11px] tracking-[0.02em] text-muted-foreground">
               Approve what you love, pass the rest.
