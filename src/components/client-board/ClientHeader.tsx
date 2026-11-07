@@ -1,5 +1,5 @@
 /**
- * Client board header — the small PULL wordmark, who the board is for, the shoot date, and the
+ * Client board header — the small Pull wordmark, who the board is for, the shoot date, and the
  * job title as the hero. Deliberately no links back to the studio (the client has no session).
  */
 import styles from "./client-board.module.css"
@@ -50,7 +50,7 @@ export function ClientHeader({
   return (
     <>
       <div className="client-top">
-        <span className="wordmark">PULL</span>
+        <span className="wordmark">Pull.</span>
         <span className={`mono ${styles.topName}`}>for {clientName}</span>
         <span className={`mono ${styles.topCount}`}>
           {lookCount} {lookCount === 1 ? "look" : "looks"}

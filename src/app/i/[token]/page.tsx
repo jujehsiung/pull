@@ -28,7 +28,7 @@ import styles from "@/components/intake/intake.module.css"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "PULL — prepaid label request",
+  title: "Pull — prepaid label request",
   // A bearer link must never end up in an index or a cache.
   robots: { index: false, follow: false, nocache: true },
 }
@@ -69,12 +69,12 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
     <div className={styles.page}>
       <main className={styles.inner}>
         <header className={styles.top}>
-          <span className="wordmark">PULL</span>
+          <span className="wordmark">Pull.</span>
           <span className={styles.topMeta}>Label request · Shippo</span>
         </header>
 
         <section className={styles.hero}>
-          <p className="eyebrow">PULL · Label request</p>
+          <p className="eyebrow">Pull · Label request</p>
           <h1 className={styles.heroTitle}>{request.brand} — prepaid label</h1>
           <p className={styles.heroLead}>
             We are arranging a prepaid label and the pickup for {job.clientName}&apos;s pull. Tell us
@@ -172,7 +172,7 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
         )}
 
         <footer className={styles.foot}>
-          <span>PULL · sample trafficking</span>
+          <span>Pull · sample trafficking</span>
           <span>Labels by Shippo · this link expires 14 days after it was sent</span>
         </footer>
       </main>

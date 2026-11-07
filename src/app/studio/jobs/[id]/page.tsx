@@ -5,7 +5,7 @@ import { boardImageUrl } from "@/lib/cloudinary"
 import { getJobBoard } from "@/server/queries/jobs"
 import { ImportPanel } from "@/components/studio/ImportPanel"
 
-export const metadata = { title: "PULL — job" }
+export const metadata = { title: "Pull — job" }
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number)

@@ -3,7 +3,7 @@ import { requireStylist } from "@/lib/auth"
 import { signOut } from "@/server/actions/auth"
 import { AgentProviderBadge } from "@/components/AgentProviderBadge"
 
-export const metadata = { title: "PULL — dashboard" }
+export const metadata = { title: "Pull — dashboard" }
 
 /** Dashboard shell: the wordmark, who is signed in, and a way out. Nothing else competes. */
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +14,7 @@ export default async function StudioLayout({ children }: { children: React.React
       <header className="client-top" style={{ position: "sticky", top: 0, zIndex: 20 }}>
         <div className="container" style={{ display: "flex", alignItems: "center", gap: 24, height: 64 }}>
           <Link href="/studio" className="wordmark">
-            PULL
+            Pull.
           </Link>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
             <AgentProviderBadge />

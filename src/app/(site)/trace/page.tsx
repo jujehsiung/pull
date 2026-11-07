@@ -3,7 +3,7 @@ import { AgentTrace } from "@/components/AgentTrace"
 import { AgentProviderBadge } from "@/components/AgentProviderBadge"
 import type { AgentStep } from "@/lib/agent/trace"
 
-export const metadata = { title: "PULL — agent trace" }
+export const metadata = { title: "Pull — sample trace" }
 
 const now = Date.now()
 const at = (offsetMs: number) => new Date(now - 9000 + offsetMs).toISOString()
@@ -86,62 +86,69 @@ const IMPORT_TRACE: AgentStep[] = [
 
 export default function TracePage() {
   return (
-    <div className="container" style={{ paddingBottom: 80 }}>
-      <div className="nav-inner" style={{ borderBottom: "1px solid var(--line)" }}>
-        <Link className="wordmark" href="/">
-          PULL
-        </Link>
-        <span className="mono" style={{ color: "var(--muted-foreground)", fontSize: 11, letterSpacing: ".14em" }}>
-          AGENT TRACE
-        </span>
-        <AgentProviderBadge hint="The backend that produced these steps. server-side only." />
-        <Link className="btn btn-ghost btn-sm" href="/setup">
-          Stack setup
-        </Link>
-      </div>
-
-      <header style={{ padding: "clamp(40px,6vw,72px) 0 8px" }}>
-        <p className="eyebrow">What the agent did</p>
-        <h1 className="display" style={{ fontSize: "clamp(34px,4.8vw,56px)", marginTop: 14 }}>
-          Every tool call, in the open.
-        </h1>
-        <p className="lead" style={{ marginTop: 16, maxWidth: 660 }}>
-          The agent is a pipeline, not a chatbot. Each step is a named tool with its input, its output,
-          how long it took and whether it failed — shown while it runs and persisted afterwards. Nothing
-          is hidden behind a spinner.
-        </p>
-      </header>
-
-      <div className="grid two" style={{ alignItems: "start", marginTop: 32 }}>
-        <AgentTrace steps={IMPORT_TRACE} title="Import · 10 screenshots" />
-        <div className="stack" style={{ gap: 16 }}>
-          <div className="card">
-            <p className="eyebrow">Why this is a requirement</p>
-            <p className="body" style={{ marginTop: 10 }}>
-              A stylist is accountable for what leaves her studio. If the agent crops the wrong thing or
-              reads “Look 27” when it is “Look 21”, she has to see that before the board goes to the client.
-              The trace is the difference between an assistant and a black box.
+    <main className="mx-auto max-w-[1440px] px-6 pb-20 md:px-10">
+      <section className="border-b border-border py-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-6">
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Sample trace</p>
+            <h1 className="text-[clamp(30px,3.4vw,46px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
+              Every tool call, in the open.
+            </h1>
+            <p className="mt-2 max-w-[560px] text-[13px] leading-relaxed text-muted-foreground">
+              The agent is a pipeline, not a chatbot. Each step is a named tool with its input, its
+              output, how long it took and whether it failed — shown while it runs, and kept afterwards.
+              Nothing hides behind a spinner.
             </p>
           </div>
-          <div className="card">
-            <p className="eyebrow">What each step carries</p>
-            <ul className="small" style={{ marginTop: 10, paddingLeft: 18, display: "grid", gap: 6 }}>
-              <li>tool name — <span className="mono">cloudinary.trim</span>, <span className="mono">tesseract.read</span>, <span className="mono">shippo.rates</span></li>
+
+          <div className="flex flex-wrap items-center gap-3 md:ml-auto">
+            <AgentProviderBadge hint="The backend that produced these steps. server-side only." />
+            <Link href="/setup" className="btn btn-ghost btn-sm">
+              Stack setup
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-10 grid gap-10 md:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] md:gap-14">
+        <AgentTrace steps={IMPORT_TRACE} title="Import · 10 screenshots — a sample run" />
+
+        <div className="flex max-w-[460px] flex-col gap-8">
+          <div className="border-t border-border pt-4">
+            <p className="text-[11px] tracking-[0.02em] text-muted-foreground">
+              Why this is a requirement
+            </p>
+            <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
+              A stylist is accountable for what leaves her studio. If the agent crops the wrong thing or
+              reads “Look 27” when it is “Look 21”, she has to see that before the board goes to the
+              client. The trace is the difference between an assistant and a black box.
+            </p>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <p className="text-[11px] tracking-[0.02em] text-muted-foreground">What each step carries</p>
+            <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-4 text-[13px] leading-relaxed text-muted-foreground">
+              <li>
+                tool name — <span className="font-mono text-[12px] text-foreground">cloudinary.trim</span>,{" "}
+                <span className="font-mono text-[12px] text-foreground">tesseract.read</span>,{" "}
+                <span className="font-mono text-[12px] text-foreground">shippo.rates</span>
+              </li>
               <li>input — the exact arguments passed</li>
               <li>output — the structured result the next step uses</li>
               <li>duration — so a slow step is visible, not felt</li>
-              <li>status — ok / error, with the provider message kept verbatim</li>
+              <li>status — ok or error, with the provider&apos;s message kept verbatim</li>
             </ul>
           </div>
-          <div className="card">
-            <p className="eyebrow">Where it shows up</p>
-            <p className="small" style={{ marginTop: 10 }}>
+
+          <div className="border-t border-border pt-4">
+            <p className="text-[11px] tracking-[0.02em] text-muted-foreground">Where it shows up</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
               Live while importing (streamed), on the job page as the activity trail, and next to each
               request when a label or email fails. Failed steps are retryable from the trace.
             </p>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

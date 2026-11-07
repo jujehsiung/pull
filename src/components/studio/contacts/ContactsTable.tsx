@@ -18,7 +18,7 @@ function isDemoSeed(contact: ContactRow): boolean {
 function shipsWords(shipsOnOwnAccount: boolean): { word: string; tag: string } {
   return shipsOnOwnAccount
     ? { word: "showroom ships on its own account", tag: "Showroom ships" }
-    : { word: "PULL sends a prepaid label", tag: "Needs label" }
+    : { word: "Pull sends a prepaid label", tag: "Needs label" }
 }
 
 export function ContactsTable({ contacts }: { contacts: ContactRow[] }) {
@@ -40,7 +40,7 @@ export function ContactsTable({ contacts }: { contacts: ContactRow[] }) {
             and whether they ship samples themselves.
           </p>
           <p className="small" style={{ marginTop: 10 }}>
-            Without one, PULL blocks the request instead of guessing an address. Import a CSV below,
+            Without one, Pull blocks the request instead of guessing an address. Import a CSV below,
             or load the five demo brands to see both shipping branches.
           </p>
         </div>

@@ -339,7 +339,7 @@ export async function sendLabel(requestId: string): Promise<LabelActionResult> {
 
   const subject = originalEmail
     ? `Re: ${originalEmail.subject.replace(/^re:\s*/i, "")} — label and tracking`
-    : `PULL — label and tracking for ${request.brand}`
+    : `Pull — label and tracking for ${request.brand}`
   const body = replyBody({
     brand: request.brand,
     tracking,

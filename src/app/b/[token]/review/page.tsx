@@ -24,7 +24,7 @@ import {
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "PULL — review & send",
+  title: "Pull — review & send",
   robots: { index: false, follow: false, nocache: true },
 }
 
@@ -102,7 +102,7 @@ export default async function ClientReviewPage({ params }: { params: Promise<{ t
     <div className={styles.page}>
       <div className="container">
         <div className={styles.summaryTop}>
-          <span className="wordmark">PULL</span>
+          <span className="wordmark">Pull.</span>
           <Link className={styles.backLink} href={`/b/${token}`}>
             ← back to the board
           </Link>

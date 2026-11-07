@@ -26,7 +26,7 @@ import { authorizeClientToken, isReviewOpen, reviewCounts, sectionsFor } from "@
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "PULL — your looks",
+  title: "Pull — your looks",
   // A signed client link must never end up in a search index.
   robots: { index: false, follow: false, nocache: true },
 }

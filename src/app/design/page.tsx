@@ -120,7 +120,7 @@ export default function DesignPage() {
       {/* ── masthead ─────────────────────────────────────────────────────── */}
       <header className="pb-10">
         <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
-          PULL · DESIGN SYSTEM
+          Pull · design system
         </p>
         <h1 className="mt-4 text-5xl font-medium leading-[1.02] tracking-[-0.035em] text-foreground">
           EVA tokens, <span className="text-muted-foreground-soft">Pull values</span>
@@ -196,7 +196,7 @@ export default function DesignPage() {
                 lead · 19 / 1.55
               </p>
               <p className="mt-2 max-w-[640px] text-[19px] leading-[1.55] text-muted-foreground">
-                Drop a folder of look screenshots. PULL crops them, reads the look numbers, builds the
+                Drop a folder of look screenshots. Pull crops them, reads the look numbers, builds the
                 boards, and sends your client one link.
               </p>
             </div>
@@ -393,7 +393,7 @@ export default function DesignPage() {
       </div>
 
       <footer className="mt-16 border-t border-border pt-8 font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
-        PULL · EVA theme · {new Date().getFullYear()} · tokens checked by scripts/check-tokens.mjs
+        Pull · EVA theme · {new Date().getFullYear()} · tokens checked by scripts/check-tokens.mjs
       </footer>
     </main>
   )

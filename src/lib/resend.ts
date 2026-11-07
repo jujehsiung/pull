@@ -28,7 +28,7 @@ export async function sendEmail(input: SendInput): Promise<{ id: string }> {
   const addressedTo = Array.isArray(input.to) ? input.to : [input.to]
   const { to, subject, html, captured } = capture(addressedTo, input.subject, input.html)
   const { data, error } = await client().emails.send({
-    from: input.from ?? e.RESEND_FROM ?? "PULL <onboarding@resend.dev>",
+    from: input.from ?? e.RESEND_FROM ?? "Pull <onboarding@resend.dev>",
     to,
     subject,
     html,
@@ -62,7 +62,7 @@ function capture(addressedTo: string[], subject: string, html: string) {
     html: `${html}
       <hr style="border:0;border-top:1px solid #e7e4df;margin:20px 0">
       <p style="font-family:ui-monospace,monospace;font-size:11px;line-height:1.6;color:#8f8b85">
-        Captured by the PULL demo. In production this would go to: ${captured.join(", ")}.
+        Captured by the Pull demo. In production this would go to: ${captured.join(", ")}.
         Unset RESEND_REDIRECT_TO to send for real.
       </p>`,
     captured,
@@ -82,13 +82,13 @@ export async function listDomains(): Promise<{ name: string; status: string }[]>
 /** One template for the demo; later per-brand templates live in the agent. */
 export function magicLinkEmail(url: string): { subject: string; html: string } {
   return {
-    subject: "Your PULL sign-in link",
+    subject: "Your Pull sign-in link",
     html: `
       <div style="font-family:Inter,system-ui,sans-serif;max-width:520px">
-        <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.16em;color:#6b6a66">PULL</p>
+        <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.04em;color:#6b6a66">Pull.</p>
         <h1 style="font-size:22px;letter-spacing:-.02em">Sign in</h1>
-        <p style="color:#2c2c2b">This link signs you in to the PULL studio for 15 minutes.</p>
-        <p><a href="${url}" style="display:inline-block;background:#0a0a0a;color:#f9f9f8;padding:12px 20px;border-radius:999px;text-decoration:none">Open PULL</a></p>
+        <p style="color:#2c2c2b">This link signs you in to the Pull studio for 15 minutes.</p>
+        <p><a href="${url}" style="display:inline-block;background:#0a0a0a;color:#f9f9f8;padding:12px 20px;border-radius:999px;text-decoration:none">Open Pull</a></p>
         <p style="color:#8f8b85;font-size:12px">If you didn't request this, ignore it.</p>
       </div>`,
   }

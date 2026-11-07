@@ -14,7 +14,7 @@ import {
   sendDraftForm,
 } from "@/server/actions/requests"
 
-export const metadata = { title: "PULL — requests" }
+export const metadata = { title: "Pull — requests" }
 
 const MODE_LABEL: Record<string, string> = {
   showroom_ships: "showroom ships",

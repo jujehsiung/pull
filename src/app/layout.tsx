@@ -2,9 +2,9 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "PULL — from screenshots to signed-off looks",
+  title: "Pull — from screenshots to signed-off looks",
   description:
-    "Drop a folder of look screenshots. PULL crops them, reads the look numbers, builds the boards, sends your client one link — and turns their approvals into request emails and prepaid labels.",
+    "Drop a folder of look screenshots. Pull crops them, reads the look numbers, builds the boards, sends your client one link — and turns their approvals into request emails and prepaid labels.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

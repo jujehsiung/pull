@@ -32,6 +32,11 @@ const schema = z.object({
   ZOOWORK_MODEL: z.string().optional(),
   ZOOWORK_BASE_URL: z.string().url().optional(),
   ZOOWORK_ENABLED: z.enum(["true", "false"]).optional(),
+
+  // Block Convey PRISM — observability for model calls. Off unless all three are set.
+  PRISMTRACE_HOST: z.string().url().optional(),
+  PRISMTRACE_PROJECT_ID: z.string().optional(),
+  PRISMTRACE_API_KEY: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>

@@ -12,8 +12,9 @@ import Link from "next/link"
 
 const LINKS = [
   { label: "Board", href: "/board" },
-  { label: "Client view", href: "/preview/client.html" },
-  { label: "Agent trace", href: "/trace" },
+  { label: "Client page", href: "/client" },
+  { label: "Request emails", href: "/requests" },
+  { label: "Studio", href: "/canvas" },
 ]
 
 export function SiteMenu() {
