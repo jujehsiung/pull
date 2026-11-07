@@ -343,11 +343,64 @@ the dark client board alike.
 - **The acts are a track, not a menu.** Three labelled steps divided by hairlines; the current one is ink
   with a brand number, the others are secondary. Every step is a link to the screen that act opens with,
   so the guide is also the fastest way to jump between acts mid-story.
+- **Act 1 opens `/board`, not `/studio`** (2026-11-07). `/studio` sits behind `requireStylist`, so a
+  logged-out visitor — a judge, a phone, a fresh browser — bounced to `/login` and the guide dead-ended
+  on its first press, and `start over` (which returns to Act 1) did the same. The public board is the
+  act's own surface; the studio is where it is made, reached from the site nav once signed in.
 - **`next` is a square control**, the same hard edge as every other button; `hide` is a text button with
   no boundary. The agent's pill is not borrowed here — nothing on this row is an agent action.
 - **Collapse, never vanish.** `hide` shrinks the row to one 44px line that names itself and restores in
   one press, remembered per browser. A guide that can be lost with no way back is a trap on stage.
-- **Not on the doors.** `/login`, `/setup`, `/design`, `/canvas` and `/trace` are not the demo and render
-  no guide. The act a route belongs to is derived from the pathname, not from state: `/b/*` and `/client`
-  are Act 2, `/i/*`, `/requests` and `/studio/jobs/*/requests` are Act 3, everything else in the guide
-  is Act 1.
+- **It is on every screen** (2026-11-07). The signing door, `/setup`, `/design`, `/canvas` and `/trace`
+  carry the bar too: a guide that disappears on half the routes is one the presenter has to remember
+  instead of read. The act a route belongs to is derived from the pathname, not from state: `/b/*` and
+  `/client` are Act 2, `/i/*`, `/requests` and `/studio/jobs/*/requests` are Act 3, everything else is
+  Act 1. (The canvas frame gives the bar its ~52 px back so the page still fits the viewport.)
+
+---
+
+## 11. The look workflow (2026-11-07)
+
+The studio's six-card graph is the demo's picture of the product: **four references in, one look out.**
+
+- **The references are not labelled — on purpose.** Four plain image sockets (`ref 1…4`), no roles on
+  the cards, no role tags in the compose card. What a picture contributes is read from the picture and
+  from the border the stylist drew, not from a label the presenter has to keep in their head. The
+  reading model infers which reference is the person and which are garments, and the prompt it writes
+  says so; a re-run reuses that prompt.
+- **The mark is the pen, and it belongs to the vision pass only, and it is red.** Press `mark` on an
+  image card and drag a border around the piece: red is the markup colour (DESIGN.md §6's pen colour),
+  distinct from the olive the agent's own state uses. The border is baked into the copy the reading
+  model sees; the **render** gets the clean copies, because a border baked into a reference would be
+  rendered into the photograph.
+- **One compose card does the work.** It reads the marked references, writes the prompt, then calls
+  `image_generate` with the clean references and that prompt on `gpt-image-2`, and shows both the
+  prompt and the render. The prompt is a textarea: edit it and run again, and the assistant is skipped.
+- **A demo never dead-ends.** If the vision pass fails, a template prompt that names no roles still
+  renders; if the provider is unreachable, the graph stops on the failed card but the assets panel
+  fills with labelled sample output (`provider unavailable — …`).
+- **A run is a real run.** Compose shows real latency (≈80–120 s for the four references on the demo
+  fixtures). The footer's time before a run is the estimate; after it, the measured value.
+- **Saving is the only way into the assets.** The save card writes the render into the panel and the
+  panel opens itself; nothing else populates it.
+- **A card moves by its whole surface** (2026-11-07). Pointer-down anywhere that is not a control
+  starts the drag, so the title bar is no longer the only handle; buttons, fields, sockets and the
+  resize grip keep their own gestures, and the image body drags the card when `mark` is off (when it
+  is on, the same drag draws a border instead).
+- **An image card is a Finder drop target** (2026-11-07). Drag a JPEG/PNG/WebP from Finder onto it and
+  the picture is replaced — downscaled to 1400 px on the long edge, the filename becomes the caption,
+  and any borders on the old picture are cleared, because they described the picture that left. A
+  dashed red frame and `drop to replace` appear while the file is over the card.
+- **A run reports its phase, not a percentage** (2026-11-07). The compose route streams one NDJSON
+  line per step, forwarded from the ZooWork session (connecting → uploading → reading → rendering →
+  saving), and the running card's footer shows it. ZooWork streams tool and lifecycle events, not image
+  pixels, so there is no honest per-image progress bar to build — the phase is the truthful signal.
+- **Pricing is after the fact, not during** (2026-11-07). ZooWork's twenty event types carry no usage
+  or cost event; credits are read from `GET /usage` once the run has finished (200 credits = $1, and
+  session-scoped) and the balance from `GET /balance`. A live price on the card would be invented, so
+  the demo shows the phases while running and the measured cost afterwards.
+- **A card resizes from its corner** (2026-11-07). The grip sits in the bottom-right corner — drag it,
+  or focus it and use ← / →. Width runs 220–640 canvas units, height follows the content, and the
+  render preview grows with the card: the save card is where the look is finally looked at, so it is
+  the card people make big. The width survives copy/paste with the rest of the card's settings; it
+  resets with the canvas, because the graph itself is not persisted.

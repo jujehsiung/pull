@@ -8,9 +8,9 @@
  * both — the three acts as one track, the act currently on screen named with its
  * instruction, and a next press that moves to the following act's opening screen.
  *
- * It renders from the root layout, so it precedes every surface the demo visits (the
- * landing, the studio, the dark client board, the intake form). `/login`, `/setup`,
- * `/design`, `/canvas` and `/trace` are not the demo and do not get it.
+ * It renders from the root layout and stays on every screen — the landing, the studio, the
+ * dark client board, the intake form, the canvas, the dev surfaces. A guide that vanishes on
+ * half the screens is a guide the presenter has to remember instead of read.
  *
  * It sits in the flow instead of sticky on purpose: the site header and the studio
  * header are both sticky at `top: 0`, and a third sticky layer would fight them.
@@ -36,10 +36,13 @@ type DemoAct = {
 
 const ACTS: DemoAct[] = [
   {
-    href: "/studio",
+    // `/board` (the public board surface), not `/studio`: the studio is behind
+    // requireStylist, so a logged-out visitor — a judge, a phone, a fresh browser —
+    // would bounce to /login and the guide would dead-end on its first press.
+    href: "/board",
     label: "board",
     title: "Act 1 · the board",
-    hint: "Import the ten looks, build the boards, publish the client link.",
+    hint: "The board a client opens from one link — imported and published in the studio.",
   },
   {
     href: "/client",
@@ -55,9 +58,6 @@ const ACTS: DemoAct[] = [
   },
 ]
 
-/** Surfaces that are not the demo: the signing door and the development screens. */
-const NO_GUIDE = ["/login", "/setup", "/design", "/canvas", "/trace"]
-
 const STORAGE_KEY = "pull:demo-guide"
 
 /** Which act the current route belongs to. Ordered most specific first. */
@@ -68,10 +68,6 @@ function actFor(pathname: string): number {
   // The requests page lives under the job it belongs to — this is where Act 3 starts.
   if (/^\/studio\/jobs\/[^/]+\/requests/.test(pathname)) return 2
   return 0
-}
-
-function isHidden(pathname: string): boolean {
-  return NO_GUIDE.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 }
 
 export function DemoGuide() {
@@ -94,8 +90,6 @@ export function DemoGuide() {
       // Same trade: a preference that cannot be saved is not worth an error.
     }
   }
-
-  if (isHidden(pathname)) return null
 
   if (collapsed) {
     return (

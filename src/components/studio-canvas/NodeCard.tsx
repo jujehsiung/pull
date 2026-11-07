@@ -4,20 +4,40 @@
  * One node on the studio canvas. Square, hairline, mono numbers — the canvas is
  * NERV-shaped: numbered steps, technical labels, nothing rounded.
  *
- * The socket rail is the node's interface, ComfyUI-style but drawn in Pull's
- * language: every input is a labelled square on the left edge (the edit step has
- * five reference sockets and one prompt socket), every output a labelled square
- * on the right. The body is the setting for that step.
+ * Three kinds carry the whole demo: an image reference (which the stylist can mark),
+ * the compose step that reads all four and renders the look, and the save step that
+ * writes it into the assets.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, type PointerEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type DragEvent as ReactDragEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent,
+} from "react"
+
+import { fileToDataUrl } from "./image-bits"
 
 import { Input } from "@/components/ui/input"
-import { KIND, MAX_REFS, MODELS, NODE_WIDTH, PORTS, RUN_MS, type CanvasNode } from "./types"
+import {
+  KIND,
+  MAX_NODE_WIDTH,
+  MIN_NODE_WIDTH,
+  NODE_WIDTH,
+  PORTS,
+  RUN_MS,
+  type CanvasNode,
+  type MarkupRect,
+} from "./types"
 
 const DOT: Record<CanvasNode["status"], string> = {
   idle: "bg-border",
   running: "bg-brand motion-safe:animate-pulse",
   done: "bg-success",
+  failed: "bg-destructive",
 }
 
 export interface NodeCardProps {
@@ -27,13 +47,10 @@ export interface NodeCardProps {
   selected: boolean
   /** Input ports that already have a wire. */
   wired: Set<string>
-  /** Images on the edit step's five reference sockets, in order. */
-  refImages: (string | undefined)[]
-  /** Text arriving on the edit step's prompt socket. */
-  promptText?: string
   /** `${nodeId}:${portId}` the wire is hovering, if any. */
   highlightPort?: string
-  /** Drop the wire on this input socket. */
+  /** Canvas zoom, so a resize drag converts screen pixels to canvas units. */
+  zoom: number
   onDisconnect: (id: string, port: string) => void
   onChange: (id: string, patch: Partial<CanvasNode>) => void
   onHeaderDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
@@ -42,11 +59,17 @@ export interface NodeCardProps {
   onPortDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
   onPortMove: (event: PointerEvent<HTMLElement>) => void
   onPortUp: (event: PointerEvent<HTMLElement>) => void
-  /** Pressing an input circle either unpicks it or starts a wire from it. */
   onInputDown: (event: PointerEvent<HTMLElement>, node: CanvasNode, port: string) => void
   onMeasure: (id: string, height: number) => void
-  /** Reports where a socket sits on the card, so wires land on the right row. */
   onMeasurePort: (id: string, side: "in" | "out", port: string, x: number, y: number) => void
+}
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
+
+const SOURCE_NOTE: Record<NonNullable<CanvasNode["promptSource"]>, string> = {
+  assist: "written by the assistant · editable",
+  template: "template prompt · the assistant was unreachable",
+  edited: "your prompt · the assistant is skipped",
 }
 
 export function NodeCard({
@@ -54,9 +77,8 @@ export function NodeCard({
   step,
   selected,
   wired,
-  refImages,
-  promptText,
   highlightPort,
+  zoom,
   onDisconnect,
   onChange,
   onHeaderDown,
@@ -72,6 +94,49 @@ export function NodeCard({
   const meta = KIND[node.kind]
   const cardRef = useRef<HTMLElement | null>(null)
   const ports = PORTS[node.kind]
+
+  /* ── the stylist's pen ─────────────────────────────────────────────────── */
+  const [marking, setMarking] = useState(false)
+  const [draft, setDraft] = useState<MarkupRect | null>(null)
+  const boxRef = useRef<HTMLDivElement | null>(null)
+
+  const pointIn = (event: PointerEvent<HTMLDivElement>) => {
+    const box = boxRef.current?.getBoundingClientRect()
+    if (!box) return null
+    return {
+      x: clamp01((event.clientX - box.left) / box.width),
+      y: clamp01((event.clientY - box.top) / box.height),
+    }
+  }
+
+  const onMarkDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!marking) return
+    const point = pointIn(event)
+    if (!point) return
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setDraft({ x: point.x, y: point.y, w: 0, h: 0 })
+  }
+
+  const onMarkMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!marking || !draft) return
+    const point = pointIn(event)
+    if (!point) return
+    setDraft({
+      x: Math.min(draft.x, point.x),
+      y: Math.min(draft.y, point.y),
+      w: Math.abs(point.x - draft.x),
+      h: Math.abs(point.y - draft.y),
+    })
+  }
+
+  const onMarkUp = () => {
+    if (!marking || !draft) return
+    const rect = draft
+    setDraft(null)
+    if (rect.w < 0.03 || rect.h < 0.03) return
+    onChange(node.id, { markup: [...(node.markup ?? []), rect] })
+  }
 
   const measure = useCallback(() => {
     const card = cardRef.current
@@ -91,8 +156,8 @@ export function NodeCard({
     }
   }, [node.id, onMeasure, onMeasurePort])
 
-  // Sockets move when the body grows (a wrapped prompt, a longer model name), so
-  // measure after every layout rather than once.
+  // Sockets move when the body grows (a wrapped prompt, a render), so measure after
+  // every layout rather than once.
   useLayoutEffect(() => {
     measure()
   })
@@ -105,14 +170,103 @@ export function NodeCard({
     return () => observer.disconnect()
   }, [measure])
 
+  /* ── resizing the card ─────────────────────────────────────────────────── */
+  const width = node.width ?? NODE_WIDTH
+  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
+
+  const clampWidth = (value: number) => Math.round(Math.min(MAX_NODE_WIDTH, Math.max(MIN_NODE_WIDTH, value)))
+
+  const onResizeDown = (event: PointerEvent<HTMLSpanElement>) => {
+    event.stopPropagation()
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    resizeRef.current = { startX: event.clientX, startWidth: width }
+  }
+
+  const onResizeMove = (event: PointerEvent<HTMLSpanElement>) => {
+    const drag = resizeRef.current
+    if (!drag) return
+    onChange(node.id, { width: clampWidth(drag.startWidth + (event.clientX - drag.startX) / zoom) })
+  }
+
+  const onResizeUp = (event: PointerEvent<HTMLSpanElement>) => {
+    resizeRef.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const onResizeKey = (event: ReactKeyboardEvent<HTMLSpanElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+    event.preventDefault()
+    onChange(node.id, { width: clampWidth(width + (event.key === "ArrowRight" ? 24 : -24)) })
+  }
+
+  /* ── dropping a file from Finder ───────────────────────────────────────── */
+  const [dropping, setDropping] = useState(false)
+
+  const acceptsFiles = (event: ReactDragEvent<HTMLElement>) =>
+    node.kind === "upload" && Array.from(event.dataTransfer.types).includes("Files")
+
+  const onDragOver = (event: ReactDragEvent<HTMLElement>) => {
+    if (!acceptsFiles(event)) return
+    event.preventDefault()
+    event.stopPropagation()
+    event.dataTransfer.dropEffect = "copy"
+    setDropping(true)
+  }
+
+  const onDragLeave = (event: ReactDragEvent<HTMLElement>) => {
+    if (node.kind !== "upload") return
+    event.stopPropagation()
+    const next = event.relatedTarget as Node | null
+    if (next && event.currentTarget.contains(next)) return
+    setDropping(false)
+  }
+
+  const onDrop = async (event: ReactDragEvent<HTMLElement>) => {
+    if (node.kind !== "upload") return
+    event.preventDefault()
+    event.stopPropagation()
+    setDropping(false)
+    const file = event.dataTransfer.files?.[0]
+    if (!file || !file.type.startsWith("image/")) return
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      onChange(node.id, { image: dataUrl, imageLabel: file.name, markup: [] })
+    } catch {
+      // A file the browser cannot decode leaves the card as it was.
+    }
+  }
+
+  const markup = node.markup ?? []
+  const refsIn = ports.inputs.filter((port) => port.kind === "image" && wired.has(port.id)).length
+
   return (
     <article
       ref={cardRef}
       data-node-id={node.id}
-      style={{ left: node.x, top: node.y, width: NODE_WIDTH }}
-      onPointerDown={(event) => event.stopPropagation()}
+      style={{ left: node.x, top: node.y, width }}
+      aria-label={`${meta.name} card, ${Math.round(width)} wide`}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+        const target = event.target as HTMLElement
+        // The card body is a handle too; controls keep their own gestures.
+        if (target.closest("button, textarea, input, select, [role='separator'], [data-socket], a")) return
+        onHeaderDown(event, node)
+      }}
+      onPointerMove={onHeaderMove}
+      onPointerUp={onHeaderUp}
+      onPointerCancel={onHeaderUp}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       className={`pointer-events-auto absolute rounded-lg bg-card transition-colors ${
-        node.status === "running" ? "border border-brand" : "border border-border"
+        node.status === "running"
+          ? "border border-brand"
+          : node.status === "failed"
+            ? "border border-destructive"
+            : "border border-border"
       } ${selected ? "outline outline-1 outline-offset-0 outline-foreground/40" : ""}`}
     >
       <div
@@ -215,143 +369,117 @@ export function NodeCard({
 
       {node.kind === "upload" ? (
         <div className="p-2.5">
-          {node.image ? (
-            <div className="aspect-square w-full overflow-hidden rounded-md border border-border bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={node.image} alt="" className="size-full object-cover object-top" />
-            </div>
-          ) : (
-            <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-border text-[11px] text-muted-foreground-soft">
-              drop a screenshot
-            </div>
-          )}
-          <p className="mt-2 truncate font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {node.image?.split("/").pop() ?? "—"}
-          </p>
+          <div
+            ref={boxRef}
+            data-markup-box
+            onPointerDown={onMarkDown}
+            onPointerMove={onMarkMove}
+            onPointerUp={onMarkUp}
+            onPointerCancel={onMarkUp}
+            className={`relative aspect-square w-full touch-none overflow-hidden rounded-md border border-border bg-muted ${
+              marking ? "cursor-crosshair" : ""
+            }`}
+          >
+            {node.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={node.image} alt="" draggable={false} className="size-full object-cover object-top" />
+            ) : (
+              <div className="flex size-full items-center justify-center text-[11px] text-muted-foreground-soft">
+                drop an image
+              </div>
+            )}
+
+            {[...markup, ...(draft ? [draft] : [])].map((rect, index) => (
+              <span
+                key={index}
+                aria-hidden
+                className="pointer-events-none absolute border-2 border-destructive bg-destructive/10"
+                style={{
+                  left: `${rect.x * 100}%`,
+                  top: `${rect.y * 100}%`,
+                  width: `${rect.w * 100}%`,
+                  height: `${rect.h * 100}%`,
+                }}
+              />
+            ))}
+
+            {marking ? (
+              <span className="pointer-events-none absolute inset-x-0 top-0 bg-destructive/90 px-1.5 py-0.5 font-mono text-[9px] text-background">
+                draw a red border around what you mean
+              </span>
+            ) : null}
+
+            {dropping ? (
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center border-2 border-dashed border-destructive bg-background/80 px-2 text-center font-mono text-[10px] text-destructive">
+                drop to replace
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
+              {node.imageLabel ?? node.image?.split("/").pop() ?? "—"}
+            </span>
+            <span className="flex shrink-0 items-center gap-1">
+              {markup.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onChange(node.id, { markup: [] })}
+                  className="rounded-md px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  clear
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setMarking((value) => !value)}
+                aria-pressed={marking}
+                className={`rounded-md border px-1.5 py-0.5 font-mono text-[10px] ${
+                  marking
+                    ? "border-destructive bg-destructive text-background"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {marking ? "done" : markup.length > 0 ? `marked ${markup.length}` : "mark"}
+              </button>
+            </span>
+          </div>
         </div>
       ) : null}
 
-      {node.kind === "prompt" ? (
-        <div className="p-2.5">
-          <textarea
-            value={node.prompt ?? ""}
-            onChange={(event) => onChange(node.id, { prompt: event.target.value })}
-            rows={4}
-            spellCheck={false}
-            aria-label="Prompt"
-            className="w-full resize-none border-0 bg-transparent p-0 text-[12px] leading-relaxed text-foreground outline-none"
-          />
-          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {(node.prompt ?? "").length} characters
-          </p>
-        </div>
-      ) : null}
-
-      {node.kind === "edit" ? (
+      {node.kind === "compose" ? (
         <div className="p-2.5">
           <div className="flex items-baseline justify-between">
             <span className="text-[11px] text-muted-foreground">References</span>
-            <span className="font-mono text-[10px] tabular-nums text-foreground">
-              {refImages.filter(Boolean).length} / {MAX_REFS}
-            </span>
+            <span className="font-mono text-[10px] tabular-nums text-foreground">{refsIn} / 4</span>
           </div>
 
-          <div className="mt-1.5 grid grid-cols-5 gap-1">
-            {Array.from({ length: MAX_REFS }, (_, index) => {
-              const image = refImages[index]
-              return image ? (
-                <div
-                  key={`ref-${index}`}
-                  className="aspect-square overflow-hidden rounded-sm border border-border bg-muted"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image} alt="" className="size-full object-cover object-top" />
-                </div>
-              ) : (
-                <div
-                  key={`ref-${index}`}
-                  className="flex aspect-square items-center justify-center rounded-sm border border-dashed border-border font-mono text-[9px] text-muted-foreground-soft"
-                >
-                  {index + 1}
-                </div>
-              )
-            })}
-          </div>
+          <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground-soft">
+            no roles to fill in — the assistant reads each picture and the red border you drew.
+          </p>
 
-          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-model`}>
-            Model
+          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
+            Prompt
           </label>
-          <select
-            id={`${node.id}-model`}
-            value={node.model ?? MODELS[0]}
-            onChange={(event) => onChange(node.id, { model: event.target.value })}
-            className="mt-1 w-full rounded-md border border-border bg-background px-1.5 py-1 text-[12px] text-foreground outline-none"
-          >
-            {MODELS.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-          </select>
-
-          <p className="mt-1.5 line-clamp-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            {promptText ? promptText : "no prompt wired"}
-          </p>
-        </div>
-      ) : null}
-
-      {node.kind === "refine" ? (
-        <div className="p-2.5">
-          <div className="flex items-baseline justify-between">
-            <label className="text-[11px] text-muted-foreground" htmlFor={`${node.id}-strength`}>
-              Strength
-            </label>
-            <span className="font-mono text-[10px] tabular-nums text-foreground">
-              {(node.strength ?? 0.35).toFixed(2)}
-            </span>
-          </div>
-          <input
-            id={`${node.id}-strength`}
-            type="range"
-            min={0.05}
-            max={0.9}
-            step={0.05}
-            value={node.strength ?? 0.35}
-            onChange={(event) => onChange(node.id, { strength: Number(event.target.value) })}
-            className="mt-2 w-full accent-[var(--brand)]"
+          <textarea
+            id={`${node.id}-prompt`}
+            value={node.prompt ?? ""}
+            onChange={(event) => onChange(node.id, { prompt: event.target.value, promptSource: "edited" })}
+            rows={4}
+            spellCheck={false}
+            placeholder="Run once: the assistant writes it here. Edit it and run again to re-render without the assistant."
+            className="mt-1 w-full resize-none rounded-md border border-border bg-background px-1.5 py-1 text-[11px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
           />
-          <p className="mt-1 font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
-            keeps the face and the light
+          <p className="mt-1 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+            {node.prompt ? SOURCE_NOTE[node.promptSource ?? "assist"] : "gpt-image-2 · reads the four refs"}
           </p>
-        </div>
-      ) : null}
 
-      {node.kind === "upscale" ? (
-        <div className="p-2.5">
-          <p className="text-[11px] text-muted-foreground">Factor</p>
-          <div className="mt-1.5 flex gap-1.5">
-            {[2, 4].map((factor) => {
-              const active = (node.factor ?? 2) === factor
-              return (
-                <button
-                  key={factor}
-                  type="button"
-                  onClick={() => onChange(node.id, { factor })}
-                  aria-pressed={active}
-                  className={`rounded-md border px-2.5 py-1 font-mono text-[11px] ${
-                    active
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {factor}×
-                </button>
-              )
-            })}
-          </div>
-          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {node.factor === 4 ? "4×000 px wide" : "2880 px wide"}
-          </p>
+          {node.output ? (
+            <div className="mt-2 aspect-square w-full overflow-hidden rounded-sm border border-border bg-muted">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={node.output} alt="" className="size-full object-cover object-top" />
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -379,15 +507,44 @@ export function NodeCard({
       ) : null}
 
       <div className="flex items-center justify-between gap-2 border-t border-border px-2.5 py-1">
-        <span className="truncate text-[10px] text-muted-foreground-soft">{meta.note}</span>
+        <span
+          className="truncate text-[10px] text-muted-foreground-soft"
+          title={node.error}
+          aria-live={node.status === "running" ? "polite" : undefined}
+        >
+          {node.status === "running" && node.progress
+            ? node.progress
+            : node.status === "failed" && node.error
+              ? node.error
+              : meta.note}
+        </span>
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground-soft">
           {node.status === "done" && node.durationMs
             ? `${(node.durationMs / 1000).toFixed(1)}s`
             : node.status === "running"
               ? "…"
-              : (RUN_MS[node.kind] / 1000).toFixed(1) + "s"}
+              : node.status === "failed"
+                ? "failed"
+                : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
         </span>
       </div>
+
+      {/* The resize grip: drag the corner, or focus it and use ← →. */}
+      <span
+        role="separator"
+        aria-label="Resize card"
+        aria-orientation="horizontal"
+        tabIndex={0}
+        title="Drag to resize the card"
+        onPointerDown={onResizeDown}
+        onPointerMove={onResizeMove}
+        onPointerUp={onResizeUp}
+        onPointerCancel={onResizeUp}
+        onKeyDown={onResizeKey}
+        className="absolute bottom-0 right-0 z-10 flex size-5 cursor-nwse-resize touch-none items-end justify-end p-1 text-muted-foreground-soft hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        <span aria-hidden className="size-2 border-b border-r border-current" />
+      </span>
     </article>
   )
 }

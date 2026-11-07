@@ -17,11 +17,10 @@ import type { PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
+import { imageDataUrl, streamJson } from "./image-bits"
 import {
   INITIAL_EDGES,
   KIND,
-  MAX_REFS,
-  MODELS,
   PORTS,
   NODE_WIDTH,
   PALETTE,
@@ -40,27 +39,21 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
   switch (kind) {
     case "upload":
       return {}
-    case "prompt":
-      return { prompt: "" }
-    case "edit":
-      return { model: MODELS[0] }
-    case "refine":
-      return { strength: 0.35 }
-    case "upscale":
-      return { factor: 2 }
+    case "compose":
+      return {}
     case "save":
       return { filename: "untitled.png" }
   }
 }
 
 export function StudioCanvas({
-  uploadImage,
+  refs,
   sampleAssets,
 }: {
-  uploadImage: string
+  refs: { name: string; image: string }[]
   sampleAssets: string[]
 }) {
-  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage))
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs))
   const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
@@ -68,6 +61,7 @@ export function StudioCanvas({
   const [running, setRunning] = useState(false)
   const [completed, setCompleted] = useState(0)
   const [assets, setAssets] = useState<string[]>([])
+  const [stubNote, setStubNote] = useState<string | null>(null)
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [linkFrom, setLinkFrom] = useState<{ x: number; y: number } | null>(null)
@@ -105,7 +99,7 @@ export function StudioCanvas({
     const rect = element.getBoundingClientRect()
     const minX = Math.min(...nodes.map((node) => node.x)) - 64
     const minY = Math.min(...nodes.map((node) => node.y)) - 64
-    const maxX = Math.max(...nodes.map((node) => node.x + NODE_WIDTH)) + 64
+    const maxX = Math.max(...nodes.map((node) => node.x + (node.width ?? NODE_WIDTH))) + 64
     const maxY = Math.max(...nodes.map((node) => node.y)) + 360
     const raw = Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY), 1)
     // Never shrink the cards into illegibility; on a narrow frame the graph pans instead.
@@ -145,6 +139,12 @@ export function StudioCanvas({
     return () => observer.disconnect()
   }, [])
 
+  // Open on the whole graph: the demo should show every card without hunting for it.
+  useEffect(() => {
+    const timer = setTimeout(() => fitRef.current(), 140)
+    return () => clearTimeout(timer)
+  }, [])
+
   // The assets panel takes width from the canvas; refit so nothing hides behind it.
   useEffect(() => {
     const timer = setTimeout(() => fitRef.current(), 540)
@@ -154,9 +154,9 @@ export function StudioCanvas({
   const copySelected = useCallback(() => {
     const node = nodesRef.current.find((candidate) => candidate.id === selected)
     if (!node) return
-    const { kind, x, y, image, prompt, model, strength, factor, filename } = node
+    const { kind, x, y, width, image, imageLabel, markup, prompt, filename } = node
     clipboardRef.current = {
-      node: { kind, x, y, image, prompt, model, strength, factor, filename },
+      node: { kind, x, y, width, image, imageLabel, markup, prompt, filename },
       count: 0,
     }
   }, [selected])
@@ -473,33 +473,120 @@ export function StudioCanvas({
     setRunning(true)
     setCompleted(0)
     setAssets([])
-    setNodes((current) => current.map((node) => ({ ...node, status: "idle" as const, durationMs: undefined })))
+    setStubNote(null)
+    setNodes((current) =>
+      current.map((node) => ({
+        ...node,
+        status: "idle" as const,
+        durationMs: undefined,
+        error: undefined,
+        output: undefined,
+        progress: undefined,
+      })),
+    )
 
-    for (const node of topologicalOrder(nodes, edges)) {
-      setNodes((current) =>
-        current.map((candidate) =>
-          candidate.id === node.id ? { ...candidate, status: "running" as const } : candidate,
-        ),
-      )
-      await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
-      setNodes((current) =>
-        current.map((candidate) =>
-          candidate.id === node.id
-            ? {
-                ...candidate,
-                status: "done" as const,
-                durationMs: RUN_MS[node.kind],
-                ...(candidate.kind === "save" ? { output: sampleAssets[0] } : {}),
-              }
-            : candidate,
-        ),
-      )
-      setCompleted((current) => current + 1)
+    const started = new Map<string, number>()
+    const renders = new Map<string, string>()
+    const produced: string[] = []
+    let failed: { reason: string } | null = null
+
+    const patch = (id: string, changes: Partial<CanvasNode>) =>
+      setNodes((current) => current.map((item) => (item.id === id ? { ...item, ...changes } : item)))
+
+    /** The references wired into a card, in socket order, with their roles. */
+    const refsInto = (id: string) =>
+      edges
+        .filter((edge) => edge.to === id && edge.port.startsWith("ref "))
+        .sort((a, b) => Number(a.port.split(" ")[1]) - Number(b.port.split(" ")[1]))
+        .map((edge) => nodes.find((candidate) => candidate.id === edge.from))
+        .filter((node): node is CanvasNode => Boolean(node?.image))
+        .map((node) => ({
+          name: node.imageLabel ?? node.id,
+          image: node.image as string,
+          markup: node.markup ?? [],
+        }))
+
+    const imageInto = (id: string): string | undefined => {
+      const edge = edges.find((candidate) => candidate.to === id && candidate.port === "image")
+      if (!edge) return undefined
+      return renders.get(edge.from) ?? nodes.find((node) => node.id === edge.from)?.output
     }
 
-    setRunning(false)
-    setAssets(sampleAssets)
+    for (const node of topologicalOrder(nodes, edges)) {
+      started.set(node.id, performance.now())
+      patch(node.id, { status: "running" })
+
+      try {
+        if (node.kind === "compose") {
+          const refs = refsInto(node.id)
+          if (refs.length === 0) throw new Error("wire the four references first")
+          const payload = await Promise.all(
+            refs.map(async (ref) => ({
+              name: ref.name,
+              dataUrl: await imageDataUrl(ref.image),
+              ...(ref.markup.length > 0
+                ? { markedDataUrl: await imageDataUrl(ref.image, { markup: ref.markup }) }
+                : {}),
+            })),
+          )
+          // The route streams a line per phase, so the card can say what is happening
+          // (reading / rendering / saving) instead of just spinning.
+          const result = await streamJson<{
+            ok: boolean
+            prompt?: string
+            promptSource?: string
+            image?: string
+            reason?: string
+          }>(
+            "/api/canvas/look",
+            { refs: payload, prompt: node.prompt || undefined },
+            (event) => {
+              if (event.type === "phase" && event.phase) patch(node.id, { progress: event.phase })
+            },
+          )
+          if (!result.ok || !result.image) throw new Error(result.reason ?? "the compose step returned nothing")
+          if (result.image) renders.set(node.id, result.image)
+          patch(node.id, {
+            prompt: result.prompt ?? node.prompt,
+            promptSource: (result.promptSource as CanvasNode["promptSource"]) ?? "assist",
+            output: result.image,
+            progress: undefined,
+          })
+        } else if (node.kind === "save") {
+          const image = imageInto(node.id)
+          if (!image) throw new Error("nothing wired into save")
+          produced.push(image)
+          patch(node.id, { output: image })
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
+        }
+
+        patch(node.id, {
+          status: "done",
+          durationMs: Math.round(performance.now() - (started.get(node.id) ?? 0)),
+        })
+        setCompleted((current) => current + 1)
+      } catch (error) {
+        failed = { reason: error instanceof Error ? error.message : "run failed" }
+        patch(node.id, {
+          status: "failed",
+          error: failed.reason,
+          progress: undefined,
+          durationMs: Math.round(performance.now() - (started.get(node.id) ?? 0)),
+        })
+        break
+      }
+    }
+
+    if (failed) {
+      // A demo that dead-ends is worse than a labelled fallback: keep the graph, say so.
+      setStubNote(`provider unavailable — ${failed.reason}`)
+      setAssets(sampleAssets)
+    } else {
+      setAssets(produced)
+    }
     setAssetsOpen(true)
+    setRunning(false)
     runRef.current = false
   }
 
@@ -525,7 +612,8 @@ export function StudioCanvas({
             Look workflow
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            A folder of screenshots in, a finished look out — and every step visible while it runs.
+            Four references in, one look out — the assistant reads your borders, you review the
+            prompt, gpt-image-2 renders it.
           </p>
         </div>
 
@@ -540,7 +628,8 @@ export function StudioCanvas({
         </div>
       </section>
 
-      <div className="relative mt-3 h-[calc(100dvh-236px)] min-h-[560px] overflow-hidden border-y border-border">
+      {/* The guide bar above is always there now, so the frame gives it its ~52px back. */}
+      <div className="relative mt-3 h-[calc(100dvh-288px)] min-h-[560px] overflow-hidden border-y border-border">
         <div
           ref={canvasRef}
           onPointerDown={onCanvasDown}
@@ -615,12 +704,8 @@ export function StudioCanvas({
                 onMeasurePort={onMeasurePort}
                 onDisconnect={onDisconnect}
                 highlightPort={snapPort ?? undefined}
+                zoom={zoom}
                 wired={wiring.get(node.id)?.wired ?? EMPTY_SET}
-                refImages={Array.from(
-                  { length: MAX_REFS },
-                  (_, index) => wiring.get(node.id)?.images[`ref ${index + 1}`],
-                )}
-                promptText={wiring.get(node.id)?.texts.prompt}
               />
             ))}
           </div>
@@ -751,7 +836,7 @@ export function StudioCanvas({
           </div>
 
           <p className="border-t border-border px-3 py-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            saved by the graph · sample output
+            {stubNote ?? "saved by the graph · gpt-image-2"}
           </p>
         </aside>
       </div>
