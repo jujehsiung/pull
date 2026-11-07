@@ -360,26 +360,23 @@ the dark client board alike.
 
 ## 11. The look workflow (2026-11-07)
 
-The studio's eight-card graph is the demo's picture of the product: **four references in, one look out.**
+The studio's six-card graph is the demo's picture of the product: **four references in, one look out.**
 
-- **Four references, one of them the client.** The client card is the face and pose to keep; the three
-  outfit cards are the garments to carry over. The graph is fixed so the demo opens on the story
-  rather than on an empty canvas.
+- **Four references, each with a job.** `subject` (the face), `the jacket`, `the top under`, `the
+  bottom`. The sockets say the roles, so the card never asks the presenter to remember them. Simpler
+  than the first draft on purpose: one compose card, one call, one failure point.
 - **The mark is the pen, and it belongs to the vision pass only.** Press `mark` on an image card and
-  drag a border around the piece; the border is drawn in olive on the card, and the client bakes that
-  same border into the copy the reading model sees. The **edit** pass gets the clean copies — a border
-  baked into a reference would be rendered into the photograph.
-- **The assistant writes, the stylist decides.** The assist card reads the marked references and
-  writes one prompt into the prompt view, which is a textarea: the run does not start from the
-  assistant's words unread. Editing it is expected, not a power move.
-- **The edit step names a real model.** `GPT Image 2` is ZooWork's `imageGenerationModel` slot; the
-  second option is that slot's documented fallback. The default is not sent as an override, because
-  naming a slot's own default is a needless override.
-- **A run is a real run.** Assist and edit are model calls with real latency (≈55 s and ≈59 s on the
-  demo fixtures). The card footer's time before a run is the estimate; after it, the measured value.
-  A failed step turns its card red and prints the reason in its footer.
-- **A demo never dead-ends.** When the provider is unreachable (no key), the graph stops on the failed
-  card but the assets panel still fills with labelled sample output and the footer says
-  `provider unavailable — …`. An unlabelled blank panel would be worse than a labelled fallback.
+  drag a border around the piece; the border is drawn in olive on the card, and the client bakes it
+  into the copy the reading model sees. The **render** gets the clean copies — a border baked into a
+  reference would be rendered into the photograph.
+- **One compose card does the work.** It reads the four marked references, writes the prompt, then
+  calls `image_generate` with the clean references and that prompt on `gpt-image-2`, and shows both
+  the prompt and the render. The prompt is a textarea: edit it and run again, and the assistant is
+  skipped — a re-run edits rather than re-reads.
+- **A demo never dead-ends.** If the vision pass fails, a template prompt built from the four roles
+  still renders; if the provider is unreachable, the graph stops on the failed card but the assets
+  panel fills with labelled sample output (`provider unavailable — …`).
+- **A run is a real run.** Compose shows real latency (≈80 s for the four references on the demo
+  fixtures). The footer's time before a run is the estimate; after it, the measured value.
 - **Saving is the only way into the assets.** The save card writes the render into the panel and the
   panel opens itself; nothing else populates it.
