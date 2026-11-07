@@ -161,9 +161,11 @@ already at 5.14:1 and the page's calm depends on it.
 `0.375rem` and it is deliberately restrained: primitives derive sm 3.6 / md 4.8 / lg 6 / xl 8.4px, so
 a field or a card carries a corner you notice only at the edge. Three families are pinned by rule:
 
-- **Buttons are square.** A button is the action; it keeps the references' hard edge
-  (`ui/button.tsx` is `rounded-none` at every size, and the legacy `.btn` was already 0). Pills stop
-  being a button shape — `--radius-pill` now belongs to chips, tags and badges only.
+- **Buttons are square — except the agent's.** A button is the action; it keeps the references' hard
+  edge (`ui/button.tsx` is `rounded-none` at every size, and the legacy `.btn` was already 0). The one
+  exception is an **agent action**: it is a solid success-green pill (`.agent-action`), because what
+  the agent does is one gesture wherever it appears — Draft requests, Polish, Suggest looks. Human
+  buttons stay square; pills are not otherwise a button shape.
 - **A trigger is a control, not an action.** The dropdown's trigger (`DatePicker`) takes the field
   radius, because it reads as the field it opens; only the things you *do* stay hard.
 - **Thumbnails are square.** A look is a photograph, not a card. Board tiles, the import queue,
@@ -234,6 +236,9 @@ import { Card, CardContent } from "@/components/ui/card"
   single eye in the page bar — "Markup" — that shows or hides every ring at once. The toggle only
   exists once something is marked. It marks a photograph, never a control — red stays a status
   colour in the chrome.
+- **A mark is olive; a verb is a green pill.** The agent's presence is olive (the sparkle, the
+  running step's dot, the suggested badge); the agent's *actions* are solid success green. Two
+  colours, two jobs: one says "the agent did this", the other says "press this to have the agent do".
 - **Icons are hairlines.** Every Lucide icon strokes at **1.5** in the 24-unit box — one rendered
   pixel at a 16px icon, set once for `.lucide` in `globals.css`, never the library's 2. An icon is a
   rule that happens to bend.

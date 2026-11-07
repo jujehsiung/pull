@@ -380,9 +380,20 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
    proposes: the sparkle on a suggested look, the suggest action, a running
    trace step, the live provider dot. Never a fill, never body copy.
    ══════════════════════════════════════════════════════════════════════════ */
+/* A mark is olive; a verb is a green pill. The agent's actions are the one
+   button family that is not square: solid success green, fully rounded, so the
+   thing the agent does reads as one gesture wherever it appears. */
 .agent-mark { color: var(--brand); }
-.agent-action { color: var(--brand); }
-.agent-action:hover { color: var(--brand); background: var(--accent); }
+.agent-action {
+  border-radius: 999px;
+  border-color: transparent;
+  background: var(--success);
+  color: var(--success-foreground);
+}
+.agent-action:hover {
+  background: color-mix(in srgb, var(--success) 88%, #000);
+  color: var(--success-foreground);
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    LOOK GRID — the marquee's spacing, applied to the board.
