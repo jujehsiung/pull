@@ -14,7 +14,7 @@
 import { useMemo, useRef, useState } from "react"
 
 import { describeTaste, nearestToTaste } from "@/lib/taste"
-import { MIN_PER_ROW, ReviewBoard, type BoardJob, type Look } from "./ReviewBoard"
+import { MIN_PER_ROW, ReviewBoard, suggestionId, type BoardJob, type Look } from "./ReviewBoard"
 import { BoardSwitcher, type BoardOption } from "./BoardSwitcher"
 
 /** The research route's shape, as much of it as the static board needs. */
@@ -38,7 +38,7 @@ function imageSource(image: string): string {
 
 function lookFrom(designer: SourceDesigner, look: SourceLook): Look {
   return {
-    id: `suggested:${designer.slug}:${look.lookNo}:${Date.now()}`,
+    id: suggestionId(designer.slug, look.lookNo),
     fileName: `${designer.slug}-look-${look.lookNo}.jpg`,
     brand: designer.brand,
     lookNo: look.lookNo,
@@ -91,6 +91,8 @@ function BoardSurface({
   const [tasteNote, setTasteNote] = useState<string | null>(null)
   /** Where the next press continues in the season; the six seeded houses came first. */
   const offset = useRef(6)
+  /** A double click must not start two runs: both would append the same houses. */
+  const inFlight = useRef(false)
 
   const looks = useMemo(() => [...board.looks, ...added], [board.looks, added])
 
@@ -115,7 +117,11 @@ function BoardSurface({
         ...current,
         [removed.brand]: (current[removed.brand] ?? []).filter((_, index) => index !== picked.index),
       }))
-      setAdded((current) => [...current, { ...picked.look, id: `${picked.look.id}:${Date.now()}` }])
+      setAdded((current) =>
+        current.some((look) => look.lookNo === picked.look.lookNo && look.brand === picked.look.brand)
+          ? current
+          : [...current, picked.look],
+      )
       if (picked.look.src) {
         setTasteNote(
           `look ${picked.look.lookNo} — ${await describeTaste(kept, {
@@ -139,7 +145,8 @@ function BoardSurface({
    * slice once before saying the season is spent.
    */
   const suggestMore = async () => {
-    if (suggesting) return
+    if (inFlight.current) return
+    inFlight.current = true
     setSuggesting(true)
     setSuggestError(null)
     const client = board.job.description.trim()
@@ -179,6 +186,7 @@ function BoardSurface({
     } catch (error) {
       setSuggestError(error instanceof Error ? error.message : "Could not load more houses.")
     } finally {
+      inFlight.current = false
       setSuggesting(false)
     }
   }

@@ -31,7 +31,7 @@ import { AgentTrace } from "@/components/AgentTrace"
 import { describeTaste, nearestToTaste } from "@/lib/taste"
 import type { AgentStep } from "@/lib/agent/trace"
 import { ingestLook } from "./ingest"
-import { MIN_PER_ROW, ReviewBoard, type Look } from "./ReviewBoard"
+import { MIN_PER_ROW, ReviewBoard, suggestionId, type Look } from "./ReviewBoard"
 
 /** One look as the research route returns it: a Vogue Runway photograph + its look number. */
 interface ApiLook {
@@ -123,7 +123,7 @@ function imageSource(image: string): string {
 function looksFromDesigners(designers: ApiDesigner[]): Look[] {
   return designers.flatMap((designer) =>
     designer.looks.map((look) => ({
-      id: `suggested:${designer.slug}:${look.lookNo}`,
+      id: suggestionId(designer.slug, look.lookNo),
       fileName: `${designer.slug}-look-${look.lookNo}.jpg`,
       brand: designer.brand,
       lookNo: look.lookNo,
@@ -178,6 +178,9 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
   const [reserveNote, setReserveNote] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null)
+
+  /** One research run at a time: a double press would append the same houses twice. */
+  const researchInFlight = useRef(false)
 
   /** The season index is the one fetch the first press used to wait on — start it when the dialog opens. */
   const warmed = useRef(false)
@@ -298,7 +301,8 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
   )
 
   const suggestLooks = useCallback(async () => {
-    if (loadingSuggestions) return
+    if (loadingSuggestions || researchInFlight.current) return
+    researchInFlight.current = true
     const client = clientName.trim()
     if (!client) {
       setNote("Add the client's name first — the research starts there.")
@@ -327,6 +331,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not load suggestions.")
     } finally {
+      researchInFlight.current = false
       setLoadingSuggestions(false)
     }
   }, [clientName, loadingSuggestions, streamResearch])
@@ -363,11 +368,12 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
 
   /**
    * Removing a suggested look refills its row from the same collection. The route sends six spare
-   * looks per designer, so the board keeps eight looks per house instead of thinning out on stage.
+   * looks per designer, so the board keeps five looks per house instead of thinning out on stage.
    */
-  /** More designers, five at a time, eight looks each. */
+  /** More designers, five at a time, five looks each — a house is one row. */
   const suggestMore = useCallback(async () => {
-    if (moreLoading || !suggestMeta?.hasMore) return
+    if (moreLoading || !suggestMeta?.hasMore || researchInFlight.current) return
+    researchInFlight.current = true
     const client = clientName.trim()
     if (!client) return
     setMoreLoading(true)
@@ -398,6 +404,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not load more designers.")
     } finally {
+      researchInFlight.current = false
       setMoreLoading(false)
     }
   }, [clientName, designerCount, moreLoading, processQueue, streamResearch, suggestMeta?.hasMore])
@@ -434,7 +441,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
           [removed.brand]: (current[removed.brand] ?? []).filter((_, slot) => slot !== index),
         }))
         const replacement: Look = {
-          id: `suggested:${removed.brand}:${spare.lookNo}:${Date.now()}`,
+          id: suggestionId(removed.brand, spare.lookNo),
           fileName: `${removed.brand}-look-${spare.lookNo}.jpg`,
           brand: removed.brand,
           lookNo: spare.lookNo,

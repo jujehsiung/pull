@@ -14,7 +14,7 @@ import { Check, Plus, RotateCcw, Sparkles, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { readBoardTaste } from "@/lib/taste"
+import { readBoardTaste, type TasteTraits } from "@/lib/taste"
 import type { IngestStep } from "./ingest"
 
 export type LookStatus = "queued" | "cropping" | "reading" | "ready" | "error"
@@ -39,6 +39,17 @@ export interface Look {
  * five is a target, not a thing to invent looks for.
  */
 export const MIN_PER_ROW = 5
+
+/**
+ * Ids for a suggested look. `Date.now()` looked unique but two looks added in the same millisecond —
+ * a designer's shown and reserve lists are read in one tick — collided, which React reports as a
+ * duplicate key. A counter is cheap and cannot repeat.
+ */
+let suggestionSeq = 0
+export function suggestionId(slug: string, lookNo: number): string {
+  suggestionSeq += 1
+  return `suggested:${slug}:${lookNo}:${suggestionSeq}`
+}
 
 export interface BoardJob {
   title: string
@@ -88,6 +99,24 @@ interface ReviewBoardProps {
   tasteNote?: string | null
 }
 
+/** One direction of the Taste read — colour, texture or shape — as a labelled chip group. */
+function ChipGroup({ label, values }: { label: string; values: string[] }) {
+  if (!values.length) return null
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <span className="text-[10px] tracking-[0.02em] text-muted-foreground-soft">{label}</span>
+      {values.map((value) => (
+        <span
+          key={value}
+          className="rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] leading-5 text-foreground"
+        >
+          {value}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 function groupByBrand(looks: Look[]) {
   const map = new Map<string, Look[]>()
   for (const look of looks) {
@@ -127,10 +156,15 @@ export function ReviewBoard({
 
   // The pattern across the board, read in the browser and shown as chips under the title. It
   // follows the pictures that are still on the board, so a delete shifts what the board reads as.
-  const [chips, setChips] = useState<string[]>([])
+  const [chips, setChips] = useState<TasteTraits | null>(null)
+  /** The house the stylist last worked in: the chips read that row, not the whole board. */
+  const [focus, setFocus] = useState<string | null>(null)
   const tasteSources = useMemo(
-    () => visible.flatMap((look) => (look.src ? [look.src] : [])),
-    [visible],
+    () =>
+      visible
+        .filter((look) => !focus || look.brand === focus)
+        .flatMap((look) => (look.src ? [look.src] : [])),
+    [visible, focus],
   )
   useEffect(() => {
     let cancelled = false
@@ -149,6 +183,7 @@ export function ReviewBoard({
     setAdded((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
 
   const removeLook = (look: Look) => {
+    setFocus(look.brand)
     const row = visible.filter((entry) => entry.brand === look.brand && entry.id !== look.id)
     setRemoved((current) => (current.some((entry) => entry.id === look.id) ? current : [...current, look]))
     setAdded((current) => current.filter((x) => x !== look.id))
@@ -363,19 +398,14 @@ export function ReviewBoard({
           </div>
         </div>
 
-        {chips.length ? (
-          <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-2 px-6 pb-4 md:px-10">
+        {chips ? (
+          <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-2 px-6 pb-4 md:px-10">
             <span className="text-[10px] tracking-[0.02em] text-muted-foreground">
-              Taste · the board reads as
+              Taste · {focus ?? "the board"}
             </span>
-            {chips.map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] leading-5 text-foreground"
-              >
-                {chip}
-              </span>
-            ))}
+            <ChipGroup label="colour" values={chips.color} />
+            <ChipGroup label="texture" values={chips.texture} />
+            <ChipGroup label="shape" values={chips.shape} />
           </div>
         ) : null}
       </header>

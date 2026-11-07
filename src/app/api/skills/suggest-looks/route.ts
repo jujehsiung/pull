@@ -7,7 +7,7 @@
  *      fallback for people Wikipedia does not know),
  *   2. open the Vogue Runway season that matches that gender (menswear or ready-to-wear),
  *   3. crawl the designers on that season's index and, for each one, read its collection slideshow
- *      and take eight looks,
+ *      and take five looks — one board row,
  *   4. keep the rest of each collection as the reserve the UI backfills from when a look is removed.
  *
  * `limit` is 10 for the first press and 5 for every "more designers" press; `offset` is the number of
@@ -25,7 +25,7 @@ export const maxDuration = 60
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
-const SHOWN_PER_DESIGNER = 8
+const SHOWN_PER_DESIGNER = 5
 const MAX_DESIGNERS = 60
 
 interface Look {
@@ -214,7 +214,7 @@ function brandFromTitle(title: string, slug: string): string {
 const LOOK_RE =
   /https:\/\/assets\.vogue\.com\/photos\/[a-z0-9]+\/master\/w_(?:1280|2560)[^" ]*?\/(\d{5})-([a-z0-9-]+?)-credit-[a-z0-9-]+\.jpg/g
 
-/** One designer's collection: title, eight looks to show, six more to refill from. */
+/** One designer's collection: title, five looks to show, the rest to refill from. */
 async function readDesigner(
   season: string,
   slug: string,
