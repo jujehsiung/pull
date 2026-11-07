@@ -14,9 +14,12 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type DragEvent as ReactDragEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent,
 } from "react"
+
+import { fileToDataUrl } from "./image-bits"
 
 import { Input } from "@/components/ui/input"
 import {
@@ -199,6 +202,43 @@ export function NodeCard({
     onChange(node.id, { width: clampWidth(width + (event.key === "ArrowRight" ? 24 : -24)) })
   }
 
+  /* ── dropping a file from Finder ───────────────────────────────────────── */
+  const [dropping, setDropping] = useState(false)
+
+  const acceptsFiles = (event: ReactDragEvent<HTMLElement>) =>
+    node.kind === "upload" && Array.from(event.dataTransfer.types).includes("Files")
+
+  const onDragOver = (event: ReactDragEvent<HTMLElement>) => {
+    if (!acceptsFiles(event)) return
+    event.preventDefault()
+    event.stopPropagation()
+    event.dataTransfer.dropEffect = "copy"
+    setDropping(true)
+  }
+
+  const onDragLeave = (event: ReactDragEvent<HTMLElement>) => {
+    if (node.kind !== "upload") return
+    event.stopPropagation()
+    const next = event.relatedTarget as Node | null
+    if (next && event.currentTarget.contains(next)) return
+    setDropping(false)
+  }
+
+  const onDrop = async (event: ReactDragEvent<HTMLElement>) => {
+    if (node.kind !== "upload") return
+    event.preventDefault()
+    event.stopPropagation()
+    setDropping(false)
+    const file = event.dataTransfer.files?.[0]
+    if (!file || !file.type.startsWith("image/")) return
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      onChange(node.id, { image: dataUrl, imageLabel: file.name, markup: [] })
+    } catch {
+      // A file the browser cannot decode leaves the card as it was.
+    }
+  }
+
   const markup = node.markup ?? []
   const refsIn = ports.inputs.filter((port) => port.kind === "image" && wired.has(port.id)).length
 
@@ -208,7 +248,19 @@ export function NodeCard({
       data-node-id={node.id}
       style={{ left: node.x, top: node.y, width }}
       aria-label={`${meta.name} card, ${Math.round(width)} wide`}
-      onPointerDown={(event) => event.stopPropagation()}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+        const target = event.target as HTMLElement
+        // The card body is a handle too; controls keep their own gestures.
+        if (target.closest("button, textarea, input, select, [role='separator'], [data-socket], a")) return
+        onHeaderDown(event, node)
+      }}
+      onPointerMove={onHeaderMove}
+      onPointerUp={onHeaderUp}
+      onPointerCancel={onHeaderUp}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       className={`pointer-events-auto absolute rounded-lg bg-card transition-colors ${
         node.status === "running"
           ? "border border-brand"
@@ -354,6 +406,12 @@ export function NodeCard({
             {marking ? (
               <span className="pointer-events-none absolute inset-x-0 top-0 bg-destructive/90 px-1.5 py-0.5 font-mono text-[9px] text-background">
                 draw a red border around what you mean
+              </span>
+            ) : null}
+
+            {dropping ? (
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center border-2 border-dashed border-destructive bg-background/80 px-2 text-center font-mono text-[10px] text-destructive">
+                drop to replace
               </span>
             ) : null}
           </div>

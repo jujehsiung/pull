@@ -34,6 +34,16 @@ export async function imageDataUrl(
   return canvas.toDataURL("image/jpeg", 0.86)
 }
 
+/** A file the stylist dragged in from Finder, ready for a card: downscaled data URL. */
+export async function fileToDataUrl(file: File, maxSize = 1400): Promise<string> {
+  const url = URL.createObjectURL(file)
+  try {
+    return await imageDataUrl(url, { maxSize })
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 function load(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()

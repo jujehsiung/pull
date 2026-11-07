@@ -382,6 +382,14 @@ The studio's six-card graph is the demo's picture of the product: **four referen
   fixtures). The footer's time before a run is the estimate; after it, the measured value.
 - **Saving is the only way into the assets.** The save card writes the render into the panel and the
   panel opens itself; nothing else populates it.
+- **A card moves by its whole surface** (2026-11-07). Pointer-down anywhere that is not a control
+  starts the drag, so the title bar is no longer the only handle; buttons, fields, sockets and the
+  resize grip keep their own gestures, and the image body drags the card when `mark` is off (when it
+  is on, the same drag draws a border instead).
+- **An image card is a Finder drop target** (2026-11-07). Drag a JPEG/PNG/WebP from Finder onto it and
+  the picture is replaced — downscaled to 1400 px on the long edge, the filename becomes the caption,
+  and any borders on the old picture are cleared, because they described the picture that left. A
+  dashed red frame and `drop to replace` appear while the file is over the card.
 - **A card resizes from its corner** (2026-11-07). The grip sits in the bottom-right corner — drag it,
   or focus it and use ← / →. Width runs 220–640 canvas units, height follows the content, and the
   render preview grows with the card: the save card is where the look is finally looked at, so it is
