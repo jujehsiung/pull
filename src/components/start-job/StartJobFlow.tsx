@@ -50,6 +50,18 @@ interface ApiDesigner {
 
 type SuggestStep = AgentStep
 
+/**
+ * Every run opens with the same three ids (`suggest.search`, `suggest.season`, `suggest.pick`), so a
+ * second press — "Add 5 more designers", the board's own Suggest looks — would repeat a key the trace
+ * list is already rendering. A repeated id is kept, but named as a later call: `suggest.search#2`.
+ */
+function appendStep(current: SuggestStep[], step: SuggestStep): SuggestStep[] {
+  if (!current.some((entry) => entry.id === step.id)) return [...current, step]
+  let run = 2
+  while (current.some((entry) => entry.id === `${step.id}#${run}`)) run += 1
+  return [...current, { ...step, id: `${step.id}#${run}` }]
+}
+
 const BOARD_KEY = "pull.board.v1"
 
 interface StoredBoard {
@@ -301,7 +313,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     setReserve({})
     try {
       const data = await streamResearch(client, 0, 10, {
-        step: (step) => setSuggestTrace((current) => [...current, step]),
+        step: (step) => setSuggestTrace((current) => appendStep(current, step)),
         designer: (designer) => {
           setSuggested((current) => [...current, ...looksFromDesigners([designer])])
           setDesignerSources((current) => [...current, designer])
@@ -362,7 +374,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     const added: Look[] = []
     try {
       const data = await streamResearch(client, designerCount, 5, {
-        step: (step) => setSuggestTrace((current) => [...current, step]),
+        step: (step) => setSuggestTrace((current) => appendStep(current, step)),
         designer: (designer) => {
           const fresh = looksFromDesigners([designer])
           added.push(...fresh)
