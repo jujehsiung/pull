@@ -12,7 +12,7 @@
  * Static surface: decisions live in this page's state and nothing is sent.
  */
 import { useMemo, useState } from "react"
-import { Brush, Check, X } from "lucide-react"
+import { Brush, Check, Eye, EyeOff, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { Look } from "@/components/start-job/ReviewBoard"
@@ -53,6 +53,8 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
   /** Circled pieces, one PNG data URL per look id. Design surface: local only. */
   const [markups, setMarkups] = useState<Record<string, string>>({})
   const [markupLook, setMarkupLook] = useState<Look | null>(null)
+  /** Markup layers hidden per look — the eye on the thumbnail. */
+  const [hiddenLayers, setHiddenLayers] = useState<string[]>([])
 
   const grouped = useMemo(() => groupByBrand(looks), [looks])
   const remaining = looks.length - approved.length - passed.length
@@ -162,6 +164,42 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                               isPassed ? "opacity-40" : ""
                             }`}
                           />
+                        ) : null}
+
+                        {/* The rings themselves, as a layer over the thumbnail. */}
+                        {markups[look.id] && !hiddenLayers.includes(look.id) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={markups[look.id]}
+                            alt=""
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                          />
+                        ) : null}
+
+                        {/* Eye: the layer is visible by default and can be hidden. */}
+                        {markups[look.id] ? (
+                          <button
+                            type="button"
+                            aria-label={
+                              hiddenLayers.includes(look.id) ? "Show markup" : "Hide markup"
+                            }
+                            aria-pressed={hiddenLayers.includes(look.id)}
+                            onClick={() =>
+                              setHiddenLayers((current) =>
+                                current.includes(look.id)
+                                  ? current.filter((x) => x !== look.id)
+                                  : [...current, look.id],
+                              )
+                            }
+                            className="absolute left-2 top-2 inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground"
+                          >
+                            {hiddenLayers.includes(look.id) ? (
+                              <EyeOff className="size-3.5" aria-hidden />
+                            ) : (
+                              <Eye className="size-3.5" aria-hidden />
+                            )}
+                          </button>
                         ) : null}
 
                         {/* Decided looks keep their mark when the pointer is away. */}
