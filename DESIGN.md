@@ -288,9 +288,13 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   the only thing that changes, to `outline-foreground/40`.
 - **The step number is mono, 10px, muted** (`01`…`06`) and it is the only thing on the card's left edge
   before the name. It is data, not a label, which is why it may keep its width.
-- **Ports are 10px squares**, centred on the card's mid-line — measured, never assumed, because a
-  card's height depends on its body. The wire is a 1.25px cubic at 22% foreground: a hairline, not a
-  diagram.
+- **Sockets are rows, not a mid-line** (2026-11-07): every input is a labelled square on the card's left
+  edge, in the order the model takes them — the edit step lists `prompt`, then `ref 1`…`ref 5`, which is
+  exactly the five images and one prompt its models accept. Outputs are labelled squares on the right.
+  A wire is drawn between the two rows it joins, so the graph reads as the model's signature rather than
+  as a bundle of anonymous lines. Each socket is 8px, square, and filled when it has a wire.
+- **One wire per socket**: dropping a second wire on an occupied input replaces the first — the same way
+  the model takes one prompt, not two. Dropping requires the socket you mean; there is no "nearest port".
 - **One olive state, one green state**: the step in flight turns its border olive and its dot pulses;
   a finished step is a green dot. There is no third colour on the canvas.
 - **The run is visible, not implied** — `Agent run · n/6` in the surface header, and each card's footer
@@ -308,7 +312,7 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   the surface header. It floats, so it never takes a row from the graph, and its palette opens upward.
 - **A step number is assigned once**, when the card is created, and never renumbers: pasting a prompt
   makes it `07`, it does not push the pipeline to `04`. The number is the card's handle, not its rank.
-- **A limit is shown, not discovered**: the edit step reads `4 / 10` beside its reference strip, because the
+- **A limit is shown, not discovered**: the edit step reads `n / 5` beside its references, because the
   model's ceiling is part of the decision, not an error you meet after the sixth image.
 - **The wheel is zoom**, anchored on the pointer: the canvas point under the cursor stays under the
   cursor. Nothing else on this page scrolls, so the wheel is free to mean zoom.

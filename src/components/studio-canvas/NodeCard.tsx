@@ -4,14 +4,15 @@
  * One node on the studio canvas. Square, hairline, mono numbers — the canvas is
  * NERV-shaped: numbered steps, technical labels, nothing rounded.
  *
- * The header is the drag handle; the right port starts a connection. The body is
- * whatever that step takes: an image, a sentence, a model, a strength, a factor,
- * a filename.
+ * The socket rail is the node's interface, ComfyUI-style but drawn in Pull's
+ * language: every input is a labelled square on the left edge (the edit step has
+ * five reference sockets and one prompt socket), every output a labelled square
+ * on the right. The body is the setting for that step.
  */
-import { useEffect, useRef, type PointerEvent } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, type PointerEvent } from "react"
 
 import { Input } from "@/components/ui/input"
-import { KIND, MAX_REFS, MODELS, NODE_WIDTH, RUN_MS, type CanvasNode } from "./types"
+import { KIND, MAX_REFS, MODELS, NODE_WIDTH, PORTS, RUN_MS, type CanvasNode } from "./types"
 
 const DOT: Record<CanvasNode["status"], string> = {
   idle: "bg-border",
@@ -24,6 +25,12 @@ export interface NodeCardProps {
   /** 1-based position in the run order. */
   step: number
   selected: boolean
+  /** Input ports that already have a wire. */
+  wired: Set<string>
+  /** Images on the edit step's five reference sockets, in order. */
+  refImages: (string | undefined)[]
+  /** Text arriving on the edit step's prompt socket. */
+  promptText?: string
   onChange: (id: string, patch: Partial<CanvasNode>) => void
   onHeaderDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
   onHeaderMove: (event: PointerEvent<HTMLElement>) => void
@@ -32,14 +39,17 @@ export interface NodeCardProps {
   onPortMove: (event: PointerEvent<HTMLElement>) => void
   onPortUp: (event: PointerEvent<HTMLElement>) => void
   onMeasure: (id: string, height: number) => void
-  /** Images the "+" tile can draw from. */
-  referencePool: string[]
+  /** Reports where a socket sits on the card, so wires land on the right row. */
+  onMeasurePort: (id: string, side: "in" | "out", port: string, y: number) => void
 }
 
 export function NodeCard({
   node,
   step,
   selected,
+  wired,
+  refImages,
+  promptText,
   onChange,
   onHeaderDown,
   onHeaderMove,
@@ -48,20 +58,37 @@ export function NodeCard({
   onPortMove,
   onPortUp,
   onMeasure,
-  referencePool,
+  onMeasurePort,
 }: NodeCardProps) {
   const meta = KIND[node.kind]
   const cardRef = useRef<HTMLElement | null>(null)
+  const ports = PORTS[node.kind]
 
-  // The ports sit at the card's mid-line, so the height is measured rather than assumed.
+  const measure = useCallback(() => {
+    const card = cardRef.current
+    if (!card) return
+    onMeasure(node.id, card.offsetHeight)
+    const cardTop = card.getBoundingClientRect().top
+    for (const element of card.querySelectorAll<HTMLElement>("[data-port-id]")) {
+      const rect = element.getBoundingClientRect()
+      const side = element.dataset.portSide === "out" ? "out" : "in"
+      onMeasurePort(node.id, side, element.dataset.portId ?? "", rect.top - cardTop + rect.height / 2)
+    }
+  }, [node.id, onMeasure, onMeasurePort])
+
+  // Sockets move when the body grows (a wrapped prompt, a longer model name), so
+  // measure after every layout rather than once.
+  useLayoutEffect(() => {
+    measure()
+  })
+
   useEffect(() => {
     const element = cardRef.current
     if (!element) return
-    const observer = new ResizeObserver(() => onMeasure(node.id, element.offsetHeight))
+    const observer = new ResizeObserver(() => measure())
     observer.observe(element)
-    onMeasure(node.id, element.offsetHeight)
     return () => observer.disconnect()
-  }, [node.id, onMeasure])
+  }, [measure])
 
   return (
     <article
@@ -73,14 +100,6 @@ export function NodeCard({
         node.status === "running" ? "border border-brand" : "border border-border"
       } ${selected ? "outline outline-1 outline-offset-0 outline-foreground/40" : ""}`}
     >
-      {node.kind !== "upload" ? (
-        <span
-          data-input-node={node.id}
-          aria-hidden
-          className="absolute -left-[5px] top-1/2 size-2.5 -translate-y-1/2 border border-border bg-card"
-        />
-      ) : null}
-
       <div
         onPointerDown={(event) => onHeaderDown(event, node)}
         onPointerMove={onHeaderMove}
@@ -97,12 +116,57 @@ export function NodeCard({
         <span aria-hidden className={`size-1.5 rounded-full ${DOT[node.status]}`} />
       </div>
 
+      {/* The socket rail: inputs left, outputs right, one row each. */}
+      {ports.inputs.length > 0 || ports.outputs.length > 0 ? (
+        <div className="flex items-start justify-between gap-3 border-b border-border py-1.5 pr-2.5">
+          <div className="flex flex-col gap-1">
+            {ports.inputs.map((port) => (
+              <div key={port.id} className="flex items-center gap-1.5">
+                <span
+                  data-input-port={`${node.id}:${port.id}`}
+                  data-port-id={port.id}
+                  data-port-side="in"
+                  className={`-ml-[5px] size-2 shrink-0 border ${
+                    wired.has(port.id) ? "border-success bg-success" : "border-border bg-card"
+                  }`}
+                />
+                <span className="font-mono text-[9px] leading-none tracking-[0.02em] text-muted-foreground">
+                  {port.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-end gap-1">
+            {ports.outputs.map((port) => (
+              <div key={port.id} className="flex items-center gap-1.5">
+                <span className="font-mono text-[9px] leading-none tracking-[0.02em] text-muted-foreground">
+                  {port.label}
+                </span>
+                <span
+                  data-output-port={`${node.id}:${port.id}`}
+                  data-port-id={port.id}
+                  data-port-side="out"
+                  role="button"
+                  aria-label={`Connect ${meta.name} ${port.label}`}
+                  onPointerDown={(event) => onPortDown(event, node)}
+                  onPointerMove={onPortMove}
+                  onPointerUp={onPortUp}
+                  onPointerCancel={onPortUp}
+                  className="-mr-[5px] size-2 shrink-0 cursor-crosshair border border-border bg-card hover:border-foreground hover:bg-brand"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {node.kind === "upload" ? (
         <div className="p-2.5">
           {node.image ? (
             <div className="aspect-square w-full overflow-hidden border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={node.image} alt="" className="size-full object-cover" />
+              <img src={node.image} alt="" className="size-full object-cover object-top" />
             </div>
           ) : (
             <div className="flex aspect-square w-full items-center justify-center border border-dashed border-border text-[11px] text-muted-foreground-soft">
@@ -120,7 +184,7 @@ export function NodeCard({
           <textarea
             value={node.prompt ?? ""}
             onChange={(event) => onChange(node.id, { prompt: event.target.value })}
-            rows={5}
+            rows={4}
             spellCheck={false}
             aria-label="Prompt"
             className="w-full resize-none border-0 bg-transparent p-0 text-[12px] leading-relaxed text-foreground outline-none"
@@ -136,42 +200,30 @@ export function NodeCard({
           <div className="flex items-baseline justify-between">
             <span className="text-[11px] text-muted-foreground">References</span>
             <span className="font-mono text-[10px] tabular-nums text-foreground">
-              {(node.refs ?? []).length} / {MAX_REFS}
+              {refImages.filter(Boolean).length} / {MAX_REFS}
             </span>
           </div>
 
           <div className="mt-1.5 grid grid-cols-5 gap-1">
-            {(node.refs ?? []).map((src, index) => (
-              <div key={`${src}-${index}`} className="group relative aspect-square overflow-hidden border border-border bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" className="size-full object-cover object-top" />
-                <button
-                  type="button"
-                  aria-label={`Remove reference ${index + 1}`}
-                  onClick={() =>
-                    onChange(node.id, { refs: (node.refs ?? []).filter((_, position) => position !== index) })
-                  }
-                  className="absolute right-0 top-0 flex size-4 items-center justify-center bg-foreground/80 font-mono text-[9px] leading-none text-background opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+            {Array.from({ length: MAX_REFS }, (_, index) => {
+              const image = refImages[index]
+              return image ? (
+                <div
+                  key={`ref-${index}`}
+                  className="aspect-square overflow-hidden border border-border bg-muted"
                 >
-                  ×
-                </button>
-              </div>
-            ))}
-
-            {(node.refs ?? []).length < MAX_REFS ? (
-              <button
-                type="button"
-                aria-label="Add a reference"
-                onClick={() => {
-                  const current = node.refs ?? []
-                  const next = referencePool.find((candidate) => !current.includes(candidate))
-                  if (next) onChange(node.id, { refs: [...current, next] })
-                }}
-                className="flex aspect-square items-center justify-center border border-dashed border-border font-mono text-[12px] leading-none text-muted-foreground-soft hover:border-foreground hover:text-foreground"
-              >
-                +
-              </button>
-            ) : null}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image} alt="" className="size-full object-cover object-top" />
+                </div>
+              ) : (
+                <div
+                  key={`ref-${index}`}
+                  className="flex aspect-square items-center justify-center border border-dashed border-border font-mono text-[9px] text-muted-foreground-soft"
+                >
+                  {index + 1}
+                </div>
+              )
+            })}
           </div>
 
           <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-model`}>
@@ -189,8 +241,9 @@ export function NodeCard({
               </option>
             ))}
           </select>
-          <p className="mt-1.5 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            the prompt rides in separately
+
+          <p className="mt-1.5 line-clamp-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+            {promptText ? promptText : "no prompt wired"}
           </p>
         </div>
       ) : null}
@@ -198,7 +251,7 @@ export function NodeCard({
       {node.kind === "refine" ? (
         <div className="p-2.5">
           <div className="flex items-baseline justify-between">
-            <label className="text-[10px] text-muted-foreground" htmlFor={`${node.id}-strength`}>
+            <label className="text-[11px] text-muted-foreground" htmlFor={`${node.id}-strength`}>
               Strength
             </label>
             <span className="font-mono text-[10px] tabular-nums text-foreground">
@@ -215,7 +268,7 @@ export function NodeCard({
             onChange={(event) => onChange(node.id, { strength: Number(event.target.value) })}
             className="mt-2 w-full accent-[var(--brand)]"
           />
-          <p className="mt-1 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
+          <p className="mt-1 font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
             keeps the face and the light
           </p>
         </div>
@@ -264,7 +317,7 @@ export function NodeCard({
           {node.output ? (
             <div className="mt-2 aspect-square w-full overflow-hidden border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={node.output} alt="" className="size-full object-cover" />
+              <img src={node.output} alt="" className="size-full object-cover object-top" />
             </div>
           ) : null}
           <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
@@ -283,19 +336,6 @@ export function NodeCard({
               : (RUN_MS[node.kind] / 1000).toFixed(1) + "s"}
         </span>
       </div>
-
-      {node.kind !== "save" ? (
-        <span
-          data-output-port={node.id}
-          role="button"
-          aria-label={`Connect from ${meta.name}`}
-          onPointerDown={(event) => onPortDown(event, node)}
-          onPointerMove={onPortMove}
-          onPointerUp={onPortUp}
-          onPointerCancel={onPortUp}
-          className="absolute -right-[5px] top-1/2 size-2.5 -translate-y-1/2 cursor-crosshair border border-border bg-card hover:border-foreground hover:bg-brand"
-        />
-      ) : null}
     </article>
   )
 }

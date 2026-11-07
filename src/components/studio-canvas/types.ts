@@ -1,8 +1,16 @@
-/** The studio canvas: six node kinds, their copy, and the example graph. */
+/** The studio canvas: six node kinds, their sockets, and the example graph. */
 
 export type NodeKind = "upload" | "prompt" | "edit" | "refine" | "upscale" | "save"
 
 export type NodeStatus = "idle" | "running" | "done"
+
+export type PortKind = "image" | "text"
+
+export interface PortSpec {
+  id: string
+  label: string
+  kind: PortKind
+}
 
 export interface CanvasNode {
   id: string
@@ -20,8 +28,6 @@ export interface CanvasNode {
   prompt?: string
   /** edit */
   model?: string
-  /** edit — up to MAX_REFS reference images */
-  refs?: string[]
   /** refine */
   strength?: number
   /** upscale */
@@ -35,11 +41,14 @@ export interface CanvasNode {
 export interface CanvasEdge {
   id: string
   from: string
+  /** Node the wire lands on. */
   to: string
+  /** Input port id on the target node. */
+  port: string
 }
 
 export const NODE_WIDTH = 260
-/** Where the ports sit, measured from the node's top edge. */
+/** Where a port sits when the card has not been measured yet. */
 export const PORT_Y = 18
 
 export const KIND: Record<NodeKind, { name: string; note: string }> = {
@@ -49,6 +58,33 @@ export const KIND: Record<NodeKind, { name: string; note: string }> = {
   refine: { name: "Image refine", note: "harmonise light and grain" },
   upscale: { name: "Image upscale", note: "enough to show" },
   save: { name: "Save image", note: "into the job's assets" },
+}
+
+/** The edit step takes five images and one prompt — the model's documented inputs. */
+export const MAX_REFS = 5
+
+const refPorts: PortSpec[] = Array.from({ length: MAX_REFS }, (_, index) => ({
+  id: `ref ${index + 1}`,
+  label: `ref ${index + 1}`,
+  kind: "image" as const,
+}))
+
+export const PORTS: Record<NodeKind, { inputs: PortSpec[]; outputs: PortSpec[] }> = {
+  upload: { inputs: [], outputs: [{ id: "image", label: "image", kind: "image" }] },
+  prompt: { inputs: [], outputs: [{ id: "text", label: "text", kind: "text" }] },
+  edit: {
+    inputs: [{ id: "prompt", label: "prompt", kind: "text" }, ...refPorts],
+    outputs: [{ id: "image", label: "image", kind: "image" }],
+  },
+  refine: {
+    inputs: [{ id: "image", label: "image", kind: "image" }],
+    outputs: [{ id: "image", label: "image", kind: "image" }],
+  },
+  upscale: {
+    inputs: [{ id: "image", label: "image", kind: "image" }],
+    outputs: [{ id: "image", label: "image", kind: "image" }],
+  },
+  save: { inputs: [{ id: "image", label: "image", kind: "image" }], outputs: [] },
 }
 
 export const PALETTE: NodeKind[] = ["upload", "prompt", "edit", "refine", "upscale", "save"]
@@ -64,20 +100,10 @@ export const RUN_MS: Record<NodeKind, number> = {
 }
 
 export const MODELS = ["Qwen Edit 2.1", "GPT Image"]
-/** What the edit models take, per the provider docs. */
-export const MAX_REFS = 10
 
-export function initialNodes(uploadImage: string, references: string[] = []): CanvasNode[] {
+export function initialNodes(uploadImage: string): CanvasNode[] {
   return [
-    {
-      id: "upload",
-      kind: "upload",
-      step: 1,
-      x: 40,
-      y: 24,
-      status: "idle",
-      image: uploadImage,
-    },
+    { id: "upload", kind: "upload", step: 1, x: 40, y: 24, status: "idle", image: uploadImage },
     {
       id: "prompt",
       kind: "prompt",
@@ -88,28 +114,19 @@ export function initialNodes(uploadImage: string, references: string[] = []): Ca
       prompt:
         "Put the Louis Vuitton jacket on the model from look 27, with the Prada trousers. Studio light, plain background, same pose.",
     },
-    {
-      id: "edit",
-      kind: "edit",
-      step: 3,
-      x: 400,
-      y: 120,
-      status: "idle",
-      model: MODELS[0],
-      refs: [uploadImage, ...references].filter(Boolean).slice(0, 3),
-    },
-    { id: "refine", kind: "refine", step: 4, x: 720, y: 120, status: "idle", strength: 0.35 },
-    { id: "upscale", kind: "upscale", step: 5, x: 1040, y: 120, status: "idle", factor: 2 },
-    { id: "save", kind: "save", step: 6, x: 1360, y: 120, status: "idle", filename: "look-27-v1.png" },
+    { id: "edit", kind: "edit", step: 3, x: 400, y: 120, status: "idle", model: MODELS[0] },
+    { id: "refine", kind: "refine", step: 4, x: 760, y: 120, status: "idle", strength: 0.35 },
+    { id: "upscale", kind: "upscale", step: 5, x: 1080, y: 120, status: "idle", factor: 2 },
+    { id: "save", kind: "save", step: 6, x: 1400, y: 120, status: "idle", filename: "look-27-v1.png" },
   ]
 }
 
 export const INITIAL_EDGES: CanvasEdge[] = [
-  { id: "e-prompt-edit", from: "prompt", to: "edit" },
-  { id: "e-upload-edit", from: "upload", to: "edit" },
-  { id: "e-edit-refine", from: "edit", to: "refine" },
-  { id: "e-refine-upscale", from: "refine", to: "upscale" },
-  { id: "e-upscale-save", from: "upscale", to: "save" },
+  { id: "e-prompt", from: "prompt", to: "edit", port: "prompt" },
+  { id: "e-ref-1", from: "upload", to: "edit", port: "ref 1" },
+  { id: "e-edit-refine", from: "edit", to: "refine", port: "image" },
+  { id: "e-refine-upscale", from: "refine", to: "upscale", port: "image" },
+  { id: "e-upscale-save", from: "upscale", to: "save", port: "image" },
 ]
 
 /** Run order: sources first, ties broken left to right. */

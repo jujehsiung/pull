@@ -22,6 +22,7 @@ import {
   KIND,
   MAX_REFS,
   MODELS,
+  PORTS,
   NODE_WIDTH,
   PALETTE,
   RUN_MS,
@@ -32,6 +33,7 @@ import {
   type NodeKind,
 } from "./types"
 
+const EMPTY_SET = new Set<string>()
 const DOTS = "radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 0)"
 
 function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
@@ -54,13 +56,11 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
 export function StudioCanvas({
   uploadImage,
   sampleAssets,
-  references,
 }: {
   uploadImage: string
   sampleAssets: string[]
-  references: string[]
 }) {
-  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage, references))
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage))
   const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
@@ -73,6 +73,7 @@ export function StudioCanvas({
   const [linkFrom, setLinkFrom] = useState<{ x: number; y: number } | null>(null)
   const [linkPoint, setLinkPoint] = useState<{ x: number; y: number } | null>(null)
   const [heights, setHeights] = useState<Record<string, number>>({})
+  const [portY, setPortY] = useState<Record<string, { in: Record<string, number>; out: Record<string, number> }>>({})
 
   const canvasRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef({ camera, zoom })
@@ -149,9 +150,9 @@ export function StudioCanvas({
   const copySelected = useCallback(() => {
     const node = nodesRef.current.find((candidate) => candidate.id === selected)
     if (!node) return
-    const { kind, x, y, image, prompt, model, refs, strength, factor, filename } = node
+    const { kind, x, y, image, prompt, model, strength, factor, filename } = node
     clipboardRef.current = {
-      node: { kind, x, y, image, prompt, model, refs: refs ? [...refs] : undefined, strength, factor, filename },
+      node: { kind, x, y, image, prompt, model, strength, factor, filename },
       count: 0,
     }
   }, [selected])
@@ -168,7 +169,6 @@ export function StudioCanvas({
       x: clip.node.x + offset,
       y: clip.node.y + offset,
       status: "idle",
-      refs: clip.node.refs ? [...clip.node.refs] : undefined,
     }
     setNodes((current) => [...current, created])
     setSelected(created.id)
@@ -221,7 +221,45 @@ export function StudioCanvas({
     setHeights((current) => (current[id] === height ? current : { ...current, [id]: height }))
   }, [])
 
+  const onMeasurePort = useCallback((id: string, side: "in" | "out", port: string, y: number) => {
+    setPortY((current) => {
+      const node = current[id] ?? { in: {}, out: {} }
+      if (node[side][port] === y) return current
+      return { ...current, [id]: { ...node, [side]: { ...node[side], [port]: y } } }
+    })
+  }, [])
+
   const midY = (node: CanvasNode) => node.y + (heights[node.id] ?? 120) / 2
+  const socketY = (node: CanvasNode, side: "in" | "out", port: string) =>
+    portY[node.id]?.[side]?.[port]
+  /** Absolute canvas position of a socket — the card's own y plus the row offset. */
+  const outputY = (node: CanvasNode) => {
+    const offset = socketY(node, "out", PORTS[node.kind].outputs[0]?.id ?? "")
+    return node.y + (offset ?? (heights[node.id] ?? 120) / 2)
+  }
+  const inputY = (node: CanvasNode, port: string) => {
+    const offset = socketY(node, "in", port)
+    return node.y + (offset ?? (heights[node.id] ?? 120) / 2)
+  }
+
+  /** What each card's sockets are fed with, so the body can show the wiring. */
+  const wiring = useMemo(() => {
+    const map = new Map<
+      string,
+      { wired: Set<string>; images: Record<string, string | undefined>; texts: Record<string, string | undefined> }
+    >()
+    for (const node of nodes) map.set(node.id, { wired: new Set(), images: {}, texts: {} })
+    for (const edge of edges) {
+      const entry = map.get(edge.to)
+      if (!entry) continue
+      entry.wired.add(edge.port)
+      const source = nodes.find((node) => node.id === edge.from)
+      if (!source) continue
+      if (source.image) entry.images[edge.port] = source.image
+      if (source.prompt) entry.texts[edge.port] = source.prompt
+    }
+    return map
+  }, [nodes, edges])
 
   const toCanvas = (clientX: number, clientY: number) => {
     const rect = canvasRef.current?.getBoundingClientRect()
@@ -318,8 +356,9 @@ export function StudioCanvas({
   const onPortDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
     event.stopPropagation()
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-    linkRef.current = { from: node.id, x: node.x + NODE_WIDTH, y: midY(node) }
-    setLinkFrom({ x: camera.x + (node.x + NODE_WIDTH) * zoom, y: camera.y + midY(node) * zoom })
+    const y = outputY(node)
+    linkRef.current = { from: node.id, x: node.x + NODE_WIDTH, y }
+    setLinkFrom({ x: camera.x + (node.x + NODE_WIDTH) * zoom, y: camera.y + y * zoom })
   }
 
   const onPortMove = (event: PointerEvent<HTMLElement>) => {
@@ -335,28 +374,19 @@ export function StudioCanvas({
     setLinkPoint(null)
     if (!link) return
 
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-input-node]")
-    const to = target?.getAttribute("data-input-node")
-    if (!to || to === link.from) return
-    setEdges((current) =>
-      current.some((edge) => edge.from === link.from && edge.to === to)
-        ? current
-        : [...current, { id: `e-${link.from}-${to}-${current.length}`, from: link.from, to }],
-    )
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-input-port]")
+    const value = target?.getAttribute("data-input-port")
+    if (!value) return
+    const separator = value.indexOf(":")
+    const to = value.slice(0, separator)
+    const port = value.slice(separator + 1)
+    if (!to || !port || to === link.from) return
 
-    // Wiring an image into the edit step is how it becomes a reference.
-    const source = nodes.find((node) => node.id === link.from)
-    const image = source?.image
-    if (image) {
-      setNodes((current) =>
-        current.map((node) => {
-          if (node.id !== to || node.kind !== "edit") return node
-          const refs = node.refs ?? []
-          if (refs.length >= MAX_REFS || refs.includes(image)) return node
-          return { ...node, refs: [...refs, image] }
-        }),
-      )
-    }
+    // An input socket takes one wire: a second one replaces the first.
+    setEdges((current) => {
+      const without = current.filter((edge) => !(edge.to === to && edge.port === port))
+      return [...without, { id: `e-${link.from}-${to}-${port}-${without.length}`, from: link.from, to, port }]
+    })
   }
 
   /* ── adding a card ─────────────────────────────────────────────────────── */
@@ -421,11 +451,11 @@ export function StudioCanvas({
     runRef.current = false
   }
 
-  const pathFor = (from: CanvasNode, to: CanvasNode) => {
+  const pathFor = (from: CanvasNode, to: CanvasNode, port: string) => {
     const x1 = from.x + NODE_WIDTH
-    const y1 = midY(from)
+    const y1 = outputY(from)
     const x2 = to.x
-    const y2 = midY(to)
+    const y2 = inputY(to, port)
     const bend = Math.max(40, Math.abs(x2 - x1) * 0.45)
     return `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`
   }
@@ -483,7 +513,7 @@ export function StudioCanvas({
                 return (
                   <path
                     key={edge.id}
-                    d={pathFor(from, to)}
+                    d={pathFor(from, to, edge.port)}
                     fill="none"
                     stroke="color-mix(in srgb, var(--foreground) 22%, transparent)"
                     strokeWidth={1.25}
@@ -508,7 +538,13 @@ export function StudioCanvas({
                 onPortMove={onPortMove}
                 onPortUp={onPortUp}
                 onMeasure={onMeasure}
-                referencePool={references}
+                onMeasurePort={onMeasurePort}
+                wired={wiring.get(node.id)?.wired ?? EMPTY_SET}
+                refImages={Array.from(
+                  { length: MAX_REFS },
+                  (_, index) => wiring.get(node.id)?.images[`ref ${index + 1}`],
+                )}
+                promptText={wiring.get(node.id)?.texts.prompt}
               />
             ))}
           </div>

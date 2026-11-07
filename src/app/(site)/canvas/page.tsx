@@ -34,11 +34,7 @@ export default function StudioPage() {
 
   return (
     <main>
-      <StudioCanvas
-        uploadImage={images[0] ?? ""}
-        sampleAssets={images.slice(1, 5)}
-        references={images.slice(0, 12)}
-      />
+      <StudioCanvas uploadImage={images[0] ?? ""} sampleAssets={images.slice(1, 5)} />
     </main>
   )
 }
