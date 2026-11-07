@@ -11,7 +11,7 @@
  * it sits under the site header (app/(site)/layout.tsx) instead of covering it.
  */
 import { BoardPreview, type PreviewBoard } from "@/components/start-job/BoardPreview"
-import { seededLooks } from "@/lib/fixtures"
+import { seededLooks, seededReserve } from "@/lib/fixtures"
 
 export default function BoardPreviewPage() {
   const looks = seededLooks()
@@ -28,6 +28,7 @@ export default function BoardPreviewPage() {
         dueDate: "2027-12-01",
       },
       looks,
+      reserve: seededReserve(looks),
     },
     {
       id: "oscar-campaign",
@@ -38,6 +39,7 @@ export default function BoardPreviewPage() {
         dueDate: "2028-02-15",
       },
       looks: looks.slice(10, 20),
+      reserve: seededReserve(looks.slice(10, 20)),
     },
     {
       id: "milan-fittings",
@@ -48,6 +50,7 @@ export default function BoardPreviewPage() {
         dueDate: "2027-09-10",
       },
       looks: looks.slice(20),
+      reserve: seededReserve(looks.slice(20)),
     },
   ]
 
