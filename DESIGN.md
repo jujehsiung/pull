@@ -380,3 +380,8 @@ The studio's six-card graph is the demo's picture of the product: **four referen
   fixtures). The footer's time before a run is the estimate; after it, the measured value.
 - **Saving is the only way into the assets.** The save card writes the render into the panel and the
   panel opens itself; nothing else populates it.
+- **A card resizes from its corner** (2026-11-07). The grip sits in the bottom-right corner — drag it,
+  or focus it and use ← / →. Width runs 220–640 canvas units, height follows the content, and the
+  render preview grows with the card: the save card is where the look is finally looked at, so it is
+  the card people make big. The width survives copy/paste with the rest of the card's settings; it
+  resets with the canvas, because the graph itself is not persisted.
