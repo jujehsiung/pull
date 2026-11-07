@@ -7,6 +7,7 @@
  */
 import { withTrace } from "./tracer"
 import { deepseek } from "./providers/deepseek"
+import { emitPrismExchange } from "./prism"
 import { zoowork, zooworkConfigured, zooworkEnabled } from "./providers/zoowork"
 import { env } from "../env"
 import type { AgentProvider, AgentTaskInput, AgentTaskResult, ProviderName } from "./providers/types"
@@ -82,11 +83,42 @@ export async function runAgentTask(
   const provider = PROVIDERS[name as Exclude<ProviderName, "deterministic">]
   const tool = `${name}.run`
 
+  // The mirror to PRISM happens around the same call the tracer wraps, so a
+  // failed exchange is mirrored too — that is the one worth watching.
+  const run = async () => {
+    const started = Date.now()
+    try {
+      const result = await provider.run(input)
+      emitPrismExchange({
+        model: result.model,
+        system: input.system,
+        user: input.user,
+        output: result.text,
+        latencyMs: Date.now() - started,
+        sessionId: ctx?.jobId,
+        metadata: { kind: ctx?.kind, provider: name, json: Boolean(input.json) },
+      })
+      return result
+    } catch (error) {
+      emitPrismExchange({
+        model: name,
+        system: input.system,
+        user: input.user,
+        output: "",
+        latencyMs: Date.now() - started,
+        sessionId: ctx?.jobId,
+        error: error instanceof Error ? error.message : String(error),
+        metadata: { kind: ctx?.kind, provider: name },
+      })
+      throw error
+    }
+  }
+
   if (ctx?.jobId) {
     return withTrace(
       { jobId: ctx.jobId, tool, args: { kind: ctx.kind, json: Boolean(input.json), provider: name } },
-      () => provider.run(input),
+      run,
     )
   }
-  return provider.run(input)
+  return run()
 }
