@@ -74,23 +74,34 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
             <h1 className="min-w-0 text-[clamp(30px,3.4vw,46px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
               {job.title}
             </h1>
-            <p className="text-[12px] tracking-[0.02em] text-muted-foreground">{job.client}</p>
+            <p className="text-[12px] tracking-[0.02em] text-muted-foreground">
+              {job.client} · Due {formatDue(job.dueDate)}
+            </p>
+            <p className="mt-1 text-[11px] tracking-[0.02em] text-muted-foreground">
+              Approve what you love, pass the rest.
+            </p>
           </div>
 
           <div className="flex items-start justify-between gap-3 md:ml-auto md:justify-end">
-            <div className="flex flex-col gap-1 text-left md:items-end md:text-right">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:flex-col md:items-end md:gap-2">
               <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
-                Due {formatDue(job.dueDate)}
+                <b className="font-medium text-foreground">{approved.length}</b> approved ·{" "}
+                <b className="font-medium text-foreground">{passed.length}</b> passed ·{" "}
+                <b className="font-medium text-foreground">{remaining}</b> to review
               </span>
-              <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
-                Approve what you love, pass the rest.
-              </span>
+              {sent ? (
+                <span className="text-[12px] text-success">Sent to your stylist</span>
+              ) : (
+                <Button onClick={() => setSent(true)} disabled={approved.length === 0}>
+                  Send approvals
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1440px] px-6 pb-28 pt-10 md:px-10">
+      <div className="mx-auto max-w-[1440px] px-6 pb-16 pt-10 md:px-10">
         <div className="flex flex-col gap-20">
           {grouped.map(([brand, list]) => (
             <section key={brand} className="flex flex-col gap-4">
@@ -198,29 +209,6 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
         </div>
       </div>
 
-      {/* The one thing a client has to finish: send the decisions back. */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-6 py-3 md:px-10">
-          <div className="flex flex-wrap items-center gap-4 text-[11px] tracking-[0.02em] text-muted-foreground">
-            <span>
-              <b className="font-medium text-foreground">{approved.length}</b> approved
-            </span>
-            <span>
-              <b className="font-medium text-foreground">{passed.length}</b> passed
-            </span>
-            <span>
-              <b className="font-medium text-foreground">{remaining}</b> to review
-            </span>
-          </div>
-          {sent ? (
-            <span className="text-[12px] text-success">Sent to your stylist</span>
-          ) : (
-            <Button onClick={() => setSent(true)} disabled={approved.length === 0}>
-              Send approvals
-            </Button>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

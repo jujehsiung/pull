@@ -7,6 +7,7 @@
  * "Send approvals" only acknowledges.
  */
 import { ClientBoard } from "@/components/client-view/ClientBoard"
+import { ShareButton } from "@/components/client-view/ShareButton"
 import { seededLooks } from "@/lib/fixtures"
 
 export const metadata = {
@@ -22,7 +23,15 @@ export default function ClientPage() {
           <span className="text-[19px] font-extrabold tracking-[0.01em] text-foreground">
             PULL.
           </span>
-          <span className="text-[11px] tracking-[0.02em] text-muted-foreground">Private link</span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[11px] tracking-[0.02em] text-muted-foreground sm:inline">
+              Private link
+            </span>
+            <ShareButton
+              title="Your PULL lookbook"
+              text="The looks Juje pulled for Dune Tour — approve what you love, pass the rest."
+            />
+          </div>
         </div>
       </div>
 
