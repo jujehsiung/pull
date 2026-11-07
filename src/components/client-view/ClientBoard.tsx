@@ -14,6 +14,8 @@
 import { useMemo, useState } from "react"
 import { Brush, Check, Eye, EyeOff, X } from "lucide-react"
 
+import { ShareButton } from "./ShareButton"
+
 import { Button } from "@/components/ui/button"
 import type { Look } from "@/components/start-job/ReviewBoard"
 
@@ -53,8 +55,8 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
   /** Circled pieces, one PNG data URL per look id. Design surface: local only. */
   const [markups, setMarkups] = useState<Record<string, string>>({})
   const [markupLook, setMarkupLook] = useState<Look | null>(null)
-  /** Markup layers hidden per look — the eye on the thumbnail. */
-  const [hiddenLayers, setHiddenLayers] = useState<string[]>([])
+  /** One switch for every markup layer: the eye in the page bar. */
+  const [markupVisible, setMarkupVisible] = useState(true)
 
   const grouped = useMemo(() => groupByBrand(looks), [looks])
   const remaining = looks.length - approved.length - passed.length
@@ -93,8 +95,42 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
     setPassed((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
   }
 
+  const markupCount = Object.keys(markups).length
+
   return (
     <div className="relative bg-background">
+      <div className="border-b border-border">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3 md:px-10">
+          <span className="text-[19px] font-extrabold tracking-[0.01em] text-foreground">
+            PULL.
+          </span>
+          <div className="flex items-center gap-3">
+            {markupCount ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMarkupVisible((visible) => !visible)}
+                aria-pressed={!markupVisible}
+                aria-label={markupVisible ? "Hide all markup" : "Show all markup"}
+              >
+                {markupVisible ? (
+                  <Eye className="size-3.5" aria-hidden />
+                ) : (
+                  <EyeOff className="size-3.5" aria-hidden />
+                )}
+                Markup
+              </Button>
+            ) : null}
+            <span className="hidden text-[11px] tracking-[0.02em] text-muted-foreground sm:inline">
+              Private link
+            </span>
+            <ShareButton
+              title="Your PULL lookbook"
+              text="The looks Juje pulled for Dune Tour — approve what you love, pass the rest."
+            />
+          </div>
+        </div>
+      </div>
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-6 py-5 md:flex-row md:items-start md:gap-6 md:px-10">
           <div className="flex min-w-0 flex-col gap-1">
@@ -167,7 +203,7 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                         ) : null}
 
                         {/* The rings themselves, as a layer over the thumbnail. */}
-                        {markups[look.id] && !hiddenLayers.includes(look.id) ? (
+                        {markups[look.id] && markupVisible ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={markups[look.id]}
@@ -175,31 +211,6 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                             aria-hidden
                             className="pointer-events-none absolute inset-0 h-full w-full object-cover"
                           />
-                        ) : null}
-
-                        {/* Eye: the layer is visible by default and can be hidden. */}
-                        {markups[look.id] ? (
-                          <button
-                            type="button"
-                            aria-label={
-                              hiddenLayers.includes(look.id) ? "Show markup" : "Hide markup"
-                            }
-                            aria-pressed={hiddenLayers.includes(look.id)}
-                            onClick={() =>
-                              setHiddenLayers((current) =>
-                                current.includes(look.id)
-                                  ? current.filter((x) => x !== look.id)
-                                  : [...current, look.id],
-                              )
-                            }
-                            className="absolute left-2 top-2 inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground"
-                          >
-                            {hiddenLayers.includes(look.id) ? (
-                              <EyeOff className="size-3.5" aria-hidden />
-                            ) : (
-                              <Eye className="size-3.5" aria-hidden />
-                            )}
-                          </button>
                         ) : null}
 
                         {/* Decided looks keep their mark when the pointer is away. */}

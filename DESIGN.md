@@ -230,8 +230,9 @@ import { Card, CardContent } from "@/components/ui/card"
 - **Dialog titles read `--title-size`** (§3). A dialog title is never sized at its call site; the
   token is the single number.
 - **Markup is a pen, not a highlight.** A client circles a piece with the status red
-  (`--destructive`, 5px, no underlay), and the rings come back on the thumbnail as a layer with an
-  eye at its top-left to hide them. It marks a photograph, never a control — red stays a status
+  (`--destructive`, 5px, no underlay), and the rings come back on the thumbnails as one layer with a
+  single eye in the page bar — "Markup" — that shows or hides every ring at once. The toggle only
+  exists once something is marked. It marks a photograph, never a control — red stays a status
   colour in the chrome.
 - **Icons are hairlines.** Every Lucide icon strokes at **1.5** in the 24-unit box — one rendered
   pixel at a 16px icon, set once for `.lucide` in `globals.css`, never the library's 2. An icon is a
