@@ -11,7 +11,7 @@ function seasonMeta(looks: LookCardLook[]): string {
   const seasons = Array.from(
     new Set(
       looks
-        .map((look) => look.season?.trim().toUpperCase())
+        .map((look) => look.season?.trim().toUpperCase()) // case-exempt: data — season codes
         .filter((season): season is string => Boolean(season)),
     ),
   )

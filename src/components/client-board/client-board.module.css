@@ -33,16 +33,14 @@
   white-space: nowrap;
   color: var(--dark-muted);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .topCount {
   flex: none;
   color: var(--dark-muted);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* ── hero ──────────────────────────────────────────────────────────────── */
@@ -67,8 +65,7 @@
 .meta {
   color: var(--dark-muted);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* ── brand sections ────────────────────────────────────────────────────── */
@@ -77,9 +74,8 @@
   font-family: var(--font);
   font-size: 15px;
   font-weight: 400;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--dark-text);
+  letter-spacing: 0.02em;
+color: var(--dark-text);
 }
 
 /* ── look grid ───────────────────────────────────────────────────────────
@@ -120,9 +116,8 @@
 .missingText {
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+  letter-spacing: 0.02em;
+color: var(--dark-muted);
 }
 
 /* ── empty + footer ────────────────────────────────────────────────────── */
@@ -148,8 +143,7 @@
 .footerText {
   color: var(--dark-muted);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -168,9 +162,8 @@
   left: 8px;
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.62);
+  letter-spacing: 0.02em;
+background: rgba(0, 0, 0, 0.62);
   color: #fff;
   padding: 3px 6px;
   border-radius: 3px;
@@ -218,15 +211,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-pill);
+  border-radius: 0;
   border: 1px solid var(--dark-line);
   background: rgba(0, 0, 0, 0.45);
   color: var(--dark-text);
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  letter-spacing: 0.02em;
+transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .reviewBtn:hover {
@@ -274,7 +266,7 @@
   flex: 1;
   min-height: 44px;
   min-width: 44px;
-  border-radius: var(--r-pill);
+  border-radius: 0;
   border: 1px solid var(--dark-line);
   background: rgba(0, 0, 0, 0.45);
   color: #6b6b72;
@@ -317,14 +309,13 @@
   min-width: 44px;
   min-height: 44px;
   padding: 0 10px;
-  border-radius: 10px;
+  border-radius: 0;
   border: 1px solid var(--dark-line);
   background: rgba(0, 0, 0, 0.45);
   color: var(--dark-text);
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* locked-card summary (FR-11) */
@@ -344,17 +335,15 @@
 .readOnlyLabel {
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+  letter-spacing: 0.02em;
+color: var(--dark-muted);
 }
 
 .readOnlyValue {
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dark-text);
+color: var(--dark-text);
 }
 
 .readOnlyStars {
@@ -386,8 +375,7 @@
 .bannerText {
   color: var(--dark-muted);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 /* sticky review bar */
@@ -418,8 +406,7 @@
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+color: var(--dark-muted);
 }
 
 .counts b {
@@ -433,7 +420,7 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 20px;
-  border-radius: var(--r-pill);
+  border-radius: 0;
   background: var(--dark-text);
   color: var(--dark);
   font-size: 13px;
@@ -459,9 +446,8 @@
   min-height: 44px;
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+  letter-spacing: 0.02em;
+color: var(--dark-muted);
 }
 
 .backLink:hover {
@@ -508,9 +494,8 @@
   margin-top: 6px;
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+  letter-spacing: 0.02em;
+color: var(--dark-muted);
 }
 
 .summarySection {
@@ -523,9 +508,8 @@
   font-family: var(--font);
   font-size: 15px;
   font-weight: 400;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--dark-text);
+  letter-spacing: 0.02em;
+color: var(--dark-text);
 }
 
 .summaryLook {
@@ -560,8 +544,7 @@
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dark-text);
+color: var(--dark-text);
 }
 
 .summaryStars {
@@ -582,9 +565,8 @@
   margin: 4px 0 0;
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+  letter-spacing: 0.02em;
+color: var(--dark-muted);
 }
 
 .summaryEmpty {
@@ -608,7 +590,7 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 22px;
-  border-radius: var(--r-pill);
+  border-radius: 0;
   border: 0;
   background: var(--dark-text);
   color: var(--dark);
@@ -625,8 +607,7 @@
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dark-muted);
+color: var(--dark-muted);
 }
 
 .lockedBox {

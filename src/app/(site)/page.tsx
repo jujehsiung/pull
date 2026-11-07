@@ -1,9 +1,7 @@
-import Link from "next/link"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { LookMarquee } from "@/components/LookMarquee"
 import { StartJobFlow } from "@/components/start-job/StartJobFlow"
-import { SiteMenu } from "@/components/SiteMenu"
 
 interface SuggestionRow {
   file: string
@@ -36,7 +34,7 @@ function stripImages(): string[] {
  * Visual direction: vende.framer.media for the type (a display scale that runs
  * past 120px, tight negative tracking, near-black on near-white, one accent) and
  * Dover Street Market for the density (a full-bleed, square-cornered image band,
- * hairline rules, uppercase labels doing the small work). No radius anywhere —
+ * hairline rules, small labels doing the quiet work). No radius anywhere —
  * thumbnails and buttons are square.
  */
 export default function LandingPage() {
@@ -44,21 +42,9 @@ export default function LandingPage() {
 
   return (
     <>
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3 md:px-10">
-          <Link
-            href="/"
-            className="text-[19px] font-extrabold tracking-[0.01em] text-foreground"
-          >
-            PULL.
-          </Link>
-          <SiteMenu />
-        </div>
-      </header>
-
       <main>
         <section className="mx-auto max-w-[1440px] px-6 pt-14 md:px-10 md:pt-20">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="text-[11px] tracking-[0.02em] text-muted-foreground">
             Sample trafficking
           </p>
 
@@ -86,10 +72,10 @@ export default function LandingPage() {
         ) : null}
 
         <footer className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-10 md:px-10">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-[11px] tracking-[0.02em] text-muted-foreground">
             Real labels · Real email · No client login
           </p>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-[11px] tracking-[0.02em] text-muted-foreground">
             New York
           </p>
         </footer>

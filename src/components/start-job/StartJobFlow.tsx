@@ -318,7 +318,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
 
           {suggested.length ? (
             <p className="text-[13px] leading-snug text-muted-foreground">
-              {suggested.length} looks suggested from{" "}
+              <span className="agent-mark">{suggested.length} looks</span> suggested from{" "}
               {[...new Set(suggested.map((look) => look.brand))].join(", ")}.
             </p>
           ) : null}
@@ -328,6 +328,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <Button
               variant="ghost"
+              className="agent-action"
               onClick={() => void suggestLooks()}
               disabled={loadingSuggestions}
               title="Seeds the board with menswear picks"

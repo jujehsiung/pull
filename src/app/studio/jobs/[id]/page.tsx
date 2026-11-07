@@ -33,7 +33,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           ← DASHBOARD
         </Link>
         <header style={{ marginTop: 16 }}>
-          <p className="eyebrow">{job.clientName.toUpperCase()}</p>
+          <p className="eyebrow">{job.clientName}</p>
           <h1 className="display" style={{ margin: "10px 0 0", fontSize: "clamp(28px, 4vw, 42px)" }}>
             {job.title}
           </h1>
@@ -49,7 +49,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       {visibleLookCount === 0 ? (
         <section aria-label="Waiting for images">
           <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
-            <p className="eyebrow">WAITING FOR IMAGES</p>
+            <p className="eyebrow">Waiting for images</p>
             <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
               NOTHING SORTED YET
             </span>

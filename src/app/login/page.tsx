@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </header>
 
       <div style={{ maxWidth: 620, marginTop: "clamp(40px, 6vw, 72px)" }}>
-        <p className="eyebrow">SIGN IN</p>
+        <p className="eyebrow">Sign in</p>
         <h1 className="display" style={{ margin: "14px 0 0" }}>
           The studio is <em>one link away</em>.
         </h1>

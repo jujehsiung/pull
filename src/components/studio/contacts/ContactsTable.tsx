@@ -17,8 +17,8 @@ function isDemoSeed(contact: ContactRow): boolean {
 
 function shipsWords(shipsOnOwnAccount: boolean): { word: string; tag: string } {
   return shipsOnOwnAccount
-    ? { word: "showroom ships on its own account", tag: "SHOWROOM SHIPS" }
-    : { word: "PULL sends a prepaid label", tag: "NEEDS LABEL" }
+    ? { word: "showroom ships on its own account", tag: "Showroom ships" }
+    : { word: "PULL sends a prepaid label", tag: "Needs label" }
 }
 
 export function ContactsTable({ contacts }: { contacts: ContactRow[] }) {
@@ -29,7 +29,7 @@ export function ContactsTable({ contacts }: { contacts: ContactRow[] }) {
           CONTACT BOOK
         </p>
         <span className={styles.count}>
-          {contacts.length} {contacts.length === 1 ? "CONTACT" : "CONTACTS"}
+          {contacts.length} {contacts.length === 1 ? "Contact" : "Contacts"}
         </span>
       </div>
 

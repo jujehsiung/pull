@@ -32,7 +32,7 @@ export default async function DashboardPage() {
     <div>
       <header className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <p className="eyebrow">DASHBOARD</p>
+          <p className="eyebrow">Dashboard</p>
           <h1 className="display" style={{ margin: "12px 0 0", fontSize: "clamp(30px, 4vw, 44px)" }}>
             Your jobs
           </h1>
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline", gap: 16 }}>
                   <div style={{ minWidth: 0 }}>
                     <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
-                      {job.clientName.toUpperCase()}
+                      {job.clientName}
                     </span>
                     <h2 className="h3" style={{ margin: "6px 0 0" }}>
                       {job.title}

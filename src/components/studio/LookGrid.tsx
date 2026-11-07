@@ -106,7 +106,7 @@ function LookCard({ look, jobId, isHidden = false }: { look: LookView; jobId: st
 
   return (
     <article className="card" style={{ padding: 10, opacity: pending ? 0.6 : 1 }} data-look={look.lookNo}>
-      <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "var(--paper-2)" }}>
+      <div style={{ position: "relative", borderRadius: 0, overflow: "hidden", background: "var(--paper-2)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={look.imageUrl}

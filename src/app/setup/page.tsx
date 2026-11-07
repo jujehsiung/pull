@@ -53,7 +53,7 @@ export default function SetupPage() {
   const statuses = serviceStatuses()
   const configured = new Map(statuses.map((s) => [s.name, s]))
   // A chip is DONE when the service it describes reports configured — the page cannot disagree
-  // with the LIVE STATUS list rendered below it.
+  // with the Live status list rendered below it.
   const isDone = (step: (typeof STEPS)[number]) =>
     step.done ?? (step.service ? Boolean(configured.get(step.service)?.configured) : false)
 
@@ -72,7 +72,7 @@ export default function SetupPage() {
       </div>
 
       <header style={{ padding: "clamp(40px,6vw,72px) 0 8px" }}>
-        <p className="eyebrow">ONE BY ONE</p>
+        <p className="eyebrow">One by one</p>
         <h1 className="display" style={{ fontSize: "clamp(34px,4.8vw,56px)", marginTop: 14 }}>
           Connect the stack.
         </h1>
@@ -94,7 +94,7 @@ export default function SetupPage() {
                   color: isDone(s) ? "var(--ok)" : undefined,
                 }}
               >
-                {isDone(s) ? "DONE" : "TODO"}
+                {isDone(s) ? "Done" : "To do"}
               </span>
             </div>
             <h2 className="h3">{s.title}</h2>
@@ -110,7 +110,7 @@ export default function SetupPage() {
       </div>
 
       <section className="card" style={{ marginTop: 24 }}>
-        <p className="eyebrow">LIVE STATUS</p>
+        <p className="eyebrow">Live status</p>
         <ul className="stack" style={{ gap: 8, marginTop: 12, padding: 0, listStyle: "none" }}>
           {statuses.map((s) => (
             <li key={s.name} className="row" style={{ justifyContent: "space-between" }}>

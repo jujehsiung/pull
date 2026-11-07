@@ -38,7 +38,7 @@ people get wrong:
 | `--muted` | a **surface** (pale grey background) | text |
 | `--muted-foreground` | **text** on that surface | a surface |
 | `--accent` | the **selection surface** (a chosen row, hover) | the brand colour |
-| `--brand` | the brand colour — Pull's olive | a fill for buttons |
+| `--brand` | the brand colour — Pull's olive, and **the agent's colour**: what the agent did or proposes | a fill for buttons |
 | `--primary` | the **primary action fill** — ink | the brand colour |
 | `--tertiary` | error/destructive status | a third brand colour |
 
@@ -60,7 +60,7 @@ rate card, the focus ring. A screen with several olive fills has lost the hierar
 | `--muted-foreground` | `#6b6a66` | 5.14:1 | body secondary |
 | `--muted-foreground-soft` | `#706b64` | 5.01:1 | eyebrow / meta |
 | `--border` | `#e6e3e3` | 1.21:1 | hairline rule |
-| `--input` | `#d5d2cd` | 1.43:1 | field boundary — see §6 |
+| `--input` | `#d5d2cd` | 1.43:1 | field boundary — see §7 |
 | `--ring` | `#465907` | 7.40:1 | focus ring |
 | `--brand` | `#465907` | 7.40:1 | olive emphasis |
 | `--accent` | `#eceee2` | — | selection surface |
@@ -71,7 +71,7 @@ rate card, the focus ring. A screen with several olive fills has lost the hierar
 | `--success` | `#2f6b3a` | 6.07:1 | shipped / confirmed |
 | `--warning` | `#8a5a00` | 5.63:1 | needs attention |
 | `--info` | `#1f5fa8` | 6.11:1 | neutral notice |
-| `--radius` | `0` | — | square; every `rounded-*` utility derives to 0 |
+| `--radius` | `0.375rem` | — | the chrome's corner; every `rounded-*` utility derives from it (sm 3.6 / md 4.8 / lg 6 / xl 8.4 px) |
 
 ### The lookbook material — fixed, not a mode
 
@@ -96,9 +96,45 @@ Set `data-eva-theme="pull" data-mode="dark"` **on the same element** (EVA select
 a nested dark region restates both attributes). The app ships light only; the block exists because an
 incomplete theme silently falls back to Dark EVA one token at a time, and nothing errors.
 
+### The title token — the H2 step (2026-11-06)
+
+`--title-size` / `--title-tracking` / `--title-leading` (in `src/styles/pull-theme.css`) are the H2
+step: `clamp(28px, 3.6vw, 44px)` / `-0.03em` / `1.08` — the same values `/design` shows as `h2`. The
+dialog title (`DialogTitle`) reads them, so a surface leader is an H2 without the primitive
+hard-coding a size, and the step changes in one place. **44px at 1440.**
+
+Two deliberate deltas from the canvas specimen: the title is set **extrabold** (the wordmark's
+weight, asked for explicitly), where the canvas H2 runs `font-medium`; and the hero keeps its own,
+larger scale (`clamp(52px, 8.6vw, 128px)`) — the title is not competing with the masthead. Type,
+like shape, does not vary by mode, so the tokens live in the default scope only and the dark block
+does not restate them.
+
 ---
 
-## 4. Resolved inconsistencies
+## 4. Case — no all caps
+
+**No all caps (2026-11-06).** Not `text-transform: uppercase`, not a display `toUpperCase()`, not
+literal capitals standing in for emphasis. The reference sites did their small work in caps and wide
+tracking; that is the one part of them Pull does not take — at 11px caps cost legibility rather than
+gaining weight, and a page of them reads like a shop sign.
+
+Reach for these instead, in this order:
+
+1. **Size and weight** — 11px → 12/13px, regular → 500.
+2. **Tracking** — a hair open (`0.02em`), not the `0.16em` that exists only to let caps breathe.
+3. **Colour** — `--muted-foreground-soft` for the aside, ink for the label.
+4. **A hairline or a gap** — separate with the rule, not with shouting.
+
+What keeps its casing: **data** — season and month codes (`AW26`, `SS26`), currency (`USD`), country
+codes and dedupe keys; **initialisms** (`CSV`, `UTC`, `OK`); the **wordmark** (`PULL.`), which is a
+mark; and **source content** (a brand that writes itself in caps). Everything that is *our words* is
+sentence case — a label, a heading, a status, a tag.
+
+Enforced by `npm run tokens:check`: the case scan fails on `text-transform: uppercase`, on
+`uppercase` in a class name, and on a display `toUpperCase()`. A legitimate data call carries
+`// case-exempt: data` on its line (§8).
+
+## 5. Resolved inconsistencies
 
 These were real conflicts, decided once. Do not re-litigate them in a component.
 
@@ -121,11 +157,44 @@ sit close in weight, so that hierarchy is carried by **size, weight and tracking
 uppercase, 0.16em) rather than by value. Do not darken `--muted-foreground` to widen the gap; it is
 already at 5.14:1 and the page's calm depends on it.
 
-**Radius is zero (2026-11-06).** The visual references — vende.framer.media and Dover Street Market —
-carry no rounding at all: square thumbnails, square buttons. Because the kit derives every `rounded-*`
-utility from `--radius`, zeroing that one token squares the whole component set at once. Pull's older
-sheets still draw their own corners from `--r-sm/--r-md/--r-lg`, so they are unchanged until they are
-converted.
+**Radius is for the chrome, never for the content (2026-11-06, revised).** The base token is
+`0.375rem` and it is deliberately restrained: primitives derive sm 3.6 / md 4.8 / lg 6 / xl 8.4px, so
+a field or a card carries a corner you notice only at the edge. Three families are pinned by rule:
+
+- **Buttons are square.** A button is the action; it keeps the references' hard edge
+  (`ui/button.tsx` is `rounded-none` at every size, and the legacy `.btn` was already 0). Pills stop
+  being a button shape — `--radius-pill` now belongs to chips, tags and badges only.
+- **A trigger is a control, not an action.** The dropdown's trigger (`DatePicker`) takes the field
+  radius, because it reads as the field it opens; only the things you *do* stay hard.
+- **Thumbnails are square.** A look is a photograph, not a card. Board tiles, the import queue,
+  the studio grid and the client deck are all `border-radius: 0`. The one exception is the
+  shortlist preview inside the client-send popover: those are ~100px proofs of what the client is
+  about to receive, not board photography, so they take the chrome's `md` radius.
+- **The look grid separates with rules, not gutters.** Cells touch: the 1px
+  hairline is the spacing, the same thin separation the landing strip uses. The
+  board is a contact sheet of photographs, not a set of cards.
+- **A tile's actions are circles.** The +/×/check that appear on hover sit *on a photograph*, so they
+  are round (white with a border; brand-green when shortlisted) — the one round button family. Page
+  actions stay square.
+- **Calendar days are circles.** The one fully round primitive: a date is a point on a grid, not a
+  cell, so hover, today, focus and selection are all the same `rounded-full` mark — the grid never
+  paints a square.
+
+**Floating panels take the top step.** Popover, dropdown and select lists are `rounded-xl` (8.4px) —
+more than the field they open from — so a sheet still reads as a sheet floating above the page
+instead of inheriting the reduced field corner.
+
+The split is the point: **hard edges on what you press and what shows the work; soft edges on the
+software around it.** Pull's older sheets still draw corners from `--r-sm/--r-md/--r-lg`; those are
+containers and inputs, not buttons or thumbnails, so they are left alone.
+
+**Olive is the agent's colour (2026-11-06).** The agent is a second author, never the voice, so
+anything it participates in wears olive as its *secondary* mark: the sparkle badge on a suggested
+look, the "Suggest looks" action (`.agent-action`), the count it reports back (`.agent-mark`), a
+running trace step's dot, the live provider dot in the badge. Ink stays primary; per §2 a screen with
+several olive fills has lost the hierarchy. Olive never becomes body copy, and it is never the
+fill of a button — the agent does not get to be louder than the work. Navigation is not the agent
+either: the board switcher marks the current board in ink, and the check in its menu is ink.
 
 **The gutter is a blur filter (2026-11-06).** On the landing, the look band is full-bleed and its two
 outer gutters are frosted glass — `backdrop-filter: blur(18px)` on a band whose width tracks the
@@ -136,7 +205,7 @@ adds no token, so it does not widen the theme surface.
 
 ---
 
-## 5. Using the primitives
+## 6. Using the primitives
 
 ```tsx
 import { Button } from "@/components/ui/button"
@@ -152,12 +221,18 @@ import { Card, CardContent } from "@/components/ui/card"
 - **Semantic utilities only:** `bg-background`, `text-foreground`, `text-muted-foreground`,
   `text-brand`, `border-border`, `ring-ring`, `font-mono`. A raw hex or `bg-[#f9f9f8]` fails review.
 - **Red is status, never an action.** Delete, fail, blocked — `destructive`. The primary action is ink.
+  A **count is not a badge**: the shortlist count is a square the button's own height, butted
+  against its right edge, dressed in the same green the shortlisted check uses (`--success`, numeral
+  in `--success-foreground`) — a split control, not a floating dot. It exists only when there is
+  something to count.
 - **Add a component rather than butcher one.** If a screen needs a variant the kit lacks, add the
   variant (and register it here) instead of overriding its classes at the call site.
+- **Dialog titles read `--title-size`** (§3). A dialog title is never sized at its call site; the
+  token is the single number.
 
 ---
 
-## 6. Open item — form boundaries
+## 7. Open item — form boundaries
 
 `--input` (`#d5d2cd`) is **1.43:1** against paper. WCAG 1.4.11 wants 3:1 for the boundary of a form
 control. This is inherited from the reference design, whose whole character is hairline rules, and the
@@ -171,7 +246,7 @@ Not decided. If a field ever becomes the only way to identify a control, this mu
 
 ---
 
-## 7. Checking it
+## 8. Checking it
 
 ```sh
 npm run tokens:check      # completeness · 33 AA pairs · dangling refs

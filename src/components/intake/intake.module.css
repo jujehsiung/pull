@@ -32,9 +32,8 @@
 .topMeta {
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+color: var(--muted-foreground);
 }
 
 .hero {
@@ -101,9 +100,8 @@
   margin: 0;
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--danger);
+  letter-spacing: 0.02em;
+color: var(--danger);
 }
 
 .errorText {
@@ -170,8 +168,7 @@
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 2px 7px;
+padding: 2px 7px;
   border-radius: var(--r-pill);
   border: 1px solid var(--line-strong);
   color: var(--muted-foreground);
@@ -204,7 +201,6 @@
 
 .labelKey {
   color: var(--muted-foreground-soft);
-  text-transform: uppercase;
 }
 
 .labelValue {
@@ -231,8 +227,7 @@
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted-foreground-soft);
+color: var(--muted-foreground-soft);
 }
 
 @media (max-width: 760px) {

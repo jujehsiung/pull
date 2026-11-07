@@ -62,9 +62,8 @@ button { font-family: inherit; cursor: pointer; }
 .eyebrow {
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+color: var(--muted-foreground);
   margin: 0;
 }
 .eyebrow.on-dark { color: var(--dark-muted); }
@@ -168,12 +167,12 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 
 .brand-section { border-top: 1px solid var(--dark-line); padding: 28px 0; }
 .brand-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.brand-name { font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase; }
-.brand-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--dark-muted); text-transform: uppercase; }
+.brand-name { font-size: 15px; letter-spacing: 0.02em;}
+.brand-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; color: var(--dark-muted);}
 
 .look-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .look {
-  position: relative; border-radius: 10px; overflow: hidden;
+  position: relative; border-radius: 0; overflow: hidden;
   background: #18181b; border: 1px solid var(--dark-line);
   transition: border-color 160ms ease, transform 160ms ease;
 }
@@ -182,8 +181,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 .look img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
 .look .tag {
   position: absolute; top: 8px; left: 8px;
-  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.62); color: #fff; padding: 3px 6px; border-radius: 3px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;background: rgba(0, 0, 0, 0.62); color: #fff; padding: 3px 6px; border-radius: 3px;
 }
 .look .controls {
   position: absolute; inset-inline: 6px; bottom: 6px;
@@ -191,7 +189,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 }
 .pill-btn {
   height: 30px; min-width: 30px; padding: 0 8px;
-  border-radius: var(--r-pill); border: 1px solid var(--dark-line);
+  border-radius: 0; border: 1px solid var(--dark-line);
   background: rgba(0, 0, 0, 0.6); color: var(--dark-text);
   display: inline-flex; align-items: center; justify-content: center; gap: 4px;
   font-size: 12px;
@@ -200,7 +198,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 .pill-btn.ok { background: var(--dark-ok); color: #10240f; border-color: transparent; font-weight: 600; }
 .pill-btn.no { background: rgba(179, 38, 30, 0.9); color: #fff; border-color: transparent; }
 .stars { display: inline-flex; gap: 2px; }
-.star { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--dark-line); background: rgba(0,0,0,0.5); color: #6b6b72; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+.star { width: 26px; height: 26px; border-radius: 0; border: 1px solid var(--dark-line); background: rgba(0,0,0,0.5); color: #6b6b72; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
 .star.on { color: var(--dark); background: var(--dark-ok); border-color: transparent; }
 
 .note { margin-top: 8px; }
@@ -219,7 +217,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   padding: 14px 0 calc(14px + env(safe-area-inset-bottom));
 }
 .client-bar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.counts { display: flex; gap: 18px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dark-muted); }
+.counts { display: flex; gap: 18px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em;color: var(--dark-muted); }
 .counts b { color: var(--dark-text); font-weight: 500; }
 
 /* mobile deck (only shown <=760px) */
@@ -227,7 +225,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 @media (max-width: 760px) {
   .look-grid { display: none; }
   .deck { display: block; padding: 18px 0 8px; }
-  .deck-card { border: 1px solid var(--dark-line); border-radius: 16px; overflow: hidden; background: #141416; }
+  .deck-card { border: 1px solid var(--dark-line); border-radius: 0; overflow: hidden; background: #141416; }
   .deck-card img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
   .deck-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
   .deck-actions { display: flex; gap: 10px; }
@@ -244,7 +242,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 .intake-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); padding: clamp(20px, 3vw, 28px); margin-top: 24px; }
 .field-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted-foreground); }
+.field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em;color: var(--muted-foreground); }
 .field input, .field select {
   height: 46px; border: 1px solid var(--line-strong); border-radius: 10px;
   background: var(--paper); padding: 0 12px; font-size: 14px; color: var(--ink);
@@ -253,7 +251,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 .field input:focus, .field select:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: transparent; }
 .field.full { grid-column: 1 / -1; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.chip { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--line); border-radius: var(--r-pill); padding: 4px 9px; color: var(--muted-foreground); }
+.chip { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;border: 1px solid var(--line); border-radius: var(--r-pill); padding: 4px 9px; color: var(--muted-foreground); }
 
 .rate-option {
   display: flex; align-items: center; gap: 14px;
@@ -266,7 +264,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 .rate-option[aria-checked="true"] { border-color: var(--ink); background: var(--accent); }
 .rate-main { flex: 1; }
 .rate-name { font-size: 15px; font-weight: 500; }
-.rate-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted-foreground); margin-top: 3px; }
+.rate-meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;color: var(--muted-foreground); margin-top: 3px; }
 .rate-price { font-size: 18px; letter-spacing: -0.02em; }
 
 .success {
@@ -311,7 +309,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   .trace-step.running::before { animation: none; opacity: .6; }
 }
 .trace-tool { font-family: var(--mono); font-size: 12px; letter-spacing: .03em; color: var(--ink); }
-.trace-meta { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground-soft); }
+.trace-meta { font-family: var(--mono); font-size: 10px; letter-spacing: .12em;color: var(--muted-foreground-soft); }
 .trace-io {
   background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px;
   padding: 10px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.5;
@@ -374,4 +372,59 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
    the browser's own scroll does the moving. */
 @media (prefers-reduced-motion: reduce) {
   .strip { overflow-x: auto; cursor: default; touch-action: auto; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AGENT — olive is the agent's colour.
+   The agent is a second author, never the voice. Olive marks what it did or
+   proposes: the sparkle on a suggested look, the suggest action, a running
+   trace step, the live provider dot. Never a fill, never body copy.
+   ══════════════════════════════════════════════════════════════════════════ */
+.agent-mark { color: var(--brand); }
+.agent-action { color: var(--brand); }
+.agent-action:hover { color: var(--brand); background: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LOOK GRID — the marquee's spacing, applied to the board.
+   Tiles touch: separation is a 1px rule, not a gutter. Each cell owns its
+   right and bottom rule, and the grid is pulled out by 1px so the last
+   column/row rule falls outside the page column instead of doubling the edge.
+   ══════════════════════════════════════════════════════════════════════════ */
+.board-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* a phone reads one look at a time */
+  margin-right: -1px;
+  margin-bottom: -1px;
+}
+@media (min-width: 640px) {
+  .board-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .board-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .board-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+.board-grid > * {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* The tile's actions live on the image and appear on hover — or always, where
+   there is no hover to depend on (touch). */
+.tile-actions { opacity: 0; transition: opacity 120ms ease; }
+.group:hover .tile-actions,
+.group:focus-within .tile-actions { opacity: 1; }
+@media (hover: none) {
+  .tile-actions { opacity: 1; }
+}
+
+/* The shortlist preview inside the client-send popover. Not `.grid`: the legacy
+   `.grid` sheet sets a clamp() gap and, being unlayered, wins over utilities —
+   which silently kept these thumbnails small and far apart. */
+.shortlist-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 240px;
 }

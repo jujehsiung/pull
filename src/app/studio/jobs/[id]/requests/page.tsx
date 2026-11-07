@@ -68,11 +68,11 @@ export default async function RequestsPage({
     <div className="stack" style={{ gap: 24 }}>
       <div>
         <Link href={`/studio/jobs/${job.id}`} className="mono" style={{ color: "var(--muted-foreground)" }}>
-          ← {job.title.toUpperCase()}
+          ← {job.title}
         </Link>
         <header className="row" style={{ justifyContent: "space-between", alignItems: "flex-end", marginTop: 14 }}>
           <div>
-            <p className="eyebrow">REQUESTS</p>
+            <p className="eyebrow">Requests</p>
             <h1 className="display" style={{ margin: "10px 0 0", fontSize: "clamp(26px, 3.6vw, 38px)" }}>
               One email per brand
             </h1>
@@ -139,7 +139,7 @@ export default async function RequestsPage({
                   </p>
                   <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
                     {MODE_LABEL[request.shippingMode] ?? request.shippingMode}
-                    {request.email?.toEmail ? ` · ${request.email.toEmail}` : " · CONTACT MISSING"}
+                    {request.email?.toEmail ? ` · ${request.email.toEmail}` : " · Contact missing"}
                     {request.status === "sent" ? " · REQUEST SENT" : ""}
                   </span>
                 </div>

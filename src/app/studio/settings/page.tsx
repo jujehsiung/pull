@@ -35,7 +35,7 @@ export default async function SettingsPage({
         ← JOBS
       </Link>
       <header style={{ marginTop: 16 }}>
-        <p className="eyebrow">STUDIO</p>
+        <p className="eyebrow">Studio</p>
         <h1 className="display" style={{ margin: "10px 0 0", fontSize: "clamp(26px, 3.6vw, 38px)" }}>
           Where the looks come back to
         </h1>

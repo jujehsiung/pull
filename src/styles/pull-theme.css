@@ -49,7 +49,7 @@
      sites. Raised to the lightest value that clears AA on paper, the muted
      surface and white — the tier no longer reads much lighter than
      --muted-foreground, so that hierarchy is carried by size, weight and
-     tracking (11px mono, uppercase, 0.16em) instead of by value. */
+     tracking (12px mono, sentence case, 0.02em) instead of by value. */
   --muted-foreground-soft: #706b64; /* 5.01 / 4.71 / 5.28 — AA everywhere */
   --border: #e6e3e3;
   --input: #d5d2cd;
@@ -125,21 +125,28 @@
   --chart-10: #e6e3e3;
 
   /* ── shape + type ─────────────────────────────────────────────────────── */
-  /* 0.875rem = 14px = Pull's --r-md, the card radius. The kit derives
-     sm .6 / md .8 / lg 1 / xl 1.4 from this, so the geometric scale is
-     8.4 / 11.2 / 14 / 19.6 / 25.2 px. Pull's legacy 8 / 14 / 22 px stays
-     available as --r-sm/--r-md/--r-lg for the sheets written before this
-     pass (see pull-bridge.css). */
-  /* 2026-11-06 — the references (vende.framer.media, Dover Street Market) carry
-     no radius at all: square thumbnails, square buttons. Because the kit derives
-     every rounded-* utility from this one token, zeroing it squares the whole
-     component set at once. */
-  --radius: 0rem;
-  --radius-pill: 999px; /* Pull extra: the pill is the house button shape */
+  /* Radius belongs to the chrome, not to the content, and it is restrained:
+     primitives derive from this one token — sm .6 / md .8 / lg 1 / xl 1.4 →
+     3.6 / 4.8 / 6 / 8.4 px. Pinned to zero: BUTTONS (a square action, see
+     ui/button.tsx) and THUMBNAILS (a look is a photograph, not a card). A
+     floating panel — popover, dropdown, select list — takes the `xl` step so a
+     sheet still reads as a sheet above the field it opens from (DESIGN.md §5). */
+  --radius: 0.375rem;
+  --radius-pill: 999px; /* chips, tags and badges — never a button (see §5) */
 
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ── title — the H2 step, for whatever leads a surface ──────────────────
+     The dialog title reads this, so a surface leader is an H2 without the
+     primitive hard-coding a size. These are the H2 values `/design` shows
+     (28 → 44px, 1.08, -0.03em); the hero has its own, larger scale and is
+     not this token. Type, like shape, does not vary by mode — declared once,
+     in the default scope. */
+  --title-size: clamp(28px, 3.6vw, 44px);
+  --title-tracking: -0.03em;
+  --title-leading: 1.08;
 
   /* ── material ─────────────────────────────────────────────────────────── */
   /* Shadows exist in the light scope (the reference floats the dark "shot"

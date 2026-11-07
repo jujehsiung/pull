@@ -119,6 +119,33 @@ const SHAPE_AND_TYPE = new Set(["--radius", "--font-sans", "--font-mono"])
 const missingDark = [...required].filter((t) => !SHAPE_AND_TYPE.has(t) && !(t in dark))
 if (missingDark.length) problems.push(`dark theme is incomplete — missing ${missingDark.length}: ${missingDark.join(", ")}`)
 
+/* ── 1b. case — no all caps (DESIGN.md §4) ──────────────────────────────── */
+
+const CASE_EXEMPT = /\/\/\s*case-exempt:\s*data/
+const caseProblems = []
+for (const file of walk(SRC)) {
+  if (!/\.(tsx?|css)$/.test(file)) continue
+  const rel = file.slice(ROOT.length + 1)
+  const lines = readFileSync(file, "utf8").split("\n")
+  lines.forEach((line, i) => {
+    const at = `${rel}:${i + 1}`
+    if (/\.css$/.test(file) && /text-transform:\s*uppercase/.test(line)) {
+      caseProblems.push(`${at} — text-transform: uppercase`)
+    }
+    if (/\.tsx$/.test(file)) {
+      if (/uppercase/.test(line) && /className|tracking-\[/.test(line) && !CASE_EXEMPT.test(line)) {
+        caseProblems.push(`${at} — uppercase class`)
+      }
+      if (/\.toUpperCase\(\)/.test(line) && !CASE_EXEMPT.test(line)) {
+        caseProblems.push(`${at} — display toUpperCase()`)
+      }
+    }
+  })
+}
+if (caseProblems.length) {
+  problems.push(`all caps found (DESIGN.md §4) — ${caseProblems.length}:\n    ${caseProblems.slice(0, 12).join("\n    ")}`)
+}
+
 /* ── 2. contrast pairs ───────────────────────────────────────────────────── */
 
 const PAIRS = [

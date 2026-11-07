@@ -123,11 +123,11 @@ function phaseLabel(item: ImportItem): string {
     case "uploading":
       return `UPLOADING ${item.progress}%`
     case "reading":
-      return "READING CAPTION"
+      return "Reading caption"
     case "ready":
-      return "READY"
+      return "Ready"
     case "error":
-      return `FAILED · ${(item.errorStep ?? "upload").toUpperCase()}`
+      return `Failed · ${item.errorStep ?? "upload"}`
   }
 }
 
@@ -650,7 +650,7 @@ function ImportTile({
       style={{
         margin: 0,
         border: `1px solid ${failed ? "color-mix(in srgb, var(--danger) 35%, var(--line))" : "var(--line)"}`,
-        borderRadius: "var(--r-sm)",
+        borderRadius: 0,
         overflow: "hidden",
         background: "var(--card)",
       }}
@@ -690,7 +690,7 @@ function ImportTile({
             top: 4,
             width: 30,
             height: 30,
-            borderRadius: "50%",
+            borderRadius: 0,
             border: 0,
             background: "rgba(0, 0, 0, 0.55)",
             color: "#fff",
@@ -706,7 +706,7 @@ function ImportTile({
           className="mono"
           style={{
             fontSize: 9,
-            letterSpacing: ".08em",
+            letterSpacing: ".02em",
             color: failed ? "var(--danger)" : "var(--muted-foreground)",
           }}
         >
@@ -722,13 +722,13 @@ function ImportTile({
               className="mono"
               style={{
                 fontSize: 9,
-                letterSpacing: ".08em",
+                letterSpacing: ".02em",
                 color: item.parsed.readSource === "image" ? "var(--brand)" : "var(--muted-foreground-soft)",
               }}
             >
               {item.parsed.readSource === "image"
-                ? "READ FROM IMAGE"
-                : `FROM ${item.parsed.readSource.toUpperCase()}`}{" "}
+                ? "Read from image"
+                : `From ${item.parsed.readSource}`}{" "}
               · {Math.round(item.parsed.confidence * 100)}%
             </span>
           </>

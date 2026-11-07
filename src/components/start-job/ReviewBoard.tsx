@@ -9,8 +9,8 @@
  *
  * Type: one typeface throughout, per Juje. No mono.
  */
-import { useMemo, useState } from "react"
-import { Sparkles } from "lucide-react"
+import { useMemo, useState, type ReactNode } from "react"
+import { Check, Plus, Sparkles, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -54,6 +54,14 @@ interface ReviewBoardProps {
   /** Live ingest progress; omitted on the static board. */
   progress?: { done: number; total: number; label: string } | null
   onBack?: () => void
+  /**
+   * `sheet` (default) is the hand-off from the start-job dialog: a fixed panel
+   * that covers the page. `page` is the board opened directly at /board, where
+   * it sits under the site header in app/(site)/layout.tsx and is not a dialog.
+   */
+  chrome?: "sheet" | "page"
+  /** Rendered beside the client's name — the board switcher, on the static page. */
+  switcher?: ReactNode
 }
 
 function groupByBrand(looks: Look[]) {
@@ -68,44 +76,69 @@ function groupByBrand(looks: Look[]) {
     .map(([brand, list]) => [brand, list.sort((x, y) => x.lookNo - y.lookNo)] as const)
 }
 
-export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) {
+export function ReviewBoard({
+  looks,
+  job,
+  progress,
+  onBack,
+  chrome = "sheet",
+  switcher,
+}: ReviewBoardProps) {
   const [added, setAdded] = useState<string[]>([])
   const [sendState, setSendState] = useState<"idle" | "needs-backend">("idle")
 
-  const grouped = useMemo(() => groupByBrand(looks), [looks])
-  const addedLooks = useMemo(() => looks.filter((l) => added.includes(l.id)), [looks, added])
+  // Removing is local to this surface — nothing is persisted, and the seeded
+  // board should come back on reload.
+  const [removed, setRemoved] = useState<string[]>([])
+  const visible = useMemo(() => looks.filter((l) => !removed.includes(l.id)), [looks, removed])
+  const grouped = useMemo(() => groupByBrand(visible), [visible])
+  const addedLooks = useMemo(() => visible.filter((l) => added.includes(l.id)), [visible, added])
 
   const toggleAdded = (id: string) =>
     setAdded((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
 
+  const removeLook = (id: string) => {
+    setRemoved((current) => (current.includes(id) ? current : [...current, id]))
+    setAdded((current) => current.filter((x) => x !== id))
+  }
+
   return (
-    <div role="dialog" aria-label="Review board" className="fixed inset-0 z-50 overflow-y-auto bg-background">
+    <div
+      role={chrome === "sheet" ? "dialog" : "region"}
+      aria-label="Review board"
+      className={
+        chrome === "sheet"
+          ? "fixed inset-0 z-50 overflow-y-auto bg-background"
+          : "relative bg-background"
+      }
+    >
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         {/* Left: what the job is. Right: when it is due and where it goes. */}
-        <div className="mx-auto flex max-w-[1180px] items-start gap-6 px-6 py-5">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-6 py-5 md:flex-row md:items-start md:gap-6 md:px-10">
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Review board</p>
-            <h2 className="text-[clamp(30px,3.4vw,46px)] font-medium leading-[0.95] tracking-[-0.035em] text-foreground">
-              {job.title.trim() || "Untitled job"}
-            </h2>
-            {job.description ? (
-              <p className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
-                {job.description}
-              </p>
+            <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Review board</p>
+            <div className="flex items-center gap-3">
+              <h2 className="min-w-0 text-[clamp(30px,3.4vw,46px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
+                {job.description.trim() || job.title.trim() || "Untitled client"}
+              </h2>
+              {switcher ?? null}
+            </div>
+            {job.description.trim() && job.title ? (
+              <p className="text-[12px] tracking-[0.02em] text-muted-foreground">{job.title}</p>
             ) : null}
           </div>
 
-          <div className="ml-auto flex items-start gap-3">
-            <div className="flex flex-col items-end gap-1 text-right">
+          <div className="flex items-start justify-between gap-3 md:ml-auto md:justify-end">
+            <div className="flex flex-col gap-1 text-left md:items-end md:text-right">
               {progress ? (
                 <span role="status" className="text-[12px] text-muted-foreground">
                   {progress.done}/{progress.total} · {progress.label}
                 </span>
               ) : null}
-              <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
                 Due {formatDue(job.dueDate)}
               </span>
-              <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
                 {job.email || "No contact email"}
               </span>
             </div>
@@ -113,9 +146,30 @@ export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) 
             {/* Cart in the header: the count is always visible, the shortlist is one click away. */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="shrink-0">
-                  Shortlist{added.length ? ` · ${added.length}` : ""}
-                </Button>
+                {/* The count is a black square the button's own height, butted
+                    against its right edge: a split control, not a floating badge. */}
+                <div className="flex shrink-0 items-stretch">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    aria-label={
+                      added.length
+                        ? `Shortlist, ${added.length} look${added.length === 1 ? "" : "s"}`
+                        : "Shortlist"
+                    }
+                  >
+                    Shortlist
+                  </Button>
+                  {added.length ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-7 min-w-7 items-center justify-center bg-success px-1 text-[11px] font-medium leading-none text-success-foreground"
+                    >
+                      {added.length}
+                    </span>
+                  ) : null}
+                </div>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-[340px] p-4">
                 <p className="text-[13px] text-muted-foreground">
@@ -124,20 +178,20 @@ export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) 
                     : `${added.length} look${added.length === 1 ? "" : "s"} added`}
                 </p>
                 {addedLooks.length ? (
-                  <div className="mt-3 grid max-h-[220px] grid-cols-4 gap-2 overflow-y-auto">
+                  <div className="shortlist-thumbs mt-3 overflow-y-auto">
                     {addedLooks.map((look) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         key={look.id}
                         src={look.src}
                         alt={`${look.brand} ${look.lookNo}`}
-                        className="aspect-[3/4] w-full rounded border border-border object-cover"
+                        className="aspect-[3/4] w-full rounded-md border border-border object-cover"
                       />
                     ))}
                   </div>
                 ) : (
                   <p className="mt-3 text-[13px] text-muted-foreground">
-                    Press Add on a look to shortlist it.
+                    Hover a look and press + to shortlist it.
                   </p>
                 )}
                 {sendState === "needs-backend" ? (
@@ -166,27 +220,27 @@ export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) 
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1180px] px-6 pb-16 pt-10">
+      <div className="mx-auto max-w-[1440px] px-6 pb-16 pt-10 md:px-10">
         {/* Sections breathe: a board is read house by house, not as one list. */}
         <div className="flex flex-col gap-20">
           {grouped.map(([brand, list]) => (
             <section key={brand} className="flex flex-col gap-4">
               <div className="flex items-baseline justify-between gap-4 border-b border-border pb-3">
-                <h3 className="text-[20px] font-medium uppercase leading-none tracking-[0.14em] text-foreground">
+                <h3 className="text-[20px] font-medium leading-none tracking-[0.02em] text-foreground">
                   {brand}
                 </h3>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                <span className="text-[10px] tracking-[0.02em] text-muted-foreground">
                   {list.length} look{list.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              <div className="board-grid">
                 {list.map((look) => {
                   const isAdded = added.includes(look.id)
                   const ready = look.status === "ready" && look.src
                   return (
                     <figure
                       key={look.id}
-                      className="flex flex-col gap-2"
+                      className="group relative flex flex-col bg-background"
                       title={
                         look.steps?.length
                           ? look.steps
@@ -201,8 +255,8 @@ export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) 
                       <div
                         className={
                           isAdded
-                            ? "relative overflow-hidden rounded-md border border-brand ring-2 ring-brand"
-                            : "relative overflow-hidden rounded-md border border-border"
+                            ? "relative overflow-hidden outline outline-1 -outline-offset-1 outline-brand"
+                            : "relative overflow-hidden"
                         }
                       >
                         {ready ? (
@@ -224,9 +278,45 @@ export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) 
                             </span>
                           </>
                         )}
+
+                        {/* Shortlisted is a state, so the green check stays put.
+                            Adding and dropping are gestures, so they show on hover. */}
+                        {ready ? (
+                          isAdded ? (
+                            <button
+                              type="button"
+                              aria-label="Remove from shortlist"
+                              aria-pressed="true"
+                              onClick={() => toggleAdded(look.id)}
+                              className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full border border-transparent bg-success text-success-foreground"
+                            >
+                              <Check className="size-3.5" aria-hidden />
+                            </button>
+                          ) : (
+                            <div className="tile-actions absolute right-2 top-2 flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                aria-label="Add to shortlist"
+                                aria-pressed="false"
+                                onClick={() => toggleAdded(look.id)}
+                                className="inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground"
+                              >
+                                <Plus className="size-3.5" aria-hidden />
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`Remove look ${look.lookNo} from the board`}
+                                onClick={() => removeLook(look.id)}
+                                className="inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground"
+                              >
+                                <X className="size-3.5" aria-hidden />
+                              </button>
+                            </div>
+                          )
+                        ) : null}
                       </div>
-                      <figcaption className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      <figcaption className="flex items-center justify-between gap-2 px-2 py-2">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.02em] text-muted-foreground">
                           Look {look.lookNo}
                           {look.season ? ` · ${look.season}` : ""}
                           {look.suggested ? (
@@ -237,15 +327,6 @@ export function ReviewBoard({ looks, job, progress, onBack }: ReviewBoardProps) 
                             />
                           ) : null}
                         </span>
-                        <Button
-                          size="sm"
-                          variant={isAdded ? "secondary" : "outline"}
-                          onClick={() => toggleAdded(look.id)}
-                          disabled={!ready}
-                          aria-pressed={isAdded}
-                        >
-                          {isAdded ? "Added" : "Add"}
-                        </Button>
                       </figcaption>
                     </figure>
                   )

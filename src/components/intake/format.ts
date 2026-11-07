@@ -1,7 +1,7 @@
 /** Small presentation helpers for the intake page. */
 
 export function formatMoney(amount: number, currency: string): string {
-  const code = (currency || "USD").toUpperCase()
+  const code = (currency || "USD").toUpperCase() // case-exempt: data — ISO currency code
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",

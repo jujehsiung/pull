@@ -107,7 +107,7 @@ function Section({
           : "border-t border-border pt-10"
       }
     >
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-brand">{eyebrow}</p>
+      <p className="font-mono text-[11px] tracking-[0.02em] text-brand">{eyebrow}</p>
       <h2 className="mt-3 text-2xl font-medium tracking-[-0.02em] text-foreground">{title}</h2>
       <div className="mt-7">{children}</div>
     </section>
@@ -119,7 +119,7 @@ export default function DesignPage() {
     <main className="mx-auto max-w-[1180px] px-6 py-14">
       {/* ── masthead ─────────────────────────────────────────────────────── */}
       <header className="pb-10">
-        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground-soft">
+        <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
           PULL · DESIGN SYSTEM
         </p>
         <h1 className="mt-4 text-5xl font-medium leading-[1.02] tracking-[-0.035em] text-foreground">
@@ -168,7 +168,15 @@ export default function DesignPage() {
         <Section eyebrow="03 — type" title="One scale, generous leading">
           <div className="flex flex-col gap-6">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground-soft">
+              <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
+                title · the H2 step — clamp(28, 3.6vw, 44) / 1.08 / -0.03em · extrabold · dialog titles
+              </p>
+              <p className="mt-2 text-[length:var(--title-size)] font-extrabold leading-[var(--title-leading)] tracking-[var(--title-tracking)] text-foreground">
+                Start a job
+              </p>
+            </div>
+            <div>
+              <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
                 display · 76 / 1.02 / -0.035em
               </p>
               <p className="mt-2 text-[clamp(40px,6vw,76px)] font-medium leading-[1.02] tracking-[-0.035em] text-foreground">
@@ -176,7 +184,7 @@ export default function DesignPage() {
               </p>
             </div>
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground-soft">
+              <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
                 h2 · 44 / 1.08
               </p>
               <p className="mt-2 text-[clamp(28px,3.6vw,44px)] font-medium leading-[1.08] tracking-[-0.03em] text-foreground">
@@ -184,7 +192,7 @@ export default function DesignPage() {
               </p>
             </div>
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground-soft">
+              <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
                 lead · 19 / 1.55
               </p>
               <p className="mt-2 max-w-[640px] text-[19px] leading-[1.55] text-muted-foreground">
@@ -193,11 +201,11 @@ export default function DesignPage() {
               </p>
             </div>
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground-soft">
-                eyebrow · 11 mono / 0.16em uppercase
+              <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
+                eyebrow · 12 mono / 0.02em
               </p>
-              <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                FR-4 · READ FROM IMAGE · CONFIDENCE 0.94
+              <p className="mt-2 font-mono text-[11px] tracking-[0.02em] text-muted-foreground">
+                FR-4 · Read from image · confidence 0.94
               </p>
             </div>
           </div>
@@ -224,10 +232,10 @@ export default function DesignPage() {
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge>READY</Badge>
-              <Badge variant="secondary">READING CAPTION</Badge>
-              <Badge variant="outline">UNASSIGNED</Badge>
-              <Badge variant="destructive">CONTACT MISSING</Badge>
+              <Badge>Ready</Badge>
+              <Badge variant="secondary">Reading caption</Badge>
+              <Badge variant="outline">Unassigned</Badge>
+              <Badge variant="destructive">Contact missing</Badge>
               <Badge variant="ghost">hidden</Badge>
             </div>
           </div>
@@ -353,7 +361,7 @@ export default function DesignPage() {
             <button className="rounded-full border border-[var(--dark-line)] px-5 py-2 text-[13px] text-[var(--dark-text)]">
               Pass
             </button>
-            <span className="rounded-full border border-[var(--dark-ok)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--dark-ok)]">
+            <span className="rounded-full border border-[var(--dark-ok)] px-3 py-2 font-mono text-[10px] tracking-[0.02em] text-[var(--dark-ok)]">
               7 approved
             </span>
           </div>
@@ -384,7 +392,7 @@ export default function DesignPage() {
         </Section>
       </div>
 
-      <footer className="mt-16 border-t border-border pt-8 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground-soft">
+      <footer className="mt-16 border-t border-border pt-8 font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
         PULL · EVA theme · {new Date().getFullYear()} · tokens checked by scripts/check-tokens.mjs
       </footer>
     </main>

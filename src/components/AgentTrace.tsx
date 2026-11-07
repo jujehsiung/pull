@@ -38,7 +38,7 @@ export function AgentTrace({
             <div className="row" style={{ justifyContent: "space-between", gap: 12 }}>
               <span className="trace-tool">{step.tool}</span>
               <span className="trace-meta">
-                {step.status === "running" ? "RUNNING" : step.status === "error" ? "ERROR" : "OK"} ·{" "}
+                {step.status === "running" ? "Running" : step.status === "error" ? "Error" : "OK"} ·{" "}
                 {formatMs(step.durationMs)}
               </span>
             </div>
@@ -50,19 +50,19 @@ export function AgentTrace({
                 </summary>
                 {step.args !== undefined && (
                   <>
-                    <p className="trace-meta" style={{ marginTop: 8 }}>INPUT</p>
+                    <p className="trace-meta" style={{ marginTop: 8 }}>Input</p>
                     <pre className="trace-io">{JSON.stringify(step.args, null, 2)}</pre>
                   </>
                 )}
                 {step.result !== undefined && (
                   <>
-                    <p className="trace-meta" style={{ marginTop: 8 }}>OUTPUT</p>
+                    <p className="trace-meta" style={{ marginTop: 8 }}>Output</p>
                     <pre className="trace-io">{JSON.stringify(step.result, null, 2)}</pre>
                   </>
                 )}
                 {step.error && (
                   <>
-                    <p className="trace-meta" style={{ marginTop: 8 }}>ERROR</p>
+                    <p className="trace-meta" style={{ marginTop: 8 }}>Error</p>
                     <pre className="trace-io" style={{ color: "var(--danger)" }}>{step.error}</pre>
                   </>
                 )}

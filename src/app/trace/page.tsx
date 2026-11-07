@@ -101,7 +101,7 @@ export default function TracePage() {
       </div>
 
       <header style={{ padding: "clamp(40px,6vw,72px) 0 8px" }}>
-        <p className="eyebrow">WHAT THE AGENT DID</p>
+        <p className="eyebrow">What the agent did</p>
         <h1 className="display" style={{ fontSize: "clamp(34px,4.8vw,56px)", marginTop: 14 }}>
           Every tool call, in the open.
         </h1>
@@ -116,7 +116,7 @@ export default function TracePage() {
         <AgentTrace steps={IMPORT_TRACE} title="Import · 10 screenshots" />
         <div className="stack" style={{ gap: 16 }}>
           <div className="card">
-            <p className="eyebrow">WHY THIS IS A REQUIREMENT</p>
+            <p className="eyebrow">Why this is a requirement</p>
             <p className="body" style={{ marginTop: 10 }}>
               A stylist is accountable for what leaves her studio. If the agent crops the wrong thing or
               reads “Look 27” when it is “Look 21”, she has to see that before the board goes to the client.
@@ -124,7 +124,7 @@ export default function TracePage() {
             </p>
           </div>
           <div className="card">
-            <p className="eyebrow">WHAT EACH STEP CARRIES</p>
+            <p className="eyebrow">What each step carries</p>
             <ul className="small" style={{ marginTop: 10, paddingLeft: 18, display: "grid", gap: 6 }}>
               <li>tool name — <span className="mono">cloudinary.trim</span>, <span className="mono">tesseract.read</span>, <span className="mono">shippo.rates</span></li>
               <li>input — the exact arguments passed</li>
@@ -134,7 +134,7 @@ export default function TracePage() {
             </ul>
           </div>
           <div className="card">
-            <p className="eyebrow">WHERE IT SHOWS UP</p>
+            <p className="eyebrow">Where it shows up</p>
             <p className="small" style={{ marginTop: 10 }}>
               Live while importing (streamed), on the job page as the activity trail, and next to each
               request when a label or email fails. Failed steps are retryable from the trace.

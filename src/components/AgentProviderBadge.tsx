@@ -66,7 +66,7 @@ export function AgentProviderBadge({ hint }: { hint?: string }) {
         style={{
           fontSize: 10,
           letterSpacing: ".1em",
-          textTransform: "uppercase",
+          
           color: "var(--ink-2)",
         }}
       >

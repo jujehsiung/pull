@@ -41,7 +41,7 @@ export function ContactEditForm({ contact }: { contact: ContactRow }) {
               id="contact-market"
               name="pr_market"
               defaultValue={contact.prMarket ?? ""}
-              placeholder="PARIS"
+              placeholder="Paris"
             />
           </div>
           <div className={`field ${styles.full}`}>

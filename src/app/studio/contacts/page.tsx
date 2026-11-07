@@ -87,7 +87,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className="eyebrow">CONTACTS</p>
+          <p className="eyebrow">Contacts</p>
           <h1
             className="display"
             style={{ margin: "12px 0 0", fontSize: "clamp(30px, 4vw, 44px)" }}

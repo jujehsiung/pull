@@ -20,7 +20,7 @@ export function ReportCard({
   return (
     <section className="card" style={{ padding: 22 }} aria-label="Client review report">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
-        <p className="eyebrow">CLIENT REPORT</p>
+        <p className="eyebrow">Client report</p>
         <span className="mono" style={{ color: "var(--muted-foreground-soft)", fontSize: 10 }}>
           {submittedAt
             ? `SUBMITTED ${submittedAt.toISOString().slice(0, 16).replace("T", " ")} UTC`
@@ -49,7 +49,7 @@ export function ReportCard({
 
       {report.shortlist.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <p className="eyebrow">PRIORITY SHORTLIST</p>
+          <p className="eyebrow">Priority shortlist</p>
           <ol style={{ margin: "10px 0 0", paddingLeft: 18, columns: 2, columnGap: 28 }}>
             {report.shortlist.map((look) => (
               <li key={look.id} className="small" style={{ marginBottom: 6 }}>
@@ -65,7 +65,7 @@ export function ReportCard({
 
       {report.notes.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <p className="eyebrow">NOTES</p>
+          <p className="eyebrow">Notes</p>
           <ul style={{ listStyle: "none", padding: 0, margin: "10px 0 0", display: "grid", gap: 10 }}>
             {report.notes.map((note) => (
               <li key={note.id} className="small" style={{ borderLeft: "2px solid var(--line-strong)", paddingLeft: 12 }}>
@@ -82,7 +82,7 @@ export function ReportCard({
 
       {report.brands.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <p className="eyebrow">BRANDS AFFECTED</p>
+          <p className="eyebrow">Brands affected</p>
           <div className="chips" style={{ marginTop: 10 }}>
             {report.brands.map((brand) => (
               <span key={brand.brand} className="chip">

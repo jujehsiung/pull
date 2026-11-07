@@ -33,9 +33,8 @@
 .count {
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted-foreground-soft);
+  letter-spacing: 0.02em;
+color: var(--muted-foreground-soft);
 }
 
 .banner {
@@ -98,9 +97,8 @@
   font-family: var(--mono);
   font-size: 9px;
   font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground-soft);
+  letter-spacing: 0.02em;
+color: var(--muted-foreground-soft);
   padding: 8px 10px;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
@@ -138,9 +136,8 @@
 .market {
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted-foreground-soft);
+  letter-spacing: 0.02em;
+color: var(--muted-foreground-soft);
 }
 
 .chips {
@@ -154,8 +151,7 @@
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1px solid var(--line);
+border: 1px solid var(--line);
   border-radius: var(--r-pill);
   padding: 2px 7px;
   color: var(--muted-foreground);
@@ -235,8 +231,7 @@
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink);
+color: var(--ink);
   white-space: nowrap;
 }
 
@@ -404,9 +399,8 @@
   cursor: pointer;
   font-family: var(--mono);
   font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+color: var(--muted-foreground);
 }
 
 .sample {

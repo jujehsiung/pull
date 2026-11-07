@@ -89,9 +89,9 @@ export async function LabelPanel({ requestId }: { requestId: string }) {
       aria-label={`Label for ${request.brand}`}
     >
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-        <p className="eyebrow">LABEL · SHIPPO</p>
+        <p className="eyebrow">Label · Shippo</p>
         <span className="row" style={{ gap: 6 }}>
-          <span className="chip">{state.mode === "test" ? "TEST MODE" : state.mode === "live" ? "LIVE" : "OFF"}</span>
+          <span className="chip">{state.mode === "test" ? "Test mode" : state.mode === "live" ? "Live" : "Off"}</span>
           <span className="chip">{REQUEST_STATUS[request.status] ?? request.status}</span>
         </span>
       </div>
@@ -161,26 +161,26 @@ export async function LabelPanel({ requestId }: { requestId: string }) {
       {hasLabel && shipment ? (
         <>
           <div className="label-preview" style={{ marginTop: 14 }} aria-label="Label details">
-            <span>TRACKING</span>
+            <span>Tracking</span>
             <span>{shipment.trackingNumber ?? "—"}</span>
-            <span>CARRIER</span>
+            <span>Carrier</span>
             <span>{[shipment.carrier, shipment.service].filter(Boolean).join(" · ") || "—"}</span>
-            <span>PARCEL</span>
+            <span>Parcel</span>
             <span>
               {shipment.intake
                 ? `${shipment.intake.length} × ${shipment.intake.width} × ${shipment.intake.height} cm · ${shipment.intake.weightKg} kg`
                 : "—"}
             </span>
-            <span>STATUS</span>
+            <span>Status</span>
             <span>
               {trackingLabel(shipment.trackingStatus)}
               {shipment.trackingStatus === "exception" ? " — check the carrier" : ""}
             </span>
-            <span>UPDATED</span>
+            <span>Updated</span>
             <span>{utcDateTime(shipment.trackingUpdatedAt)}</span>
             {shipment.amountCents ? (
               <>
-                <span>COST</span>
+                <span>Cost</span>
                 <span>{formatMoney(shipment.amountCents / 100, shipment.currency ?? "USD")}</span>
               </>
             ) : null}

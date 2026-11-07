@@ -354,7 +354,7 @@ export async function POST(request: Request) {
       width: integer(record.width, 0, 20000),
       height: integer(record.height, 0, 20000),
       lookNo,
-      season: record.season == null ? null : text(record.season, 16).toUpperCase() || null,
+      season: record.season == null ? null : text(record.season, 16).toUpperCase() || null, // case-exempt: data — season codes keep their casing
       brand: canonicalBrand(text(record.brand, 80) || "Unassigned"),
       confidence: Math.round(decimal(record.confidence, 0, 1) * 100) / 100,
       readSource: readSource as "image" | "filename" | "sequence",

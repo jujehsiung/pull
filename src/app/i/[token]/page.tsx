@@ -74,7 +74,7 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
         </header>
 
         <section className={styles.hero}>
-          <p className="eyebrow">PULL · LABEL REQUEST</p>
+          <p className="eyebrow">PULL · Label request</p>
           <h1 className={styles.heroTitle}>{request.brand} — prepaid label</h1>
           <p className={styles.heroLead}>
             We are arranging a prepaid label and the pickup for {job.clientName}&apos;s pull. Tell us
@@ -82,10 +82,10 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
           </p>
 
           <div className={styles.chips}>
-            <span className="chip">FOR {job.clientName.toUpperCase()}</span>
-            <span className="chip">{job.title.toUpperCase()}</span>
-            <span className="chip">RETURN BY {formatIsoDate(job.returnDate).toUpperCase()}</span>
-            <span className="chip">{STATUS_LABEL[request.status]?.toUpperCase() ?? request.status.toUpperCase()}</span>
+            <span className="chip">For {job.clientName}</span>
+            <span className="chip">{job.title}</span>
+            <span className="chip">Return by {formatIsoDate(job.returnDate)}</span>
+            <span className="chip">{STATUS_LABEL[request.status] ?? request.status}</span>
           </div>
 
           {studio.display ? (

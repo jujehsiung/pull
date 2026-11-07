@@ -19,7 +19,7 @@ export function JobToolbar({
     <section className="card" style={{ padding: 20 }} aria-label="Publish and share">
       <div className="row" style={{ justifyContent: "space-between", gap: 16 }}>
         <div style={{ minWidth: 0 }}>
-          <p className="eyebrow">CLIENT LINK</p>
+          <p className="eyebrow">Client link</p>
           {linkPath ? (
             <a
               href={linkPath}

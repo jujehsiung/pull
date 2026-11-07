@@ -126,11 +126,11 @@ export function parseContactFields(fields: Partial<Record<ContactColumn, string>
   warnings?: string[]
   error?: string
 } {
-  const brand = (fields.brand ?? "").trim().replace(/\s+/g, " ").toUpperCase()
+  const brand = (fields.brand ?? "").trim().replace(/\s+/g, " ")
   if (!brand) return { error: "brand is required." }
   if (brand.length > 80) return { error: "brand is longer than 80 characters." }
 
-  const prMarket = (fields.pr_market ?? "").trim().replace(/\s+/g, " ").toUpperCase()
+  const prMarket = (fields.pr_market ?? "").trim().replace(/\s+/g, " ")
   if (prMarket.length > 60) return { error: "pr_market is longer than 60 characters." }
 
   const rawEmails = (fields.emails ?? "").trim()
@@ -160,7 +160,7 @@ export function parseContactFields(fields: Partial<Record<ContactColumn, string>
   if (!/^[a-z]{2}$/i.test(rawCountry)) {
     return { error: `country "${rawCountry}" is not a 2-letter ISO code.` }
   }
-  showroomAddress.country = rawCountry.toUpperCase()
+  showroomAddress.country = rawCountry.toUpperCase() // case-exempt: data — ISO country code
 
   const rawShips = (fields.ships_on_own_account ?? "").trim().toLowerCase()
   let shipsOnOwnAccount: boolean
@@ -191,7 +191,7 @@ export function parseContactFields(fields: Partial<Record<ContactColumn, string>
 }
 
 export function contactKey(brand: string, prMarket: string | null | undefined): string {
-  return `${brand.trim().toUpperCase()}|${(prMarket ?? "").trim().toUpperCase()}`
+  return `${brand.trim().toUpperCase()}|${(prMarket ?? "").trim().toUpperCase()}` // case-exempt: data — dedupe key
 }
 
 export function parseContactsCsv(text: string): ParsedContactsCsv {

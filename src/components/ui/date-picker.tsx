@@ -92,7 +92,7 @@ export function DatePicker({
           disabled={disabledTrigger}
           aria-label={ariaLabel}
           className={cn(
-            "w-[212px] justify-between text-left font-normal data-[empty=true]:text-muted-foreground",
+            "w-[212px] justify-between rounded-lg text-left font-normal data-[empty=true]:text-muted-foreground",
             className
           )}
         >

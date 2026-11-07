@@ -10,9 +10,9 @@
 import { getActivity } from "@/server/queries/activity"
 
 const ACTOR_LABEL: Record<string, string> = {
-  agent: "AGENT",
-  stylist: "STYLIST",
-  client: "CLIENT",
+  agent: "Agent",
+  stylist: "Stylist",
+  client: "Client",
 }
 
 function actorColour(actor: string): string {
@@ -55,8 +55,8 @@ export async function ActivityLog({ jobId }: { jobId: string }) {
   return (
     <section className="card" style={{ padding: 20 }} aria-label="Activity log">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
-        <p className="eyebrow">ACTIVITY</p>
-        <span className="mono" style={{ fontSize: 10, letterSpacing: ".1em", color: "var(--muted-foreground-soft)" }}>
+        <p className="eyebrow">Activity</p>
+        <span className="mono" style={{ fontSize: 10, letterSpacing: ".02em", color: "var(--muted-foreground-soft)" }}>
           {header}
         </span>
       </div>
@@ -88,9 +88,9 @@ export async function ActivityLog({ jobId }: { jobId: string }) {
                 <div className="row" style={{ gap: 8, alignItems: "baseline" }}>
                   <span
                     className="mono"
-                    style={{ fontSize: 9, letterSpacing: ".1em", color: actorColour(row.actor), flex: "none" }}
+                    style={{ fontSize: 9, letterSpacing: ".02em", color: actorColour(row.actor), flex: "none" }}
                   >
-                    {ACTOR_LABEL[row.actor] ?? row.actor.toUpperCase()}
+                    {ACTOR_LABEL[row.actor] ?? row.actor}
                   </span>
                   <span
                     style={{

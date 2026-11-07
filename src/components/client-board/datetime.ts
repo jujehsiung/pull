@@ -10,9 +10,9 @@ const SUBMITTED_FORMAT = new Intl.DateTimeFormat("en-GB", {
   timeZoneName: "short",
 })
 
-/** `6 Nov 2026, 03:42 PM EST` → uppercase, matching the mono eyebrows. */
+/** `6 Nov 2026, 03:42 PM EST` — sentence case, matching the mono labels. */
 export function formatSubmittedAt(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return "—"
-  return SUBMITTED_FORMAT.format(date).toUpperCase()
+  return SUBMITTED_FORMAT.format(date)
 }

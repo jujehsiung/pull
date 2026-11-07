@@ -71,7 +71,7 @@ export function SiteMenu() {
               {link.label}
             </Link>
           ))}
-          <p className="mt-10 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="mt-10 text-[11px] tracking-[0.02em] text-muted-foreground">
             Sample trafficking · New York
           </p>
         </nav>

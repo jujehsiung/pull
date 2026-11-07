@@ -26,7 +26,7 @@ export function RateOptions({
     <section className={styles.ratesCard} aria-label="Shipping options" id="rates">
       <div className={styles.ratesHead}>
         <div>
-          <p className="eyebrow">SHIPPO · {mode === "test" ? "TEST RATES" : "LIVE RATES"}</p>
+          <p className="eyebrow">SHIPPO · {mode === "test" ? "Test rates" : "Live rates"}</p>
           <h2 className="h3" style={{ margin: "8px 0 2px" }}>
             {rates.length === 1 ? "1 service" : `${rates.length} services`}
           </h2>
@@ -34,7 +34,7 @@ export function RateOptions({
             {[routeSummary, parcelSummary].filter(Boolean).join(" · ") || "Rates for the parcel above"}
           </p>
         </div>
-        {mode ? <span className="chip">{mode === "test" ? "TEST MODE" : "LIVE"}</span> : null}
+        {mode ? <span className="chip">{mode === "test" ? "Test mode" : "Live"}</span> : null}
       </div>
 
       <ul className={styles.rateList}>
