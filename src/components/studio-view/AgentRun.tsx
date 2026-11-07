@@ -9,8 +9,10 @@
  * and calls back as each one lands, so the content arrives with the work that
  * produced it. Olive marks the running step, because olive is the agent's.
  *
- * On the real screens these steps come from the tracer (`events`, surfaced at
- * /trace); here they are the same shape, replayed.
+ * The step names are the ones the tracer actually writes — `agent.draft` per
+ * brand, `resend.send` per email (`src/server/requests/drafts.ts`,
+ * `src/server/actions/requests.ts`) — replayed here with their real order and
+ * durations. Anything the app does not record is not shown as a step.
  */
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
@@ -35,21 +37,25 @@ export function AgentRun({
 }) {
   const [done, setDone] = useState(0)
   const finished = useRef(false)
+  const stepHandler = useRef(onStep)
+  const doneHandler = useRef(onDone)
+  stepHandler.current = onStep
+  doneHandler.current = onDone
 
   useEffect(() => {
     if (done >= steps.length) {
       if (!finished.current) {
         finished.current = true
-        onDone?.()
+        doneHandler.current?.()
       }
       return
     }
     const timer = setTimeout(() => {
-      onStep?.(steps[done], done)
+      stepHandler.current?.(steps[done], done)
       setDone((current) => current + 1)
     }, steps[done].ms)
     return () => clearTimeout(timer)
-  }, [done, steps, onStep, onDone])
+  }, [done, steps])
 
   return (
     <div className="mt-8 border-t border-border pt-4">

@@ -112,6 +112,7 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
   const [run, setRun] = useState<{ steps: AgentStep[]; brands: (string | null)[] } | null>(null)
   const [running, setRunning] = useState(false)
   const [polishing, setPolishing] = useState<string | null>(null)
+  const [sending, setSending] = useState<string | null>(null)
 
   const counts = useMemo(() => {
     const all = Object.values(drafts)
@@ -133,30 +134,18 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
       Object.fromEntries(Object.entries(current).filter(([, draft]) => draft.status === "sent")),
     )
 
-    const steps: AgentStep[] = [
-      {
-        tool: "agent.read_review",
-        note: `${approvedLooks} looks approved across ${brands.length} houses`,
-        ms: 650,
-      },
-      {
-        tool: "agent.match_contacts",
-        note: `${brands.length} showrooms matched from the contacts book`,
-        ms: 700,
-      },
-      ...brands.map((brand) => ({
-        tool: "agent.draft_email",
-        note: `${brand.brand} · ${brand.looks.length} look${brand.looks.length === 1 ? "" : "s"}`,
-        ms: 600,
-      })),
-      {
-        tool: "agent.check_addresses",
-        note: `${brands.filter((brand) => looksLikeEmail(brand.contactEmail)).length} of ${brands.length} have a showroom address`,
-        ms: 500,
-      },
-    ]
+    // What the tracer really writes for this step: one agent.draft per brand,
+    // with the brand and the look numbers it requested.
+    const steps: AgentStep[] = brands.map((brand) => ({
+      tool: "agent.draft",
+      note: `${brand.brand} · look ${brand.looks
+        .map((look) => look.lookNo)
+        .sort((a, b) => a - b)
+        .join(", ")}`,
+      ms: 700,
+    }))
 
-    setRun({ steps, brands: [null, null, ...brands.map((brand) => brand.brand), null] })
+    setRun({ steps, brands: brands.map((brand) => brand.brand) })
     setRunning(true)
   }
 
@@ -165,10 +154,36 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
     if (!brandName) return
     const brand = brands.find((candidate) => candidate.brand === brandName)
     if (!brand) return
+    if (step.tool === "resend.send") {
+      setDrafts((current) =>
+        current[brandName] && current[brandName].status === "queued"
+          ? { ...current, [brandName]: { ...current[brandName], status: "sent", savedAt: undefined } }
+          : current,
+      )
+      setSending(null)
+      return
+    }
+
     setDrafts((current) =>
       current[brandName] && current[brandName].status === "sent"
         ? current
         : { ...current, [brandName]: { ...draftFor(brand, job), status: "draft", polished: false } },
+    )
+  }
+
+  /** Sending is a traced action too: `resend.send`, one per email. */
+  const sendEmail = (brand: RequestBrand) => {
+    if (sending) return
+    setSending(brand.brand)
+    const step: AgentStep = {
+      tool: "resend.send",
+      note: `${brand.brand} · ${drafts[brand.brand]?.to ?? brand.contactEmail}`,
+      ms: 900,
+    }
+    setRun((current) =>
+      current
+        ? { steps: [...current.steps, step], brands: [...current.brands, brand.brand] }
+        : { steps: [step], brands: [brand.brand] },
     )
   }
 
@@ -386,10 +401,10 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                     </Button>
                     <Button
                       size="sm"
-                      disabled={draft.status !== "queued" || !looksLikeEmail(draft.to)}
-                      onClick={() => patch(brand.brand, { status: "sent", savedAt: undefined })}
+                      disabled={draft.status !== "queued" || !looksLikeEmail(draft.to) || sending !== null}
+                      onClick={() => sendEmail(brand)}
                     >
-                      {locked ? "Sent" : "Send"}
+                      {locked ? "Sent" : sending === brand.brand ? "Sending…" : "Send"}
                     </Button>
                   </div>
                 </div>
