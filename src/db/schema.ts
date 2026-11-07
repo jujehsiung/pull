@@ -99,6 +99,13 @@ export const jobs = pgTable(
      * alone cannot say when.
      */
     reviewSubmittedAt: timestamp("review_submitted_at", { withTimezone: true }),
+    /**
+     * When the stylist last acknowledged that review — the bell's unread rule is
+     * `reviewSeenAt IS NULL OR reviewSeenAt < reviewSubmittedAt`. Kept on the job
+     * instead of a notifications table: one source of truth, and re-publishing a
+     * board moves `reviewSubmittedAt` and notifies again.
+     */
+    reviewSeenAt: timestamp("review_seen_at", { withTimezone: true }),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
