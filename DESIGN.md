@@ -362,21 +362,23 @@ the dark client board alike.
 
 The studio's six-card graph is the demo's picture of the product: **four references in, one look out.**
 
-- **Four references, each with a job.** `subject` (the face), `the jacket`, `the top under`, `the
-  bottom`. The sockets say the roles, so the card never asks the presenter to remember them. Simpler
-  than the first draft on purpose: one compose card, one call, one failure point.
-- **The mark is the pen, and it belongs to the vision pass only.** Press `mark` on an image card and
-  drag a border around the piece; the border is drawn in olive on the card, and the client bakes it
-  into the copy the reading model sees. The **render** gets the clean copies — a border baked into a
-  reference would be rendered into the photograph.
-- **One compose card does the work.** It reads the four marked references, writes the prompt, then
-  calls `image_generate` with the clean references and that prompt on `gpt-image-2`, and shows both
-  the prompt and the render. The prompt is a textarea: edit it and run again, and the assistant is
-  skipped — a re-run edits rather than re-reads.
-- **A demo never dead-ends.** If the vision pass fails, a template prompt built from the four roles
-  still renders; if the provider is unreachable, the graph stops on the failed card but the assets
-  panel fills with labelled sample output (`provider unavailable — …`).
-- **A run is a real run.** Compose shows real latency (≈80 s for the four references on the demo
+- **The references are not labelled — on purpose.** Four plain image sockets (`ref 1…4`), no roles on
+  the cards, no role tags in the compose card. What a picture contributes is read from the picture and
+  from the border the stylist drew, not from a label the presenter has to keep in their head. The
+  reading model infers which reference is the person and which are garments, and the prompt it writes
+  says so; a re-run reuses that prompt.
+- **The mark is the pen, and it belongs to the vision pass only, and it is red.** Press `mark` on an
+  image card and drag a border around the piece: red is the markup colour (DESIGN.md §6's pen colour),
+  distinct from the olive the agent's own state uses. The border is baked into the copy the reading
+  model sees; the **render** gets the clean copies, because a border baked into a reference would be
+  rendered into the photograph.
+- **One compose card does the work.** It reads the marked references, writes the prompt, then calls
+  `image_generate` with the clean references and that prompt on `gpt-image-2`, and shows both the
+  prompt and the render. The prompt is a textarea: edit it and run again, and the assistant is skipped.
+- **A demo never dead-ends.** If the vision pass fails, a template prompt that names no roles still
+  renders; if the provider is unreachable, the graph stops on the failed card but the assets panel
+  fills with labelled sample output (`provider unavailable — …`).
+- **A run is a real run.** Compose shows real latency (≈80–120 s for the four references on the demo
   fixtures). The footer's time before a run is the estimate; after it, the measured value.
 - **Saving is the only way into the assets.** The save card writes the render into the panel and the
   panel opens itself; nothing else populates it.

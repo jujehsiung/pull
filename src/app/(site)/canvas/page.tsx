@@ -34,12 +34,13 @@ export default function StudioPage() {
     rows = []
   }
 
+  // Deliberately unnamed: the assistant infers what each reference is from the picture
+  // and the red border the stylist draws, so the sockets carry no roles.
   const refs = [
-    // Reference 1 is the face; 2 is the jacket, 3 the top under it, 4 the bottom.
-    { name: "subject · timothée", image: "/fixtures/canvas/client-timothee-square.jpg" },
-    { name: "the jacket · prada", image: fixture("prada_look_1_aw26.jpg", rows) },
-    { name: "the top under · dior", image: fixture("dior_homme_look_1_aw26.jpg", rows) },
-    { name: "the bottom · vuitton", image: fixture("louis_vuitton_look_4_aw26.jpg", rows) },
+    { name: "ref 1", image: "/fixtures/canvas/client-timothee-square.jpg" },
+    { name: "ref 2", image: fixture("prada_look_1_aw26.jpg", rows) },
+    { name: "ref 3", image: fixture("dior_homme_look_1_aw26.jpg", rows) },
+    { name: "ref 4", image: fixture("louis_vuitton_look_4_aw26.jpg", rows) },
   ]
 
   // Anything that is not a wired reference still gives the assets panel something to

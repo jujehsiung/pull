@@ -66,13 +66,9 @@ export const PORT_Y = 18
 
 export const KIND: Record<NodeKind, { name: string; note: string }> = {
   upload: { name: "Image", note: "one reference the stylist marks up" },
-  compose: { name: "Look compose", note: "reads the four refs, renders the look" },
+  compose: { name: "Look compose", note: "reads the refs and their borders" },
   save: { name: "Save image", note: "into the job's assets" },
 }
-
-/** The four references this workflow reads, in socket order. */
-export const REF_ROLES = ["subject", "the jacket", "the top under", "the bottom"] as const
-export type RefRole = (typeof REF_ROLES)[number]
 
 /** The model names the render can use. The first is the Agent's default slot. */
 export const MODELS = ["GPT Image 2", "Gemini 3.1 Flash Image"]
@@ -83,9 +79,13 @@ export const MODEL_ALIAS: Record<string, string> = {
   "Gemini 3.1 Flash Image": "litellm/gemini-3.1-flash-image",
 }
 
-const refPorts: PortSpec[] = REF_ROLES.map((role, index) => ({
+/**
+ * The four reference sockets are deliberately unnamed: what a reference means is read
+ * from its picture and the stylist's border, not from a label on the socket.
+ */
+const refPorts: PortSpec[] = Array.from({ length: 4 }, (_, index) => ({
   id: `ref ${index + 1}`,
-  label: role,
+  label: `ref ${index + 1}`,
   kind: "image" as const,
 }))
 

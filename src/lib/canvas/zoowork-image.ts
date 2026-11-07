@@ -28,11 +28,7 @@ const AGENT_NAME = "pull-canvas-agent"
 /** Reading model: vision-capable and the cheapest row that is. */
 const ASSIST_MODEL = "litellm/gemini-3.8-flash"
 
-/** The four references this workflow reads, in socket order. */
-export const LOOK_ROLES = ["subject", "the jacket", "the top under the jacket", "the bottom"] as const
-
 export interface LookRef {
-  role?: string
   name: string
   /** `data:image/…;base64,…` — the clean copy, used for the render. */
   dataUrl: string
@@ -188,15 +184,17 @@ function cleanPrompt(raw: string): string {
     .slice(0, 900)
 }
 
-/** The prompt used when the vision pass cannot run: built from the four roles. */
+/**
+ * The prompt used when the vision pass cannot run. It names no roles — it can only ask the
+ * edit model to combine what the references show, which is exactly what the pictures say.
+ */
 export function templatePrompt(refs: LookRef[]): string {
-  const role = (index: number) => refs[index]?.role ?? LOOK_ROLES[index] ?? `reference ${index + 1}`
+  const count = Math.max(1, refs.length)
   return (
-    `Editorial full-length fashion photograph. Dress the ${role(0)} from reference 1 in the ` +
-    `${role(1)} from reference 2, worn over the ${role(2)} from reference 3, with the ` +
-    `${role(3)} from reference 4. Keep the face and hair of reference 1 exactly; carry each ` +
-    `garment's colour, cut and fabric exactly from its own reference. Plain studio background, ` +
-    `soft daylight, whole outfit visible.`
+    `Editorial full-length fashion photograph built from ${count} references: dress the person ` +
+    `in the outfit the references show, treating any red border as the exact garment to carry ` +
+    `over. Keep the person's face and hair exactly; carry each garment's colour, cut and fabric ` +
+    `from its own reference. Plain studio background, soft daylight, whole outfit visible.`
   )
 }
 
@@ -227,22 +225,25 @@ export async function composeLook(refs: LookRef[], givenPrompt?: string): Promis
       const list = refs
         .map((ref, index) => {
           const path = assistPaths[index] ?? cleanPaths[index] ?? "(missing)"
-          const border = ref.markedDataUrl ? " — the stylist drew a border here" : ""
-          return `${index + 1}. ${LOOK_ROLES[index]} (${ref.name}) — ${path}${border}`
+          const border = ref.markedDataUrl ? " — a red border is drawn on it" : ""
+          return `${index + 1}. ${ref.name} — ${path}${border}`
         })
         .join("\n")
       const content = [
-        "You are dressing a client for one editorial look. The numbered references are:",
+        "You are dressing one person for a single editorial look. The references are:",
         list,
         "",
-        "Reference 1 is the client's face — the render must keep that likeness exactly.",
-        "Reference 2 is the jacket (the top layer), reference 3 is the top worn under it, and",
-        "reference 4 is the bottom (trousers or skirt). A border drawn on an image marks the",
-        "exact piece to use from it. Read the images with your image tool, then write ONE prompt",
-        "for an image-edit model that dresses the client in refs 2–4. Keep the face and hair of",
-        "ref 1, and let the pose and setting follow the garment photographs. Be concrete about",
-        "garment, colour and fabric. Reply with the prompt only, at most 70 words — no preamble,",
-        "no quotes, no markdown.",
+        "Nothing on these references names what it is. Read the pictures: one reference is the",
+        "person to dress, the others are garments — and each garment is a different part of the",
+        "outfit. A red border drawn on a picture marks the exact object to use from it. Work out",
+        "each reference's meaning yourself from what you see and from the borders; do not assume",
+        "an order.",
+        "",
+        "Read the images with your image tool, then write ONE prompt for an image-edit model that",
+        "dresses that person in those garments. Keep the person's face and hair exactly, and carry",
+        "each garment's colour, cut and fabric from its own reference; let the pose and setting",
+        "follow the garment photographs. Be concrete about what each picture contributes. Reply",
+        "with the prompt only, at most 70 words — no preamble, no quotes, no markdown.",
       ].join("\n")
       const session = await c.createSession(agentId, {
         initial_events: [{ type: "user.message", content }],
@@ -268,7 +269,7 @@ export async function composeLook(refs: LookRef[], givenPrompt?: string): Promis
     "Use the image_generate tool now, with these arguments:",
     `- action: "edit"`,
     `- images: ${JSON.stringify(cleanPaths)}`,
-    "- image: the first entry of images is the subject; the rest are the garments to carry over",
+    "- images: the references; the prompt says what each one contributes",
     `- prompt: ${JSON.stringify(prompt)}`,
     `- size: "1024x1024"`,
     `- save: "/workspace/out/look.png"`,

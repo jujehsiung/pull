@@ -341,7 +341,7 @@ export function NodeCard({
               <span
                 key={index}
                 aria-hidden
-                className="pointer-events-none absolute border-2 border-brand bg-brand/10"
+                className="pointer-events-none absolute border-2 border-destructive bg-destructive/10"
                 style={{
                   left: `${rect.x * 100}%`,
                   top: `${rect.y * 100}%`,
@@ -352,8 +352,8 @@ export function NodeCard({
             ))}
 
             {marking ? (
-              <span className="pointer-events-none absolute inset-x-0 top-0 bg-brand/90 px-1.5 py-0.5 font-mono text-[9px] text-background">
-                drag a border around the piece
+              <span className="pointer-events-none absolute inset-x-0 top-0 bg-destructive/90 px-1.5 py-0.5 font-mono text-[9px] text-background">
+                draw a red border around what you mean
               </span>
             ) : null}
           </div>
@@ -378,7 +378,7 @@ export function NodeCard({
                 aria-pressed={marking}
                 className={`rounded-md border px-1.5 py-0.5 font-mono text-[10px] ${
                   marking
-                    ? "border-brand bg-brand text-background"
+                    ? "border-destructive bg-destructive text-background"
                     : "border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -396,16 +396,9 @@ export function NodeCard({
             <span className="font-mono text-[10px] tabular-nums text-foreground">{refsIn} / 4</span>
           </div>
 
-          <div className="mt-1.5 grid grid-cols-4 gap-1">
-            {["subject", "jacket", "under", "bottom"].map((role) => (
-              <span
-                key={role}
-                className="rounded-sm border border-border px-1 py-0.5 text-center font-mono text-[9px] text-muted-foreground-soft"
-              >
-                {role}
-              </span>
-            ))}
-          </div>
+          <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground-soft">
+            no roles to fill in — the assistant reads each picture and the red border you drew.
+          </p>
 
           <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
             Prompt

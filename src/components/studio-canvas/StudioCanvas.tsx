@@ -24,7 +24,6 @@ import {
   PORTS,
   NODE_WIDTH,
   PALETTE,
-  REF_ROLES,
   RUN_MS,
   initialNodes,
   topologicalOrder,
@@ -500,8 +499,7 @@ export function StudioCanvas({
         .sort((a, b) => Number(a.port.split(" ")[1]) - Number(b.port.split(" ")[1]))
         .map((edge) => nodes.find((candidate) => candidate.id === edge.from))
         .filter((node): node is CanvasNode => Boolean(node?.image))
-        .map((node, index) => ({
-          role: REF_ROLES[index] ?? "reference",
+        .map((node) => ({
           name: node.imageLabel ?? node.id,
           image: node.image as string,
           markup: node.markup ?? [],
@@ -523,7 +521,6 @@ export function StudioCanvas({
           if (refs.length === 0) throw new Error("wire the four references first")
           const payload = await Promise.all(
             refs.map(async (ref) => ({
-              role: ref.role,
               name: ref.name,
               dataUrl: await imageDataUrl(ref.image),
               ...(ref.markup.length > 0
