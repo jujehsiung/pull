@@ -1,0 +1,538 @@
+"use client"
+
+/**
+ * The studio canvas — a node graph for making a look.
+ *
+ * Six kinds of step, wired left to right: upload a screenshot, write the prompt,
+ * edit the image, refine it, upscale it, save it. Drag a card to move it, drag the
+ * background to pan, drag a port to connect. Run walks the graph in order; when it
+ * finishes, the assets panel slides out with what the save step produced.
+ *
+ * A design surface: the run is modelled (durations, statuses, outputs) rather than
+ * wired to a provider. The node vocabulary is the real one from PRODUCT.md Phase 4.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { X } from "lucide-react"
+import type { PointerEvent, WheelEvent } from "react"
+
+import { Button } from "@/components/ui/button"
+import { NodeCard } from "./NodeCard"
+import {
+  INITIAL_EDGES,
+  KIND,
+  MODELS,
+  NODE_WIDTH,
+  PALETTE,
+  RUN_MS,
+  initialNodes,
+  topologicalOrder,
+  type CanvasEdge,
+  type CanvasNode,
+  type NodeKind,
+} from "./types"
+
+const DOTS = "radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 0)"
+
+function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
+  switch (kind) {
+    case "upload":
+      return {}
+    case "prompt":
+      return { prompt: "" }
+    case "edit":
+      return { model: MODELS[0] }
+    case "refine":
+      return { strength: 0.35 }
+    case "upscale":
+      return { factor: 2 }
+    case "save":
+      return { filename: "untitled.png" }
+  }
+}
+
+export function StudioCanvas({
+  uploadImage,
+  sampleAssets,
+}: {
+  uploadImage: string
+  sampleAssets: string[]
+}) {
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage))
+  const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
+  const [camera, setCamera] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(0.85)
+  const [selected, setSelected] = useState<string | null>(null)
+  const [running, setRunning] = useState(false)
+  const [completed, setCompleted] = useState(0)
+  const [assets, setAssets] = useState<string[]>([])
+  const [assetsOpen, setAssetsOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [linkFrom, setLinkFrom] = useState<{ x: number; y: number } | null>(null)
+  const [linkPoint, setLinkPoint] = useState<{ x: number; y: number } | null>(null)
+  const [heights, setHeights] = useState<Record<string, number>>({})
+
+  const canvasRef = useRef<HTMLDivElement | null>(null)
+  const panelRef = useRef<HTMLElement | null>(null)
+  const [panelWidth, setPanelWidth] = useState(0)
+  const [wide, setWide] = useState(true)
+  const dragRef = useRef<{ id: string; startX: number; startY: number; x: number; y: number } | null>(null)
+  const panRef = useRef<{ startX: number; startY: number; camX: number; camY: number } | null>(null)
+  const linkRef = useRef<{ from: string; x: number; y: number } | null>(null)
+  const runRef = useRef(false)
+
+  const order = useMemo(() => topologicalOrder(nodes, edges), [nodes, edges])
+
+  const fit = useCallback(() => {
+    const element = canvasRef.current
+    if (!element || nodes.length === 0) return
+    const rect = element.getBoundingClientRect()
+    const minX = Math.min(...nodes.map((node) => node.x)) - 64
+    const minY = Math.min(...nodes.map((node) => node.y)) - 64
+    const maxX = Math.max(...nodes.map((node) => node.x + NODE_WIDTH)) + 64
+    const maxY = Math.max(...nodes.map((node) => node.y)) + 360
+    const raw = Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY), 1)
+    // Never shrink the cards into illegibility; on a narrow frame the graph pans instead.
+    const next = Math.min(Math.max(raw, 0.45), 1)
+    const contentWidth = (maxX - minX) * next
+    setZoom(next)
+    setCamera({
+      x: contentWidth > rect.width ? 24 - minX * next : (rect.width - contentWidth) / 2 - minX * next,
+      y: (rect.height - (maxY - minY) * next) / 2 - minY * next,
+    })
+  }, [nodes])
+
+  // Frame the graph once, after the canvas has been measured.
+  const fitRef = useRef(fit)
+  fitRef.current = fit
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => fitRef.current())
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
+  // A narrow frame cannot give the panel a column, so there it slides over the canvas.
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)")
+    const sync = () => setWide(query.matches)
+    sync()
+    query.addEventListener("change", sync)
+    return () => query.removeEventListener("change", sync)
+  }, [])
+
+  // Measure the panel so the canvas gives it exactly its width, at any viewport.
+  useEffect(() => {
+    const element = panelRef.current
+    if (!element) return
+    const observer = new ResizeObserver(() => setPanelWidth(element.offsetWidth))
+    observer.observe(element)
+    setPanelWidth(element.offsetWidth)
+    return () => observer.disconnect()
+  }, [])
+
+  // The assets panel takes width from the canvas; refit so nothing hides behind it.
+  useEffect(() => {
+    const timer = setTimeout(() => fitRef.current(), 540)
+    return () => clearTimeout(timer)
+  }, [assetsOpen])
+
+  // Escape closes the add menu; backspace deletes the selected card.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAddOpen(false)
+        return
+      }
+      if (event.key !== "Backspace" && event.key !== "Delete") return
+      const target = event.target as HTMLElement | null
+      if (target?.closest("input, textarea, select, [contenteditable='true']")) return
+      if (!selected) return
+      event.preventDefault()
+      setNodes((current) => current.filter((node) => node.id !== selected))
+      setEdges((current) => current.filter((edge) => edge.from !== selected && edge.to !== selected))
+      setSelected(null)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [selected])
+
+  const onMeasure = useCallback((id: string, height: number) => {
+    setHeights((current) => (current[id] === height ? current : { ...current, [id]: height }))
+  }, [])
+
+  const midY = (node: CanvasNode) => node.y + (heights[node.id] ?? 120) / 2
+
+  const toCanvas = (clientX: number, clientY: number) => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (!rect) return { x: 0, y: 0 }
+    return { x: (clientX - rect.left - camera.x) / zoom, y: (clientY - rect.top - camera.y) / zoom }
+  }
+
+  /* ── moving a card ─────────────────────────────────────────────────────── */
+
+  const onHeaderDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
+    event.stopPropagation()
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    dragRef.current = { id: node.id, startX: event.clientX, startY: event.clientY, x: node.x, y: node.y }
+    setSelected(node.id)
+  }
+
+  const onHeaderMove = (event: PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current
+    if (!drag) return
+    const dx = (event.clientX - drag.startX) / zoom
+    const dy = (event.clientY - drag.startY) / zoom
+    setNodes((current) =>
+      current.map((node) =>
+        node.id === drag.id ? { ...node, x: Math.round(drag.x + dx), y: Math.round(drag.y + dy) } : node,
+      ),
+    )
+  }
+
+  const onHeaderUp = () => {
+    dragRef.current = null
+  }
+
+  /* ── panning the canvas ────────────────────────────────────────────────── */
+
+  const onCanvasDown = (event: PointerEvent<HTMLDivElement>) => {
+    setSelected(null)
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    panRef.current = { startX: event.clientX, startY: event.clientY, camX: camera.x, camY: camera.y }
+  }
+
+  const onCanvasMove = (event: PointerEvent<HTMLDivElement>) => {
+    const pan = panRef.current
+    if (pan) {
+      setCamera({
+        x: pan.camX + (event.clientX - pan.startX),
+        y: pan.camY + (event.clientY - pan.startY),
+      })
+      return
+    }
+    if (linkRef.current) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (rect) setLinkPoint({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+    }
+  }
+
+  const onCanvasUp = () => {
+    panRef.current = null
+  }
+
+  const onWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey && !event.metaKey) return
+    setZoom((current) => Math.min(1.6, Math.max(0.4, current - event.deltaY * 0.0015)))
+  }
+
+  /* ── wiring two cards ──────────────────────────────────────────────────── */
+
+  const onPortDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
+    event.stopPropagation()
+    ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+    linkRef.current = { from: node.id, x: node.x + NODE_WIDTH, y: midY(node) }
+    setLinkFrom({ x: camera.x + (node.x + NODE_WIDTH) * zoom, y: camera.y + midY(node) * zoom })
+  }
+
+  const onPortMove = (event: PointerEvent<HTMLElement>) => {
+    if (!linkRef.current) return
+    const rect = canvasRef.current?.getBoundingClientRect()
+    if (rect) setLinkPoint({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+  }
+
+  const onPortUp = (event: PointerEvent<HTMLElement>) => {
+    const link = linkRef.current
+    linkRef.current = null
+    setLinkFrom(null)
+    setLinkPoint(null)
+    if (!link) return
+
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-input-node]")
+    const to = target?.getAttribute("data-input-node")
+    if (!to || to === link.from) return
+    setEdges((current) =>
+      current.some((edge) => edge.from === link.from && edge.to === to)
+        ? current
+        : [...current, { id: `e-${link.from}-${to}-${current.length}`, from: link.from, to }],
+    )
+  }
+
+  /* ── adding a card ─────────────────────────────────────────────────────── */
+
+  const addNode = (kind: NodeKind) => {
+    const rect = canvasRef.current?.getBoundingClientRect()
+    const center = rect
+      ? toCanvas(rect.left + rect.width / 2, rect.top + rect.height / 2)
+      : { x: 240, y: 120 }
+    const id = `${kind}-${Math.random().toString(36).slice(2, 7)}`
+    setNodes((current) => [
+      ...current,
+      { id, kind, x: Math.round(center.x) - 60, y: Math.round(center.y) - 40, status: "idle", ...defaultsFor(kind) },
+    ])
+    setSelected(id)
+    setAddOpen(false)
+  }
+
+  /* ── running the graph ─────────────────────────────────────────────────── */
+
+  const run = async () => {
+    if (runRef.current) return
+    runRef.current = true
+    setRunning(true)
+    setCompleted(0)
+    setAssets([])
+    setNodes((current) => current.map((node) => ({ ...node, status: "idle" as const, durationMs: undefined })))
+
+    for (const node of topologicalOrder(nodes, edges)) {
+      setNodes((current) =>
+        current.map((candidate) =>
+          candidate.id === node.id ? { ...candidate, status: "running" as const } : candidate,
+        ),
+      )
+      await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
+      setNodes((current) =>
+        current.map((candidate) =>
+          candidate.id === node.id
+            ? {
+                ...candidate,
+                status: "done" as const,
+                durationMs: RUN_MS[node.kind],
+                ...(candidate.kind === "save" ? { output: sampleAssets[0] } : {}),
+              }
+            : candidate,
+        ),
+      )
+      setCompleted((current) => current + 1)
+    }
+
+    setRunning(false)
+    setAssets(sampleAssets)
+    setAssetsOpen(true)
+    runRef.current = false
+  }
+
+  const pathFor = (from: CanvasNode, to: CanvasNode) => {
+    const x1 = from.x + NODE_WIDTH
+    const y1 = midY(from)
+    const x2 = to.x
+    const y2 = midY(to)
+    const bend = Math.max(40, Math.abs(x2 - x1) * 0.45)
+    return `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`
+  }
+
+  const done = running || completed > 0
+
+  return (
+    <>
+      <section className="mx-auto flex max-w-[1440px] flex-wrap items-end justify-between gap-4 px-6 pt-5 md:px-10">
+        <div className="min-w-0">
+          <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Studio</p>
+          <h1 className="mt-1.5 text-[clamp(26px,2.8vw,38px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
+            Look workflow
+          </h1>
+          <p className="mt-1.5 text-[12px] text-muted-foreground">
+            A folder of screenshots in, a finished look out — and every step visible while it runs.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
+            Agent run · {done ? `${completed}/${nodes.length}` : `0/${nodes.length}`}
+          </span>
+
+          <div className="relative" data-add-menu>
+            <Button variant="outline" size="sm" onClick={() => setAddOpen((open) => !open)} aria-expanded={addOpen}>
+              Add node
+            </Button>
+            {addOpen ? (
+              <div className="absolute right-0 top-full z-30 mt-1 w-[228px] border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)]">
+                {PALETTE.map((kind) => (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => addNode(kind)}
+                    className="flex w-full items-baseline justify-between gap-2 px-2.5 py-1.5 text-left text-[11px] text-foreground hover:bg-muted"
+                  >
+                    <span>{KIND[kind].name}</span>
+                    <span className="font-mono text-[9px] text-muted-foreground-soft">{KIND[kind].note}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setAssetsOpen((open) => !open)}
+            aria-pressed={assetsOpen}
+          >
+            Assets · {assets.length}
+          </Button>
+
+          <Button size="sm" className="agent-action" onClick={run} disabled={running}>
+            {running ? "Running…" : "Run"}
+          </Button>
+        </div>
+      </section>
+
+      <div className="relative mt-3 h-[calc(100dvh-236px)] min-h-[560px] overflow-hidden border-y border-border">
+        <div
+          ref={canvasRef}
+          onPointerDown={onCanvasDown}
+          onPointerMove={onCanvasMove}
+          onPointerUp={onCanvasUp}
+          onPointerCancel={onCanvasUp}
+          onWheel={onWheel}
+          className="absolute inset-y-0 left-0 cursor-grab touch-none select-none bg-background transition-[right] duration-500 ease-out active:cursor-grabbing"
+          style={{
+            right: assetsOpen && wide ? panelWidth : 0,
+            backgroundImage: DOTS,
+            backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
+            backgroundPosition: `${camera.x}px ${camera.y}px`,
+          }}
+        >
+          <div
+            className="pointer-events-none absolute left-0 top-0 origin-top-left"
+            style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${zoom})` }}
+          >
+            <svg className="absolute left-0 top-0 overflow-visible" width="1" height="1" aria-hidden>
+              {edges.map((edge) => {
+                const from = nodes.find((node) => node.id === edge.from)
+                const to = nodes.find((node) => node.id === edge.to)
+                if (!from || !to) return null
+                return (
+                  <path
+                    key={edge.id}
+                    d={pathFor(from, to)}
+                    fill="none"
+                    stroke="color-mix(in srgb, var(--foreground) 22%, transparent)"
+                    strokeWidth={1.25}
+                  />
+                )
+              })}
+            </svg>
+
+            {nodes.map((node, index) => (
+              <NodeCard
+                key={node.id}
+                node={node}
+                index={index}
+                selected={selected === node.id}
+                onChange={(id, patch) =>
+                  setNodes((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)))
+                }
+                onHeaderDown={onHeaderDown}
+                onHeaderMove={onHeaderMove}
+                onHeaderUp={onHeaderUp}
+                onPortDown={onPortDown}
+                onPortMove={onPortMove}
+                onPortUp={onPortUp}
+                onMeasure={onMeasure}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* The wire being dragged, in screen space. */}
+        {linkFrom && linkPoint ? (
+          <svg className="pointer-events-none absolute inset-0 z-10 size-full" aria-hidden>
+            <path
+              d={`M ${linkFrom.x} ${linkFrom.y} L ${linkPoint.x} ${linkPoint.y}`}
+              stroke="var(--foreground)"
+              strokeWidth={1.25}
+              strokeDasharray="3 3"
+              fill="none"
+            />
+          </svg>
+        ) : null}
+
+        {/* Zoom, bottom left. */}
+        <div className="absolute bottom-3 left-3 z-20 flex items-center border border-border bg-card">
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => setZoom((current) => Math.max(0.4, current - 0.1))}
+            className="px-2 py-1 text-[12px] text-muted-foreground hover:text-foreground"
+          >
+            −
+          </button>
+          <span className="border-x border-border px-2 py-1 font-mono text-[10px] tabular-nums text-foreground">
+            {Math.round(zoom * 100)}%
+          </span>
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => setZoom((current) => Math.min(1.6, current + 0.1))}
+            className="px-2 py-1 text-[12px] text-muted-foreground hover:text-foreground"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={fit}
+            className="border-l border-border px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            Fit
+          </button>
+        </div>
+
+        {/* The assets panel, sliding out when the work lands. */}
+        <aside
+          ref={panelRef}
+          aria-label="Studio assets"
+          className={`absolute right-0 top-0 z-20 flex h-full w-[320px] max-w-[88vw] flex-col border-l border-border bg-card shadow-[-12px_0_32px_rgba(10,10,10,0.05)] transition-transform duration-500 ease-out ${
+            assetsOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+            <p className="text-[11px] tracking-[0.02em] text-muted-foreground">Assets · {assets.length}</p>
+            <button
+              type="button"
+              onClick={() => setAssetsOpen(false)}
+              aria-label="Close assets"
+              className="p-1 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {assets.length === 0 ? (
+              <p className="px-3 py-6 text-[11px] leading-relaxed text-muted-foreground">
+                Nothing yet. Run the graph and the images land here.
+              </p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-px bg-border">
+                {assets.map((src, index) => (
+                  <li key={`${src}-${index}`} className="bg-card">
+                    <div className="aspect-[4/5] overflow-hidden bg-muted">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="" className="size-full object-cover" />
+                    </div>
+                    <div className="flex items-baseline justify-between px-1.5 py-1 font-mono text-[9px] text-muted-foreground-soft">
+                      <span className="truncate">look-27-v{index + 1}.png</span>
+                      <span>2×</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <p className="border-t border-border px-3 py-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+            saved by the graph · sample output
+          </p>
+        </aside>
+      </div>
+
+      <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-6 py-2.5 md:px-10">
+        <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
+          drag a card to move it · drag the canvas to pan · ⌘ scroll to zoom · drag a port to connect ·
+          backspace deletes
+        </p>
+        <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
+          {nodes.length} nodes · {edges.length} links · {order.length} in the run
+        </p>
+      </div>
+    </>
+  )
+}

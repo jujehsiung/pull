@@ -275,3 +275,28 @@ kit instead of drifting from it. A new token the kit consumes but the theme omit
 value that fails AA fails the gate. A typo'd `var(--tokn)` fails the gate.
 
 Visual review: `/design` (the living canvas — both modes, every primitive).
+
+---
+
+## 9. The studio canvas (2026-11-07)
+
+The studio (`/canvas`) is the one surface that is a **canvas**, and it takes the NERV language without
+taking its colours: numbered steps, technical labels, hairlines, and the same near-white paper.
+
+- **Cards are square and hairline**, exactly like every other card — no radius, no shadow except the
+  1px lift that says "this can be picked up". A card is `bg-card` + `border-border`; the selected one is
+  the only thing that changes, to `outline-foreground/40`.
+- **The step number is mono, 10px, muted** (`01`…`06`) and it is the only thing on the card's left edge
+  before the name. It is data, not a label, which is why it may keep its width.
+- **Ports are 10px squares**, centred on the card's mid-line — measured, never assumed, because a
+  card's height depends on its body. The wire is a 1.25px cubic at 22% foreground: a hairline, not a
+  diagram.
+- **One olive state, one green state**: the step in flight turns its border olive and its dot pulses;
+  a finished step is a green dot. There is no third colour on the canvas.
+- **The run is visible, not implied** — `Agent run · n/6` in the surface header, and each card's footer
+  shows what that step cost (`1.6s`) once it has run.
+- **The assets panel is a column, not an overlay**: above 768px the canvas gives it exactly its measured
+  width and refits, so nothing hides behind it. Below 768px there is no column to give, so it slides
+  over the canvas like a drawer — the one place the same panel behaves two ways, and deliberately.
+- **Type never goes below 10px effective**: `fit()` floors the zoom at 45% so a narrow frame pans
+  instead of shrinking the cards into unreadability.
