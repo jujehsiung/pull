@@ -50,13 +50,34 @@ export async function POST(request: Request) {
     )
   }
 
-  try {
-    const result = await composeLook(refs, prompt)
-    return NextResponse.json({ ok: true, ...result })
-  } catch (error) {
-    return NextResponse.json(
-      { ok: false, reason: error instanceof Error ? error.message : "compose failed" },
-      { status: 502 },
-    )
-  }
+  // Stream one NDJSON line per phase, then the result. The phase lines come from the
+  // ZooWork session's own progress (tool/lifecycle events), so the card shows the real step.
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (value: unknown) => {
+        try {
+          controller.enqueue(encoder.encode(`${JSON.stringify(value)}\n`))
+        } catch {
+          // The client walked away; the run keeps going and the artifact is still published.
+        }
+      }
+      try {
+        const result = await composeLook(refs, prompt, (phase) => send({ type: "phase", phase }))
+        send({ type: "result", ok: true, ...result })
+      } catch (error) {
+        send({ type: "result", ok: false, reason: error instanceof Error ? error.message : "compose failed" })
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      "content-type": "application/x-ndjson; charset=utf-8",
+      "cache-control": "no-store",
+      "x-accel-buffering": "no",
+    },
+  })
 }

@@ -351,10 +351,11 @@ the dark client board alike.
   no boundary. The agent's pill is not borrowed here — nothing on this row is an agent action.
 - **Collapse, never vanish.** `hide` shrinks the row to one 44px line that names itself and restores in
   one press, remembered per browser. A guide that can be lost with no way back is a trap on stage.
-- **Not on the doors.** `/login`, `/setup`, `/design`, `/canvas` and `/trace` are not the demo and render
-  no guide. The act a route belongs to is derived from the pathname, not from state: `/b/*` and `/client`
-  are Act 2, `/i/*`, `/requests` and `/studio/jobs/*/requests` are Act 3, everything else in the guide
-  is Act 1.
+- **It is on every screen** (2026-11-07). The signing door, `/setup`, `/design`, `/canvas` and `/trace`
+  carry the bar too: a guide that disappears on half the routes is one the presenter has to remember
+  instead of read. The act a route belongs to is derived from the pathname, not from state: `/b/*` and
+  `/client` are Act 2, `/i/*`, `/requests` and `/studio/jobs/*/requests` are Act 3, everything else is
+  Act 1. (The canvas frame gives the bar its ~52 px back so the page still fits the viewport.)
 
 ---
 
@@ -390,6 +391,14 @@ The studio's six-card graph is the demo's picture of the product: **four referen
   the picture is replaced — downscaled to 1400 px on the long edge, the filename becomes the caption,
   and any borders on the old picture are cleared, because they described the picture that left. A
   dashed red frame and `drop to replace` appear while the file is over the card.
+- **A run reports its phase, not a percentage** (2026-11-07). The compose route streams one NDJSON
+  line per step, forwarded from the ZooWork session (connecting → uploading → reading → rendering →
+  saving), and the running card's footer shows it. ZooWork streams tool and lifecycle events, not image
+  pixels, so there is no honest per-image progress bar to build — the phase is the truthful signal.
+- **Pricing is after the fact, not during** (2026-11-07). ZooWork's twenty event types carry no usage
+  or cost event; credits are read from `GET /usage` once the run has finished (200 credits = $1, and
+  session-scoped) and the balance from `GET /balance`. A live price on the card would be invented, so
+  the demo shows the phases while running and the measured cost afterwards.
 - **A card resizes from its corner** (2026-11-07). The grip sits in the bottom-right corner — drag it,
   or focus it and use ← / →. Width runs 220–640 canvas units, height follows the content, and the
   render preview grows with the card: the save card is where the look is finally looked at, so it is

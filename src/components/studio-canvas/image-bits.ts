@@ -54,20 +54,58 @@ function load(src: string): Promise<HTMLImageElement> {
   })
 }
 
-/** POST JSON and normalise the two failure shapes the canvas understands. */
-export async function postJson<T extends { ok: boolean }>(url: string, body: unknown): Promise<T> {
+/** One line of the compose route's NDJSON progress stream. */
+export interface LookStreamEvent {
+  type: "phase" | "result"
+  phase?: string
+}
+
+/**
+ * POST and read the response as NDJSON. The compose route sends one `phase` line per step
+ * (the ZooWork session's own tool/lifecycle events, forwarded) and one final `result` line.
+ */
+export async function streamJson<T extends { ok: boolean }>(
+  url: string,
+  body: unknown,
+  onEvent: (event: LookStreamEvent) => void,
+): Promise<T> {
+  const failure = (reason: string) => ({ ok: false, reason }) as unknown as T
   try {
     const response = await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     })
-    const payload = (await response.json()) as T
-    if (!response.ok && payload.ok !== false) {
-      return { ok: false, reason: `HTTP ${response.status}` } as unknown as T
+    if (!response.ok || !response.body) {
+      const payload = (await response.json().catch(() => null)) as T | null
+      return payload ?? failure(`HTTP ${response.status}`)
     }
-    return payload
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    let result: T | null = null
+
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let newline = buffer.indexOf("\n")
+      while (newline >= 0) {
+        const line = buffer.slice(0, newline).trim()
+        buffer = buffer.slice(newline + 1)
+        newline = buffer.indexOf("\n")
+        if (!line) continue
+        const event = JSON.parse(line) as LookStreamEvent & Record<string, unknown>
+        if (event.type === "phase") onEvent(event)
+        else if (event.type === "result") {
+          const { type: _type, ...rest } = event
+          result = rest as unknown as T
+        }
+      }
+    }
+    return result ?? failure("the run ended without a result")
   } catch (error) {
-    return { ok: false, reason: error instanceof Error ? error.message : "network error" } as unknown as T
+    return failure(error instanceof Error ? error.message : "network error")
   }
 }

@@ -17,7 +17,7 @@ import type { PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
-import { imageDataUrl, postJson } from "./image-bits"
+import { imageDataUrl, streamJson } from "./image-bits"
 import {
   INITIAL_EDGES,
   KIND,
@@ -481,6 +481,7 @@ export function StudioCanvas({
         durationMs: undefined,
         error: undefined,
         output: undefined,
+        progress: undefined,
       })),
     )
 
@@ -528,19 +529,28 @@ export function StudioCanvas({
                 : {}),
             })),
           )
-          const result = await postJson<{
+          // The route streams a line per phase, so the card can say what is happening
+          // (reading / rendering / saving) instead of just spinning.
+          const result = await streamJson<{
             ok: boolean
             prompt?: string
             promptSource?: string
             image?: string
             reason?: string
-          }>("/api/canvas/look", { refs: payload, prompt: node.prompt || undefined })
+          }>(
+            "/api/canvas/look",
+            { refs: payload, prompt: node.prompt || undefined },
+            (event) => {
+              if (event.type === "phase" && event.phase) patch(node.id, { progress: event.phase })
+            },
+          )
           if (!result.ok || !result.image) throw new Error(result.reason ?? "the compose step returned nothing")
           if (result.image) renders.set(node.id, result.image)
           patch(node.id, {
             prompt: result.prompt ?? node.prompt,
             promptSource: (result.promptSource as CanvasNode["promptSource"]) ?? "assist",
             output: result.image,
+            progress: undefined,
           })
         } else if (node.kind === "save") {
           const image = imageInto(node.id)
@@ -561,6 +571,7 @@ export function StudioCanvas({
         patch(node.id, {
           status: "failed",
           error: failed.reason,
+          progress: undefined,
           durationMs: Math.round(performance.now() - (started.get(node.id) ?? 0)),
         })
         break
@@ -617,7 +628,8 @@ export function StudioCanvas({
         </div>
       </section>
 
-      <div className="relative mt-3 h-[calc(100dvh-236px)] min-h-[560px] overflow-hidden border-y border-border">
+      {/* The guide bar above is always there now, so the frame gives it its ~52px back. */}
+      <div className="relative mt-3 h-[calc(100dvh-288px)] min-h-[560px] overflow-hidden border-y border-border">
         <div
           ref={canvasRef}
           onPointerDown={onCanvasDown}

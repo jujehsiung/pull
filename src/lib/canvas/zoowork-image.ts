@@ -202,11 +202,25 @@ export function templatePrompt(refs: LookRef[]): string {
  * Compose the look: read the references (or reuse a prompt the stylist edited), render it,
  * publish the result. One function, one round trip from the canvas.
  */
-export async function composeLook(refs: LookRef[], givenPrompt?: string): Promise<LookResult> {
+export async function composeLook(
+  refs: LookRef[],
+  givenPrompt?: string,
+  onPhase?: (phase: string) => void,
+): Promise<LookResult> {
   const started = Date.now()
+  const say = (phase: string) => {
+    try {
+      onPhase?.(phase)
+    } catch {
+      // A progress callback must never fail the run.
+    }
+  }
+
+  say("connecting to the agent")
   const c = client()
   const agentId = await ensureAgent(c)
 
+  say("uploading the references")
   const cleanPaths = (await uploadRefs(c, agentId, "look", refs, false)).filter(
     (path): path is string => Boolean(path),
   )
@@ -245,6 +259,7 @@ export async function composeLook(refs: LookRef[], givenPrompt?: string): Promis
         "follow the garment photographs. Be concrete about what each picture contributes. Reply",
         "with the prompt only, at most 70 words — no preamble, no quotes, no markdown.",
       ].join("\n")
+      say("reading the pictures")
       const session = await c.createSession(agentId, {
         initial_events: [{ type: "user.message", content }],
         metadata: { app: "pull-canvas", step: "read" },
@@ -264,6 +279,7 @@ export async function composeLook(refs: LookRef[], givenPrompt?: string): Promis
     }
   }
 
+  say("rendering the look · gpt-image-2")
   // One image_generate edit: the clean references, the prompt, a published Artifact.
   const content = [
     "Use the image_generate tool now, with these arguments:",
@@ -284,6 +300,7 @@ export async function composeLook(refs: LookRef[], givenPrompt?: string): Promis
   })
   const turn = await readTurn(c, agentId, session.session_id, 300_000)
 
+  say("saving the render")
   const page = await c.listArtifacts(agentId, { sessionId: session.session_id, page: 1, limit: 20 })
   const ready = (page.artifacts ?? []).find((artifact) => artifact.status === "ready")
   if (!ready) {

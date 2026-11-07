@@ -507,8 +507,16 @@ export function NodeCard({
       ) : null}
 
       <div className="flex items-center justify-between gap-2 border-t border-border px-2.5 py-1">
-        <span className="truncate text-[10px] text-muted-foreground-soft" title={node.error}>
-          {node.status === "failed" && node.error ? node.error : meta.note}
+        <span
+          className="truncate text-[10px] text-muted-foreground-soft"
+          title={node.error}
+          aria-live={node.status === "running" ? "polite" : undefined}
+        >
+          {node.status === "running" && node.progress
+            ? node.progress
+            : node.status === "failed" && node.error
+              ? node.error
+              : meta.note}
         </span>
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground-soft">
           {node.status === "done" && node.durationMs

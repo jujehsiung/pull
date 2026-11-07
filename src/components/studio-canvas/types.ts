@@ -40,6 +40,8 @@ export interface CanvasNode {
   prompt?: string
   /** compose — how the prompt was produced. */
   promptSource?: "assist" | "template" | "edited"
+  /** compose — the live phase while a run is in flight. */
+  progress?: string
   /** compose / save */
   output?: string
   /** save */
