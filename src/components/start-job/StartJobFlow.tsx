@@ -50,6 +50,46 @@ interface ApiDesigner {
 
 type SuggestStep = AgentStep
 
+const BOARD_KEY = "pull.board.v1"
+
+interface StoredBoard {
+  job: { title: string; description: string; email: string; dueDate: string }
+  looks: Look[]
+}
+
+/**
+ * A board is built in memory at `/`, so any reload — a dev refresh, a dropped socket — used to drop
+ * the stylist back on the landing page mid-run. The board is kept in sessionStorage instead: only
+ * looks whose source is a URL can come back (an uploaded file cannot), and the board is the thing
+ * that reappears, not the landing page.
+ */
+function storeBoard(board: StoredBoard) {
+  try {
+    sessionStorage.setItem(BOARD_KEY, JSON.stringify(board))
+  } catch {
+    // A full quota is not worth failing a build over.
+  }
+}
+
+function clearStoredBoard() {
+  try {
+    sessionStorage.removeItem(BOARD_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+function readStoredBoard(): StoredBoard | null {
+  try {
+    const raw = sessionStorage.getItem(BOARD_KEY)
+    if (!raw) return null
+    const board = JSON.parse(raw) as StoredBoard
+    return board?.looks?.length ? board : null
+  } catch {
+    return null
+  }
+}
+
 interface SuggestLooksResponse {
   clientName: string
   gender: { value: "male" | "female" | "unknown"; evidence: string; sourceUrl: string }
@@ -134,6 +174,23 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     void fetch("/api/skills/suggest-looks?warm=1")
   }, [open])
 
+  useEffect(() => {
+    const saved = readStoredBoard()
+    if (!saved) return
+    setJobName(saved.job.title)
+    setClientName(saved.job.description)
+    setContactEmail(saved.job.email)
+    setDeliveryDate(saved.job.dueDate)
+    setLooks(
+      saved.looks.map((look) => ({
+        ...look,
+        status: "ready" as const,
+        src: typeof look.source === "string" ? look.source : look.src,
+      })),
+    )
+    setStage("board")
+  }, [])
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
@@ -143,6 +200,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
   }
 
   const reset = useCallback(() => {
+    clearStoredBoard()
     setLooks((current) => {
       releaseUrls(current)
       return []
@@ -373,10 +431,16 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
 
   const buildBoard = useCallback(() => {
     if (!canBuild) return
+    storeBoard({
+      job: { title: jobName, description: clientName, email: contactEmail, dueDate: deliveryDate },
+      looks: pool
+        .filter((look) => typeof look.source === "string")
+        .map((look) => ({ ...look, status: "ready" as const })),
+    })
     setStage("board")
     setOpen(false)
     void processQueue(pool)
-  }, [canBuild, pool, processQueue])
+  }, [canBuild, contactEmail, clientName, deliveryDate, jobName, pool, processQueue])
 
   const trigger =
     kind === "nav" ? (
@@ -655,6 +719,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
           onRemoveLook={refillSuggestion}
           canRemove={canRemoveLook}
           onBack={() => {
+            clearStoredBoard()
             setStage("details")
             setOpen(true)
           }}
