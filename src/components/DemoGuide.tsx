@@ -104,6 +104,7 @@ export function DemoGuide() {
           type="button"
           className="demo-guide-reveal"
           onClick={() => persistCollapsed(false)}
+          aria-controls="demo-guide"
           aria-expanded={false}
         >
           <span className="demo-guide-mark mono">demo guide</span>
@@ -118,7 +119,7 @@ export function DemoGuide() {
   const act = ACTS[current]
 
   return (
-    <nav className="demo-guide" aria-label="Demo guide">
+    <nav className="demo-guide" id="demo-guide" aria-label="Demo guide">
       <span className="demo-guide-mark mono" aria-hidden>
         demo
       </span>
@@ -163,7 +164,8 @@ export function DemoGuide() {
           type="button"
           className="demo-guide-hide"
           onClick={() => persistCollapsed(true)}
-          aria-expanded
+          aria-controls="demo-guide"
+          aria-expanded={true}
         >
           hide
         </button>

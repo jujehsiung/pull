@@ -494,14 +494,14 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   flex-wrap: wrap;
   gap: 0 18px;
   min-height: 44px;
-  padding: 4px var(--gutter);
+  padding: 4px clamp(24px, 2.8vw, 40px);
   background: var(--card);
   border-bottom: 1px solid var(--border);
   color: var(--foreground);
 }
 .demo-guide-mark {
   font-size: 11px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   color: var(--muted-foreground-soft);
 }
 .demo-guide-steps {
@@ -586,7 +586,7 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   gap: 10px;
   width: 100%;
   min-height: 44px;
-  padding: 0 var(--gutter);
+  padding: 0 clamp(24px, 2.8vw, 40px);
   border: 0;
   background: none;
   font-size: 13px;
@@ -600,9 +600,10 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 }
 @media (max-width: 640px) {
   /* One row on a phone: the steps keep their numbers and words, the act's title
-     is already the highlighted step, and "next" falls back to its arrow. */
+     is already the highlighted step, and "next" falls back to its arrow. The
+     collapsed row keeps its own name — that is the way back, so it must say so. */
   .demo-guide { gap: 0 12px; }
-  .demo-guide-mark,
+  .demo-guide > .demo-guide-mark,
   .demo-guide-now,
   .demo-guide-next-label { display: none; }
   .demo-guide-step { padding: 0 9px; }
@@ -614,4 +615,6 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   .demo-guide-next,
   .demo-guide-hide,
   .demo-guide-reveal { min-height: 44px; }
+  .demo-guide-next,
+  .demo-guide-hide { min-width: 44px; }
 }
