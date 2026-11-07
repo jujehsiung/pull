@@ -61,8 +61,11 @@ interface ReviewBoardProps {
   /** Live ingest progress; omitted on the static board. */
   progress?: { done: number; total: number; label: string } | null
   onBack?: () => void
-  /** Called after a look is removed, so the start-job flow can refill it from the same collection. */
-  onRemoveLook?: (look: Look) => void
+  /**
+   * Called after a look is removed, with the row it left behind, so the owner can pick a
+   * replacement from the same collection — the Taste skill reads that row.
+   */
+  onRemoveLook?: (look: Look, row: Look[]) => void
   /**
    * Whether a look may be removed. The parent owns the reserve, so it decides: with stock left a
    * removal is always replaced; at the floor with none, the control is held.
@@ -80,6 +83,8 @@ interface ReviewBoardProps {
   onSuggest?: () => void
   suggesting?: boolean
   suggestError?: string | null
+  /** One line from the Taste skill: which look it picked and why. */
+  tasteNote?: string | null
 }
 
 function groupByBrand(looks: Look[]) {
@@ -106,6 +111,7 @@ export function ReviewBoard({
   onSuggest,
   suggesting = false,
   suggestError,
+  tasteNote,
 }: ReviewBoardProps) {
   const [added, setAdded] = useState<string[]>([])
   const [sendState, setSendState] = useState<"idle" | "needs-backend">("idle")
@@ -122,9 +128,10 @@ export function ReviewBoard({
     setAdded((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
 
   const removeLook = (look: Look) => {
+    const row = visible.filter((entry) => entry.brand === look.brand && entry.id !== look.id)
     setRemoved((current) => (current.some((entry) => entry.id === look.id) ? current : [...current, look]))
     setAdded((current) => current.filter((x) => x !== look.id))
-    onRemoveLook?.(look)
+    onRemoveLook?.(look, row)
   }
 
   const restoreLook = (look: Look) =>
@@ -157,6 +164,11 @@ export function ReviewBoard({
             {suggestError ? (
               <p role="status" className="text-[11px] text-[var(--destructive)]">
                 {suggestError}
+              </p>
+            ) : null}
+            {tasteNote ? (
+              <p role="status" className="text-[11px] text-muted-foreground">
+                <span className="text-brand">Taste</span> · {tasteNote}
               </p>
             ) : null}
           </div>

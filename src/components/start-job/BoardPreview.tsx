@@ -13,6 +13,7 @@
  */
 import { useMemo, useRef, useState } from "react"
 
+import { describeTaste, nearestToTaste } from "@/lib/taste"
 import { MIN_PER_ROW, ReviewBoard, type BoardJob, type Look } from "./ReviewBoard"
 import { BoardSwitcher, type BoardOption } from "./BoardSwitcher"
 
@@ -87,19 +88,43 @@ function BoardSurface({
   const [reserve, setReserve] = useState<Record<string, Look[]>>(board.reserve ?? {})
   const [suggesting, setSuggesting] = useState(false)
   const [suggestError, setSuggestError] = useState<string | null>(null)
+  const [tasteNote, setTasteNote] = useState<string | null>(null)
   /** Where the next press continues in the season; the six seeded houses came first. */
   const offset = useRef(6)
 
   const looks = useMemo(() => [...board.looks, ...added], [board.looks, added])
 
-  const refill = (removed: Look) => {
-    const spare = reserve[removed.brand]?.[0]
-    if (!spare) return
-    setReserve((current) => ({
-      ...current,
-      [removed.brand]: (current[removed.brand] ?? []).slice(1),
-    }))
-    setAdded((current) => [...current, { ...spare, id: `${spare.id}:${Date.now()}` }])
+  /**
+   * Taste picks the replacement: it reads the row that is left and takes the look from the same
+   * collection nearest to it, instead of the next one in the list.
+   */
+  const refill = (removed: Look, row: Look[]) => {
+    const candidates = reserve[removed.brand] ?? []
+    if (!candidates.length) return
+    void (async () => {
+      const kept = row.flatMap((look) => (look.src ? [{ id: look.id, src: look.src }] : []))
+      const readable = candidates.flatMap((look, index) => (look.src ? [{ look, index }] : []))
+      const slot = readable.length
+        ? await nearestToTaste(
+            kept,
+            readable.map((entry) => ({ id: entry.look.id, src: entry.look.src as string })),
+          )
+        : 0
+      const picked = readable[slot] ?? { look: candidates[0], index: 0 }
+      setReserve((current) => ({
+        ...current,
+        [removed.brand]: (current[removed.brand] ?? []).filter((_, index) => index !== picked.index),
+      }))
+      setAdded((current) => [...current, { ...picked.look, id: `${picked.look.id}:${Date.now()}` }])
+      if (picked.look.src) {
+        setTasteNote(
+          `look ${picked.look.lookNo} — ${await describeTaste(kept, {
+            id: picked.look.id,
+            src: picked.look.src,
+          })}`,
+        )
+      }
+    })()
   }
 
   /** A house keeps five: below that, a removal is only offered when a replacement exists. */
@@ -168,6 +193,7 @@ function BoardSurface({
       onSuggest={() => void suggestMore()}
       suggesting={suggesting}
       suggestError={suggestError}
+      tasteNote={tasteNote}
       switcher={<BoardSwitcher boards={options} currentId={board.id} onSelect={onSelect} />}
     />
   )

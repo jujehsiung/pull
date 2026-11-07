@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { AgentTrace } from "@/components/AgentTrace"
+import { describeTaste, nearestToTaste } from "@/lib/taste"
 import type { AgentStep } from "@/lib/agent/trace"
 import { ingestLook } from "./ingest"
 import { MIN_PER_ROW, ReviewBoard, type Look } from "./ReviewBoard"
@@ -406,37 +407,57 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
   const canBuild =
     Boolean(jobName.trim()) && Boolean(clientName.trim()) && Boolean(contactEmail.trim()) && pool.length > 0
 
+  /**
+   * Taste picks the replacement here too: the row the look left behind is the brief, and the spare
+   * nearest to it in the same collection is what comes back — not simply the next spare.
+   */
   const refillSuggestion = useCallback(
-    (removed: Look) => {
+    (removed: Look, row: Look[]) => {
       if (!removed.suggested) return
-      const spare = reserve[removed.brand]?.[0]
-      if (!spare) {
+      const candidates = reserve[removed.brand] ?? []
+      if (!candidates.length) {
         setReserveNote(`No more ${removed.brand} looks left in this collection.`)
         return
       }
-      setReserve((current) => ({ ...current, [removed.brand]: (current[removed.brand] ?? []).slice(1) }))
-      const replacement: Look = {
-        id: `suggested:${removed.brand}:${spare.lookNo}:${Date.now()}`,
-        fileName: `${removed.brand}-look-${spare.lookNo}.jpg`,
-        brand: removed.brand,
-        lookNo: spare.lookNo,
-        season: removed.season,
-        suggested: true,
-        known: { brand: removed.brand, lookNo: spare.lookNo, season: removed.season },
-        source: imageSource(spare.image),
-        status: "queued",
-      }
-      setSuggested((current) => [...current, replacement])
-      setReserveNote(null)
-      void processQueue([replacement])
+      void (async () => {
+        const kept = row.flatMap((look) => (look.src ? [{ id: look.id, src: look.src }] : []))
+        const index = await nearestToTaste(
+          kept,
+          candidates.map((spare) => ({
+            id: `${removed.brand}:${spare.lookNo}`,
+            src: imageSource(spare.image),
+          })),
+        )
+        const spare = candidates[index] ?? candidates[0]
+        setReserve((current) => ({
+          ...current,
+          [removed.brand]: (current[removed.brand] ?? []).filter((_, slot) => slot !== index),
+        }))
+        const replacement: Look = {
+          id: `suggested:${removed.brand}:${spare.lookNo}:${Date.now()}`,
+          fileName: `${removed.brand}-look-${spare.lookNo}.jpg`,
+          brand: removed.brand,
+          lookNo: spare.lookNo,
+          season: removed.season,
+          suggested: true,
+          known: { brand: removed.brand, lookNo: spare.lookNo, season: removed.season },
+          source: imageSource(spare.image),
+          status: "queued",
+        }
+        setSuggested((current) => [...current, replacement])
+        void processQueue([replacement])
+        setReserveNote(null)
+        if (spare) {
+          void describeTaste(kept, {
+            id: `${removed.brand}:${spare.lookNo}`,
+            src: imageSource(spare.image),
+          }).then((why) => setReserveNote(`Taste · look ${spare.lookNo} — ${why}`))
+        }
+      })()
     },
     [reserve, processQueue],
   )
 
-  /**
-   * A house keeps five on the stage board too: the reserve replaces what is removed while it lasts,
-   * and past the last spare the row is held at five rather than thinned further.
-   */
   const canRemoveLook = useCallback(
     (look: Look, rowCount: number) => {
       if (rowCount > MIN_PER_ROW) return true
