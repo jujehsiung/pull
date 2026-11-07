@@ -164,6 +164,30 @@ export async function nearestToTaste(
   return best >= 0 ? best : 0
 }
 
+/** The words a signature reads as: the pattern, in a stylist's vocabulary. */
+export function traitsOf(signature: TasteSignature): string[] {
+  const traits: string[] = []
+  if (signature.tone < 0.4) traits.push("dark")
+  else if (signature.tone > 0.62) traits.push("pale")
+  if (Math.abs(signature.warmth - 0.5) > 0.05) traits.push(signature.warmth > 0.5 ? "warm" : "cool")
+  if (signature.ink > 0.28) traits.push("heavy garment")
+  if (signature.edge > 0.09) traits.push("dense silhouette")
+  else if (signature.edge < 0.05) traits.push("clean silhouette")
+  return traits
+}
+
+/**
+ * The pattern across a set of looks — the chips at the top of the board. It needs a few images to
+ * be a pattern at all, so fewer than three reads as no pattern rather than a confident claim.
+ */
+export async function readBoardTaste(srcs: string[], limit = 80): Promise<string[]> {
+  const signatures = (await Promise.all(srcs.slice(0, limit).map((src) => readTaste(src)))).filter(
+    (sig): sig is TasteSignature => Boolean(sig),
+  )
+  if (signatures.length < 3) return []
+  return traitsOf(mean(signatures))
+}
+
 /**
  * One line for the header: what the kept row reads as, so the choice is legible. It describes the
  * row, not a claim that the pick matches every axis — the signature is coarse and the point is that
@@ -175,14 +199,7 @@ export async function describeTaste(kept: TasteCandidate[], chosen: TasteCandida
   )
   const pick = await readTaste(chosen.src)
   if (!pick || signatures.length < 2) return "nearest look in the collection"
-  const centre = mean(signatures)
-  const traits: string[] = []
-  if (centre.tone < 0.4) traits.push("dark")
-  else if (centre.tone > 0.62) traits.push("pale")
-  if (Math.abs(centre.warmth - 0.5) > 0.05) traits.push(centre.warmth > 0.5 ? "warm" : "cool")
-  if (centre.ink > 0.28) traits.push("heavy garment")
-  if (centre.edge > 0.09) traits.push("dense silhouette")
-  else if (centre.edge < 0.05) traits.push("clean silhouette")
+  const traits = traitsOf(mean(signatures))
   return traits.length
     ? `closest to the row's ${traits.slice(0, 3).join(", ")}`
     : "nearest look in the collection"

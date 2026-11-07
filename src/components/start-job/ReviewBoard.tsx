@@ -9,11 +9,12 @@
  *
  * Type: one typeface throughout, per Juje. No mono.
  */
-import { useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { Check, Plus, RotateCcw, Sparkles, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { readBoardTaste } from "@/lib/taste"
 import type { IngestStep } from "./ingest"
 
 export type LookStatus = "queued" | "cropping" | "reading" | "ready" | "error"
@@ -123,6 +124,26 @@ export function ReviewBoard({
   const visible = useMemo(() => looks.filter((l) => !removedIds.has(l.id)), [looks, removedIds])
   const grouped = useMemo(() => groupByBrand(visible), [visible])
   const addedLooks = useMemo(() => visible.filter((l) => added.includes(l.id)), [visible, added])
+
+  // The pattern across the board, read in the browser and shown as chips under the title. It
+  // follows the pictures that are still on the board, so a delete shifts what the board reads as.
+  const [chips, setChips] = useState<string[]>([])
+  const tasteSources = useMemo(
+    () => visible.flatMap((look) => (look.src ? [look.src] : [])),
+    [visible],
+  )
+  useEffect(() => {
+    let cancelled = false
+    const timer = setTimeout(() => {
+      void readBoardTaste(tasteSources).then((traits) => {
+        if (!cancelled) setChips(traits)
+      })
+    }, 250)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [tasteSources])
 
   const toggleAdded = (id: string) =>
     setAdded((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
@@ -341,6 +362,22 @@ export function ReviewBoard({
             ) : null}
           </div>
         </div>
+
+        {chips.length ? (
+          <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-2 px-6 pb-4 md:px-10">
+            <span className="text-[10px] tracking-[0.02em] text-muted-foreground">
+              Taste · the board reads as
+            </span>
+            {chips.map((chip) => (
+              <span
+                key={chip}
+                className="rounded-full border border-border bg-card px-2.5 py-0.5 text-[11px] leading-5 text-foreground"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       <div className="mx-auto max-w-[1440px] px-6 pb-16 pt-10 md:px-10">
