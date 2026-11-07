@@ -40,7 +40,7 @@ export async function SiteHeader() {
           href="/"
           className="text-[19px] font-extrabold tracking-[0.01em] text-foreground"
         >
-          PULL.
+          Pull.
         </Link>
         <div className="flex items-center gap-1">
           <NotificationsBell notices={notices} />

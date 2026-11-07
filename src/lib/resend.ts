@@ -85,7 +85,7 @@ export function magicLinkEmail(url: string): { subject: string; html: string } {
     subject: "Your PULL sign-in link",
     html: `
       <div style="font-family:Inter,system-ui,sans-serif;max-width:520px">
-        <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.16em;color:#6b6a66">PULL</p>
+        <p style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.04em;color:#6b6a66">Pull.</p>
         <h1 style="font-size:22px;letter-spacing:-.02em">Sign in</h1>
         <p style="color:#2c2c2b">This link signs you in to the PULL studio for 15 minutes.</p>
         <p><a href="${url}" style="display:inline-block;background:#0a0a0a;color:#f9f9f8;padding:12px 20px;border-radius:999px;text-decoration:none">Open PULL</a></p>

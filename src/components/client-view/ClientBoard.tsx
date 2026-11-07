@@ -102,7 +102,7 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
       <div className="border-b border-border">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3 md:px-10">
           <span className="text-[19px] font-extrabold tracking-[0.01em] text-foreground">
-            PULL.
+            Pull.
           </span>
           <div className="flex items-center gap-3">
             {markupCount ? (

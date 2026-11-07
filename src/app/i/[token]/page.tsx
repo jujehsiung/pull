@@ -69,7 +69,7 @@ export default async function IntakePage({ params }: { params: Promise<{ token: 
     <div className={styles.page}>
       <main className={styles.inner}>
         <header className={styles.top}>
-          <span className="wordmark">PULL</span>
+          <span className="wordmark">Pull.</span>
           <span className={styles.topMeta}>Label request · Shippo</span>
         </header>
 

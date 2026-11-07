@@ -14,7 +14,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="container" style={{ paddingTop: "clamp(48px, 8vw, 96px)", paddingBottom: 96 }}>
       <header className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <Link href="/" className="wordmark">
-          PULL
+          Pull.
         </Link>
         <span className="mono" style={{ color: "var(--muted-foreground-soft)" }}>
           STUDIO

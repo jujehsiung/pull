@@ -93,7 +93,7 @@ color: var(--muted-foreground);
   border-bottom: 1px solid var(--line);
 }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
-.wordmark { font-weight: 600; letter-spacing: 0.22em; font-size: 14px; }
+.wordmark { font-weight: 600; letter-spacing: 0.01em; font-size: 14px; }
 .nav-links { display: flex; gap: 28px; }
 .nav-links a { font-size: 14px; color: var(--ink-2); }
 .nav-links a:hover { color: var(--ink); }
