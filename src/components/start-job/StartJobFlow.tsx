@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { AgentTrace } from "@/components/AgentTrace"
-import { describeTaste, nearestToTaste } from "@/lib/taste"
+import { describeTaste, pickCached, warmTaste } from "@/lib/taste"
 import type { AgentStep } from "@/lib/agent/trace"
 import { ingestLook } from "./ingest"
 import { MIN_PER_ROW, ReviewBoard, suggestionId, type Look } from "./ReviewBoard"
@@ -415,55 +415,70 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     Boolean(jobName.trim()) && Boolean(clientName.trim()) && Boolean(contactEmail.trim()) && pool.length > 0
 
   /**
-   * Taste picks the replacement here too: the row the look left behind is the brief, and the spare
-   * nearest to it in the same collection is what comes back — not simply the next spare.
+   * Taste picks the replacement here too, and the row is filled in the same tick as the delete: the
+   * queued tile is the fifth look immediately, and the crop/read happens behind it. A cached pick
+   * is the taste choice; a cold cache still takes the next spare rather than leaving a gap.
    */
   const refillSuggestion = useCallback(
     (removed: Look, row: Look[]) => {
       if (!removed.suggested) return
       const candidates = reserve[removed.brand] ?? []
-      if (!candidates.length) {
+      const entries = candidates
+        .map((spare, index) => ({ spare, index }))
+        .filter(
+          (entry) =>
+            !suggested.some(
+              (look) => look.brand === removed.brand && look.lookNo === entry.spare.lookNo,
+            ),
+        )
+      if (!entries.length) {
         setReserveNote(`No more ${removed.brand} looks left in this collection.`)
         return
       }
-      void (async () => {
-        const kept = row.flatMap((look) => (look.src ? [{ id: look.id, src: look.src }] : []))
-        const index = await nearestToTaste(
-          kept,
-          candidates.map((spare) => ({
-            id: `${removed.brand}:${spare.lookNo}`,
-            src: imageSource(spare.image),
-          })),
-        )
-        const spare = candidates[index] ?? candidates[0]
-        setReserve((current) => ({
-          ...current,
-          [removed.brand]: (current[removed.brand] ?? []).filter((_, slot) => slot !== index),
-        }))
-        const replacement: Look = {
-          id: suggestionId(removed.brand, spare.lookNo),
-          fileName: `${removed.brand}-look-${spare.lookNo}.jpg`,
-          brand: removed.brand,
-          lookNo: spare.lookNo,
-          season: removed.season,
-          suggested: true,
-          known: { brand: removed.brand, lookNo: spare.lookNo, season: removed.season },
-          source: imageSource(spare.image),
-          status: "queued",
-        }
-        setSuggested((current) => [...current, replacement])
-        void processQueue([replacement])
-        setReserveNote(null)
-        if (spare) {
-          void describeTaste(kept, {
-            id: `${removed.brand}:${spare.lookNo}`,
-            src: imageSource(spare.image),
-          }).then((why) => setReserveNote(`Taste · look ${spare.lookNo} — ${why}`))
-        }
-      })()
+      const kept = row.flatMap((look) => (look.src ? [{ id: look.id, src: look.src }] : []))
+      const slot = pickCached(
+        kept,
+        entries.map((entry) => ({
+          id: `${removed.brand}:${entry.spare.lookNo}`,
+          src: imageSource(entry.spare.image),
+        })),
+      )
+      const picked = entries[slot >= 0 ? slot : 0]
+      setReserve((current) => ({
+        ...current,
+        [removed.brand]: (current[removed.brand] ?? []).filter((_, slotIndex) => slotIndex !== picked.index),
+      }))
+      const replacement: Look = {
+        id: suggestionId(removed.brand, picked.spare.lookNo),
+        fileName: `${removed.brand}-look-${picked.spare.lookNo}.jpg`,
+        brand: removed.brand,
+        lookNo: picked.spare.lookNo,
+        season: removed.season,
+        suggested: true,
+        known: { brand: removed.brand, lookNo: picked.spare.lookNo, season: removed.season },
+        source: imageSource(picked.spare.image),
+        status: "queued",
+      }
+      setSuggested((current) => [...current, replacement])
+      void processQueue([replacement])
+      setReserveNote(null)
+      void describeTaste(kept, {
+        id: `${removed.brand}:${picked.spare.lookNo}`,
+        src: imageSource(picked.spare.image),
+      }).then((why) => setReserveNote(`Taste · look ${picked.spare.lookNo} — ${why}`))
     },
-    [reserve, processQueue],
+    [reserve, processQueue, suggested],
   )
+
+  // Warm the reserve while the board is on screen, so the first delete already has signatures.
+  useEffect(() => {
+    if (stage !== "board") return
+    warmTaste(
+      Object.values(reserve)
+        .flatMap((list) => list.slice(0, 6).map((spare) => imageSource(spare.image)))
+        .slice(0, 40),
+    )
+  }, [stage, reserve])
 
   const canRemoveLook = useCallback(
     (look: Look, rowCount: number) => {

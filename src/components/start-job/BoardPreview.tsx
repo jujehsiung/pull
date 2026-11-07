@@ -11,9 +11,9 @@
  * house keeps its five looks instead of thinning out. Once the reserve is spent
  * the five are a floor: the remove control is held rather than allowed below it.
  */
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import { centreOf, describeTaste, nearestToTaste, rankByTaste } from "@/lib/taste"
+import { centreOf, describeTaste, pickCached, rankByTaste, warmTaste } from "@/lib/taste"
 import { MIN_PER_ROW, ReviewBoard, suggestionId, type BoardJob, type Look } from "./ReviewBoard"
 import { BoardSwitcher, type BoardOption } from "./BoardSwitcher"
 
@@ -101,47 +101,56 @@ function BoardSurface({
 
   const looks = useMemo(() => [...base, ...added], [base, added])
 
+  /** Reserve looks that are readable and not already on the board, with their reserve index. */
+  const available = (brand: string) =>
+    (reserve[brand] ?? []).flatMap((look, index) =>
+      look.src && !looks.some((entry) => entry.brand === look.brand && entry.lookNo === look.lookNo)
+        ? [{ look, index }]
+        : [],
+    )
+
   /**
-   * Taste picks the replacement: it reads the row that is left and takes the look from the same
-   * collection nearest to it, instead of the next one in the list.
+   * Taste picks the replacement, and the row is filled in the same tick as the delete: signatures
+   * are read ahead of time (below), so the pick is a cache lookup, and a cold cache still takes the
+   * next spare immediately rather than leaving the house a look short while the read finishes.
    */
   const refill = (removed: Look, row: Look[]) => {
-    const candidates = reserve[removed.brand] ?? []
-    if (!candidates.length) return
-    void (async () => {
-      const kept = row.flatMap((look) => (look.src ? [{ id: look.id, src: look.src }] : []))
-      const readable = candidates.flatMap((look, index) => (look.src ? [{ look, index }] : []))
-      const slot = readable.length
-        ? await nearestToTaste(
-            kept,
-            readable.map((entry) => ({ id: entry.look.id, src: entry.look.src as string })),
-          )
-        : 0
-      const picked = readable[slot] ?? { look: candidates[0], index: 0 }
-      setReserve((current) => ({
-        ...current,
-        [removed.brand]: (current[removed.brand] ?? []).filter((_, index) => index !== picked.index),
-      }))
-      setAdded((current) =>
-        current.some((look) => look.lookNo === picked.look.lookNo && look.brand === picked.look.brand)
-          ? current
-          : [...current, picked.look],
+    const entries = available(removed.brand)
+    if (!entries.length) return
+    const kept = row.flatMap((look) => (look.src ? [{ id: look.id, src: look.src }] : []))
+    const slot = pickCached(
+      kept,
+      entries.map((entry) => ({ id: entry.look.id, src: entry.look.src as string })),
+    )
+    const picked = entries[slot >= 0 ? slot : 0]
+    setReserve((current) => ({
+      ...current,
+      [removed.brand]: (current[removed.brand] ?? []).filter((_, index) => index !== picked.index),
+    }))
+    setAdded((current) => [...current, picked.look])
+    setTasteNote(null)
+    if (picked.look.src) {
+      void describeTaste(kept, { id: picked.look.id, src: picked.look.src }).then((why) =>
+        setTasteNote(`look ${picked.look.lookNo} — ${why}`),
       )
-      if (picked.look.src) {
-        setTasteNote(
-          `look ${picked.look.lookNo} — ${await describeTaste(kept, {
-            id: picked.look.id,
-            src: picked.look.src,
-          })}`,
-        )
-      }
-    })()
+    }
   }
+
+  // Read what the board shows and what it holds in reserve before anyone deletes anything, so the
+  // refill above can answer from the cache. Cheap after the first pass: signatures are cached by URL.
+  useEffect(() => {
+    warmTaste([
+      ...looks.flatMap((look) => (look.src ? [look.src] : [])).slice(0, 30),
+      ...Object.values(reserve)
+        .flatMap((list) => list.slice(0, 6).map((look) => look.src))
+        .filter((src): src is string => Boolean(src)),
+    ])
+  }, [looks, reserve])
 
   /** A house keeps five: below that, a removal is only offered when a replacement exists. */
   const canRemove = (look: Look, rowCount: number) => {
     if (rowCount > MIN_PER_ROW) return true
-    return (reserve[look.brand]?.length ?? 0) > 0
+    return available(look.brand).length > 0
   }
 
   /**

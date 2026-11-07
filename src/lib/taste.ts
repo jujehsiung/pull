@@ -286,6 +286,34 @@ function majority(values: string[], take = 1): string[] {
     .map(([value]) => value)
 }
 
+/**
+ * The pick when every signature is already in the cache — synchronous, so a row can be filled in
+ * the same frame the look is deleted. `-1` when anything still has to be read; the caller then
+ * takes the next spare at once and lets the read happen behind it.
+ */
+export function pickCached(kept: TasteCandidate[], candidates: TasteCandidate[]): number {
+  const keptSignatures = kept.map((look) => cache.get(look.src)).filter(Boolean)
+  const candidateSignatures = candidates.map((look) => cache.get(look.src))
+  if (keptSignatures.length < 2 || candidateSignatures.some((sig) => !sig)) return -1
+  const centre = mean(keptSignatures as TasteSignature[])
+  let best = -1
+  let bestDistance = Number.POSITIVE_INFINITY
+  candidateSignatures.forEach((signature, index) => {
+    if (!signature) return
+    const d = distance(centre, signature)
+    if (d < bestDistance) {
+      bestDistance = d
+      best = index
+    }
+  })
+  return best
+}
+
+/** Read a set of looks ahead of a delete, so the pick above has something to answer with. */
+export function warmTaste(srcs: string[], limit = 24): void {
+  for (const src of [...new Set(srcs)].slice(0, limit)) void readTaste(src)
+}
+
 /** The mean signature of a set of looks — what the board reads as, before it is put into words. */
 export async function centreOf(srcs: string[], limit = 80): Promise<TasteSignature | null> {
   const signatures = (await Promise.all(srcs.slice(0, limit).map((src) => readTaste(src)))).filter(
