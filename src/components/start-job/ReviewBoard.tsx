@@ -390,20 +390,21 @@ export function ReviewBoard({
                     Hover a look and press + to shortlist it.
                   </p>
                 )}
+                {/* The action stays: pressing it explains why nothing can be minted here, it does
+                    not consume the control. */}
+                <Button
+                  className="mt-4 w-full"
+                  disabled={added.length === 0}
+                  onClick={() => setSendState("needs-backend")}
+                >
+                  Send to client
+                </Button>
                 {sendState === "needs-backend" ? (
-                  <p role="status" className="mt-4 rounded-md border border-border bg-muted p-3 text-[12px] leading-snug text-foreground">
+                  <p role="status" className="mt-3 rounded-md border border-border bg-muted p-3 text-[12px] leading-snug text-foreground">
                     Held in the browser. Minting the client link and emailing it needs the database
                     connection, so nothing was sent.
                   </p>
-                ) : (
-                  <Button
-                    className="mt-4 w-full"
-                    disabled={added.length === 0}
-                    onClick={() => setSendState("needs-backend")}
-                  >
-                    Send to client
-                  </Button>
-                )}
+                ) : null}
               </PopoverContent>
             </Popover>
 
