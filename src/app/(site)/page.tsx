@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import Link from "next/link"
 
+import { AgentTraceReel, type TraceRow } from "@/components/landing/AgentTraceReel"
 import { HowItWorks, type HowStep } from "@/components/landing/HowItWorks"
 import { Pricing } from "@/components/landing/Pricing"
 import { LookMarquee } from "@/components/LookMarquee"
@@ -60,13 +61,13 @@ const STEPS: HowStep[] = [
   },
 ]
 
-/** Real tool names, as they appear on /trace. */
-const TRACE = [
-  { tool: "cloudinary.trim", note: "look 27 · border trimmed", ms: "182ms" },
-  { tool: "tesseract.read", note: "CELINE · LOOK 27 · AW26", ms: "941ms" },
-  { tool: "parse.look", note: "brand CELINE · look 27 · AW26", ms: "3ms" },
-  { tool: "agent.draft", note: "CELINE · look 27", ms: "1,204ms" },
-  { tool: "resend.send", note: "CELINE · pr@celine.demo", ms: "312ms" },
+/** Real tool names and durations, as they appear on /trace. */
+const TRACE: TraceRow[] = [
+  { tool: "cloudinary.trim", note: "look 27 · border trimmed", ms: 182 },
+  { tool: "tesseract.read", note: "CELINE · LOOK 27 · AW26", ms: 941 },
+  { tool: "parse.look", note: "brand CELINE · look 27 · AW26", ms: 3 },
+  { tool: "agent.draft", note: "CELINE · look 27", ms: 1204 },
+  { tool: "resend.send", note: "CELINE · pr@celine.demo", ms: 312 },
 ]
 
 const FAQ = [
@@ -168,29 +169,11 @@ export default function LandingPage() {
               long it took — visible while it runs, and kept afterwards. The agent drafts; you approve;
               then it sends.
             </p>
-            <Link
-              href="/trace"
-              className="mt-6 inline-block border-b border-foreground pb-0.5 text-[13px] text-foreground"
-            >
-              See a trace →
-            </Link>
           </div>
 
-          <ol className="flex flex-col self-start border-t border-border" aria-label="Agent trace sample">
-            {TRACE.map((row) => (
-              <li
-                key={row.tool}
-                className="flex items-baseline gap-3 border-b border-border py-2.5 text-[11px]"
-              >
-                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-success" />
-                <span className="shrink-0 font-mono text-[11px] text-foreground">{row.tool}</span>
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">{row.note}</span>
-                <span className="shrink-0 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-                  {row.ms}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <div className="self-start">
+            <AgentTraceReel rows={TRACE} />
+          </div>
         </div>
       </section>
 

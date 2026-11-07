@@ -477,3 +477,9 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
 @media (prefers-reduced-motion: reduce) {
   .reel-progress { animation: none; transform: scaleX(1); }
 }
+
+/* A duration appears the moment its call returns. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
