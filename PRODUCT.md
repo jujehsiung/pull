@@ -113,15 +113,22 @@ picked pieces (crops + house + kind)  →  prompt assembled
 **Model** — a thin `ImageProvider` interface with both behind it, so the choice is config, not a
 rewrite:
 
+**Where it runs.** ZooWork's catalog carries image slots — `imageModel` and `imageGenerationModel`
+appear as `default_for` values in its model reference, and a session's outputs arrive as files and
+artifacts. That means **the image step can run on the same key, billing and execution history as the
+text agent**, which is one integration instead of two. Read the catalog with `npm run agent:models`
+(the alias is account-specific — never hardcode a model name); RunningHub remains the fallback behind
+the same interface, for Qwen Edit's multi-reference compositing.
+
 | | Qwen Image Edit 2.1 | GPT-image |
 |---|---|---|
 | multi-reference compositing | strong, built for it | weaker at "use *this* jacket" |
 | instruction following | good | better |
-| cost / access | cheap; Alibaba DashScope, or RunningHub's workflow API (the studio already uses it) | pricier; OpenAI API |
-| verdict | **default** | fallback / quality pass |
+| access | ZooWork image slot, RunningHub workflow, or DashScope | ZooWork image slot or OpenAI API |
+| verdict | **default for compositing** | **default for the finish pass** |
 
-Recommendation: **Qwen Edit 2.1 through RunningHub** if that account exists (the studio's other image
-work runs there, so one key and one trace pattern), DashScope direct otherwise.
+If the catalog exposes an **edit**-capable image model, that is the one to call with the garment
+crops as references; a text-to-image model will invent the clothes instead of carrying them over.
 
 **Where it lives in the app**
 
@@ -140,8 +147,9 @@ houses' product; keep the citation under every composed image. Cost per generati
 unbounded if left open — cap per job and per month. Latency is seconds, so it must run as a
 background step with the trace visible, not a blocking modal.
 
-**Open questions:** RunningHub or DashScope for Qwen? Do compositions go to the client for approval,
-or stay internal? Do pieces come only from *approved* looks, or from every ingested look?
+**Open questions:** does the ZooWork catalog carry a selectable image alias on juje's account (run
+`npm run agent:models`)? Do compositions go to the client for approval, or stay internal? Do pieces
+come only from *approved* looks, or from every ingested look?
 
 ## Phase 5 — Product hardening
 

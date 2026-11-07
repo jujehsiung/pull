@@ -24,7 +24,8 @@
     "e2e": "playwright test",
     "tokens:check": "node scripts/check-tokens.mjs",
     "agent:swap": "node scripts/swap-provider.mjs",
-    "prism:check": "node scripts/prism-check.mjs"
+    "prism:check": "node scripts/prism-check.mjs",
+    "agent:models": "node scripts/zoowork-models.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
