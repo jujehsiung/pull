@@ -54,6 +54,8 @@ interface ReviewBoardProps {
   /** Live ingest progress; omitted on the static board. */
   progress?: { done: number; total: number; label: string } | null
   onBack?: () => void
+  /** Called after a look is removed, so the start-job flow can refill it from the same collection. */
+  onRemoveLook?: (look: Look) => void
   /**
    * `sheet` (default) is the hand-off from the start-job dialog: a fixed panel
    * that covers the page. `page` is the board opened directly at /board, where
@@ -81,6 +83,7 @@ export function ReviewBoard({
   job,
   progress,
   onBack,
+  onRemoveLook,
   chrome = "sheet",
   switcher,
 }: ReviewBoardProps) {
@@ -97,9 +100,10 @@ export function ReviewBoard({
   const toggleAdded = (id: string) =>
     setAdded((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
 
-  const removeLook = (id: string) => {
-    setRemoved((current) => (current.includes(id) ? current : [...current, id]))
-    setAdded((current) => current.filter((x) => x !== id))
+  const removeLook = (look: Look) => {
+    setRemoved((current) => (current.includes(look.id) ? current : [...current, look.id]))
+    setAdded((current) => current.filter((x) => x !== look.id))
+    onRemoveLook?.(look)
   }
 
   return (
@@ -306,7 +310,7 @@ export function ReviewBoard({
                               <button
                                 type="button"
                                 aria-label={`Remove look ${look.lookNo} from the board`}
-                                onClick={() => removeLook(look.id)}
+                                onClick={() => removeLook(look)}
                                 className="inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground"
                               >
                                 <X className="size-3.5" aria-hidden />

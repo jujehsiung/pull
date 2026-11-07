@@ -29,16 +29,65 @@ import {
 import { ingestLook } from "./ingest"
 import { ReviewBoard, type Look } from "./ReviewBoard"
 
-interface SuggestionRow {
-  file: string
-  brand: string
+/** One look as the research route returns it: a Vogue Runway photograph + its look number. */
+interface ApiLook {
   lookNo: number
-  season: string
+  image: string
 }
 
-const SUGGESTION_MANIFEST = "/fixtures/menswear/manifest.json"
-const SUGGESTION_CAP = 30
-const SUGGESTIONS_PER_HOUSE = 5
+interface ApiDesigner {
+  brand: string
+  slug: string
+  season: string
+  collectionUrl: string
+  slideshowUrl: string
+  looks: ApiLook[]
+  reserve: ApiLook[]
+}
+
+interface SuggestStep {
+  id: string
+  tool: string
+  status: string
+  durationMs?: number
+  args?: unknown
+  result?: unknown
+}
+
+interface SuggestLooksResponse {
+  clientName: string
+  gender: { value: "male" | "female" | "unknown"; evidence: string; sourceUrl: string }
+  season: { slug: string; label: string; url: string }
+  designers: ApiDesigner[]
+  trace: SuggestStep[]
+  hasMore: boolean
+  nextOffset: number
+  totalDesigners: number
+  error?: string
+}
+
+const SHOWN_PER_DESIGNER = 8
+
+/** The route relays Vogue photos same-origin so the board's canvas crop stays readable. */
+function imageSource(image: string): string {
+  return `/api/skills/suggest-looks/image?u=${encodeURIComponent(image)}`
+}
+
+function looksFromDesigners(designers: ApiDesigner[]): Look[] {
+  return designers.flatMap((designer) =>
+    designer.looks.map((look) => ({
+      id: `suggested:${designer.slug}:${look.lookNo}`,
+      fileName: `${designer.slug}-look-${look.lookNo}.jpg`,
+      brand: designer.brand,
+      lookNo: look.lookNo,
+      season: designer.season,
+      suggested: true,
+      known: { brand: designer.brand, lookNo: look.lookNo, season: designer.season },
+      source: imageSource(look.image),
+      status: "queued" as const,
+    })),
+  )
+}
 
 function looksFromFiles(files: File[]): Look[] {
   return files
@@ -72,6 +121,12 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
   const [looks, setLooks] = useState<Look[]>([])
   const [suggested, setSuggested] = useState<Look[]>([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const [suggestMeta, setSuggestMeta] = useState<SuggestLooksResponse | null>(null)
+  const [suggestTrace, setSuggestTrace] = useState<SuggestStep[]>([])
+  const [designerCount, setDesignerCount] = useState(0)
+  const [moreLoading, setMoreLoading] = useState(false)
+  const [reserve, setReserve] = useState<Record<string, ApiLook[]>>({})
+  const [reserveNote, setReserveNote] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(null)
 
@@ -99,6 +154,11 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     setDeliveryDate("")
     setNote(null)
     setProgress(null)
+    setSuggestMeta(null)
+    setSuggestTrace([])
+    setDesignerCount(0)
+    setReserve({})
+    setReserveNote(null)
   }, [])
 
   const takeFiles = useCallback((fileList: FileList | null) => {
@@ -115,44 +175,72 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     })
   }, [])
 
+  /** The research run: client → gender → Vogue Runway season → designers × eight looks. */
+  const runResearch = useCallback(async (client: string, offset: number, limit: number) => {
+    const response = await fetch("/api/skills/suggest-looks", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ clientName: client, offset, limit }),
+    })
+    const data = (await response.json()) as SuggestLooksResponse
+    if (!response.ok) throw new Error(data.error ?? "The research run failed.")
+    return data
+  }, [])
+
   const suggestLooks = useCallback(async () => {
     if (loadingSuggestions) return
+    const client = clientName.trim()
+    if (!client) {
+      setNote("Add the client's name first — the research starts there.")
+      return
+    }
     setLoadingSuggestions(true)
     setNote(null)
+    setReserveNote(null)
     try {
-      const response = await fetch(SUGGESTION_MANIFEST, { cache: "no-store" })
-      if (!response.ok) throw new Error("The suggestion set is not being served.")
-      const manifest = (await response.json()) as { assets?: SuggestionRow[] }
-      const all = manifest.assets ?? []
-      // Spread across houses: the manifest is ordered by house, so slicing the
-      // first N would seed a board with one label and call it a suggestion.
-      const byBrand = new Map<string, SuggestionRow[]>()
-      for (const row of all) {
-        const list = byBrand.get(row.brand) ?? []
-        if (list.length < SUGGESTIONS_PER_HOUSE) list.push(row)
-        byBrand.set(row.brand, list)
-      }
-      const rows = [...byBrand.values()].flat().slice(0, SUGGESTION_CAP)
-      if (!rows.length) throw new Error("The suggestion set is empty.")
-      setSuggested(
-        rows.map((row) => ({
-          id: `suggested:${row.file}`,
-          fileName: row.file,
-          brand: row.brand,
-          lookNo: row.lookNo,
-          season: row.season,
-          suggested: true,
-          known: { brand: row.brand, lookNo: row.lookNo, season: row.season },
-          source: `/fixtures/menswear/${encodeURIComponent(row.file)}`,
-          status: "queued" as const,
-        })),
-      )
+      const data = await runResearch(client, 0, 10)
+      setSuggested(looksFromDesigners(data.designers))
+      setSuggestMeta(data)
+      setSuggestTrace(data.trace)
+      setDesignerCount(data.designers.length)
+      setReserve(Object.fromEntries(data.designers.map((designer) => [designer.brand, designer.reserve])))
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not load suggestions.")
     } finally {
       setLoadingSuggestions(false)
     }
-  }, [loadingSuggestions])
+  }, [clientName, loadingSuggestions, runResearch])
+
+  /** More designers, five at a time, eight looks each. */
+  const suggestMore = useCallback(async () => {
+    if (moreLoading || !suggestMeta?.hasMore) return
+    const client = clientName.trim()
+    if (!client) return
+    setMoreLoading(true)
+    setNote(null)
+    try {
+      const data = await runResearch(client, designerCount, 5)
+      setSuggested((current) => [...current, ...looksFromDesigners(data.designers)])
+      setSuggestTrace((current) => [...current, ...data.trace])
+      setDesignerCount((count) => count + data.designers.length)
+      setSuggestMeta((current) =>
+        current
+          ? { ...current, hasMore: data.hasMore, nextOffset: data.nextOffset, totalDesigners: data.totalDesigners }
+          : data,
+      )
+      setReserve((current) => {
+        const next = { ...current }
+        for (const designer of data.designers) {
+          next[designer.brand] = [...(next[designer.brand] ?? []), ...designer.reserve]
+        }
+        return next
+      })
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Could not load more designers.")
+    } finally {
+      setMoreLoading(false)
+    }
+  }, [clientName, designerCount, moreLoading, runResearch, suggestMeta?.hasMore])
 
   const pool = useMemo(() => [...looks, ...suggested], [looks, suggested])
 
@@ -188,6 +276,37 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     }
     setProgress(null)
   }, [])
+
+  /**
+   * Removing a suggested look refills its row from the same collection. The route sends six spare
+   * looks per designer, so the board keeps eight looks per house instead of thinning out on stage.
+   */
+  const refillSuggestion = useCallback(
+    (removed: Look) => {
+      if (!removed.suggested) return
+      const spare = reserve[removed.brand]?.[0]
+      if (!spare) {
+        setReserveNote(`No more ${removed.brand} looks left in this collection.`)
+        return
+      }
+      setReserve((current) => ({ ...current, [removed.brand]: (current[removed.brand] ?? []).slice(1) }))
+      const replacement: Look = {
+        id: `suggested:${removed.brand}:${spare.lookNo}:${Date.now()}`,
+        fileName: `${removed.brand}-look-${spare.lookNo}.jpg`,
+        brand: removed.brand,
+        lookNo: spare.lookNo,
+        season: removed.season,
+        suggested: true,
+        known: { brand: removed.brand, lookNo: spare.lookNo, season: removed.season },
+        source: imageSource(spare.image),
+        status: "queued",
+      }
+      setSuggested((current) => [...current, replacement])
+      setReserveNote(null)
+      void processQueue([replacement])
+    },
+    [reserve, processQueue],
+  )
 
   const buildBoard = useCallback(() => {
     if (!canBuild) return
@@ -332,6 +451,45 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
             </p>
           ) : null}
 
+          {suggestMeta ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-[12px] leading-snug text-muted-foreground">
+                client read as <b>{suggestMeta.gender.value}</b> · {suggestMeta.season.label} ·{" "}
+                {designerCount} designers × {SHOWN_PER_DESIGNER} looks ·{" "}
+                <a
+                  href={suggestMeta.season.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2"
+                >
+                  Vogue Runway season
+                </a>
+              </p>
+              <details className="text-[11px] text-muted-foreground">
+                <summary className="cursor-pointer">trace · {suggestTrace.length} calls</summary>
+                <ol className="mt-1 flex flex-col gap-1">
+                  {suggestTrace.map((step) => (
+                    <li key={step.id} className="font-mono text-[10px]">
+                      {step.tool} · {step.durationMs ?? 0} ms
+                    </li>
+                  ))}
+                </ol>
+              </details>
+              {suggestMeta.hasMore ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="self-start"
+                  onClick={() => void suggestMore()}
+                  disabled={moreLoading}
+                >
+                  {moreLoading ? "Finding 5 more…" : "Add 5 more designers"}
+                </Button>
+              ) : null}
+              {reserveNote ? <p className="text-[11px] text-muted-foreground">{reserveNote}</p> : null}
+            </div>
+          ) : null}
+
           {note ? <p className="text-sm text-[var(--destructive)]">{note}</p> : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -362,6 +520,7 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
           looks={pool}
           job={{ title: jobName, description: clientName, email: contactEmail, dueDate: deliveryDate }}
           progress={progress}
+          onRemoveLook={refillSuggestion}
           onBack={() => {
             setStage("details")
             setOpen(true)
