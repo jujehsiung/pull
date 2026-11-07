@@ -35,7 +35,8 @@ export default function StudioPage() {
   }
 
   const refs = [
-    { name: "the client", image: fixture("hed_mayner_look_1_aw26.jpg", rows) },
+    // A portrait, not a runway look: this is the face the render has to keep.
+    { name: "the client", image: "/fixtures/canvas/client-timothee-square.jpg" },
     { name: "outfit 1 · prada", image: fixture("prada_look_1_aw26.jpg", rows) },
     { name: "outfit 2 · dior", image: fixture("dior_homme_look_1_aw26.jpg", rows) },
     { name: "outfit 3 · vuitton", image: fixture("louis_vuitton_look_4_aw26.jpg", rows) },
