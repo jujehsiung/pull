@@ -35,11 +35,11 @@ export default function StudioPage() {
   }
 
   const refs = [
-    // A portrait, not a runway look: this is the face the render has to keep.
-    { name: "the client", image: "/fixtures/canvas/client-timothee-square.jpg" },
-    { name: "outfit 1 · prada", image: fixture("prada_look_1_aw26.jpg", rows) },
-    { name: "outfit 2 · dior", image: fixture("dior_homme_look_1_aw26.jpg", rows) },
-    { name: "outfit 3 · vuitton", image: fixture("louis_vuitton_look_4_aw26.jpg", rows) },
+    // Reference 1 is the face; 2 is the jacket, 3 the top under it, 4 the bottom.
+    { name: "subject · timothée", image: "/fixtures/canvas/client-timothee-square.jpg" },
+    { name: "the jacket · prada", image: fixture("prada_look_1_aw26.jpg", rows) },
+    { name: "the top under · dior", image: fixture("dior_homme_look_1_aw26.jpg", rows) },
+    { name: "the bottom · vuitton", image: fixture("louis_vuitton_look_4_aw26.jpg", rows) },
   ]
 
   // Anything that is not a wired reference still gives the assets panel something to

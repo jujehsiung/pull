@@ -1,6 +1,6 @@
-/** The studio canvas: node kinds, their sockets, and the demo look workflow. */
+/** The studio canvas: three node kinds, their sockets, and the demo look workflow. */
 
-export type NodeKind = "upload" | "assist" | "text" | "prompt" | "edit" | "refine" | "upscale" | "save"
+export type NodeKind = "upload" | "compose" | "save"
 
 export type NodeStatus = "idle" | "running" | "done" | "failed"
 
@@ -30,22 +30,18 @@ export interface CanvasNode {
   status: NodeStatus
   /** How long this step took, once it has run. */
   durationMs?: number
-  /** upload — the reference image, and the stylist's borders on it. */
+  /** upload — the reference image, its role, and the stylist's borders. */
   image?: string
   imageLabel?: string
   markup?: MarkupRect[]
-  /** prompt / text — the prompt, written by hand or by the assist step. */
+  /** compose — the prompt the assistant wrote (editable), and the render. */
   prompt?: string
-  /** edit */
-  model?: string
-  /** refine */
-  strength?: number
-  /** upscale */
-  factor?: number
+  /** compose — how the prompt was produced. */
+  promptSource?: "assist" | "template" | "edited"
+  /** compose / save */
+  output?: string
   /** save */
   filename?: string
-  /** what this step wrote: the rendered image on edit/save. */
-  output?: string
   /** why a step failed, shown on the card. */
   error?: string
 }
@@ -64,57 +60,16 @@ export const NODE_WIDTH = 260
 export const PORT_Y = 18
 
 export const KIND: Record<NodeKind, { name: string; note: string }> = {
-  upload: { name: "Image", note: "a reference the stylist marks up" },
-  assist: { name: "Agent assist", note: "reads the marks, writes the prompt" },
-  text: { name: "Prompt view", note: "review and edit before the run" },
-  prompt: { name: "Prompt", note: "what the look should be" },
-  edit: { name: "Image edit", note: "the jacket, the other trousers" },
-  refine: { name: "Image refine", note: "harmonise light and grain" },
-  upscale: { name: "Image upscale", note: "enough to show" },
+  upload: { name: "Image", note: "one reference the stylist marks up" },
+  compose: { name: "Look compose", note: "reads the four refs, renders the look" },
   save: { name: "Save image", note: "into the job's assets" },
 }
 
-/** The edit step takes five images and one prompt — the model's documented inputs. */
-export const MAX_REFS = 5
-/** The assist step reads the four references of this workflow. */
-export const ASSIST_REFS = 4
+/** The four references this workflow reads, in socket order. */
+export const REF_ROLES = ["subject", "the jacket", "the top under", "the bottom"] as const
+export type RefRole = (typeof REF_ROLES)[number]
 
-const refPorts = (count: number): PortSpec[] =>
-  Array.from({ length: count }, (_, index) => ({
-    id: `ref ${index + 1}`,
-    label: `ref ${index + 1}`,
-    kind: "image" as const,
-  }))
-
-export const PORTS: Record<NodeKind, { inputs: PortSpec[]; outputs: PortSpec[] }> = {
-  upload: { inputs: [], outputs: [{ id: "image", label: "image", kind: "image" }] },
-  assist: {
-    inputs: refPorts(ASSIST_REFS),
-    outputs: [{ id: "prompt", label: "prompt", kind: "text" }],
-  },
-  text: {
-    inputs: [{ id: "prompt", label: "prompt", kind: "text" }],
-    outputs: [{ id: "prompt", label: "prompt", kind: "text" }],
-  },
-  prompt: { inputs: [], outputs: [{ id: "text", label: "text", kind: "text" }] },
-  edit: {
-    inputs: [{ id: "prompt", label: "prompt", kind: "text" }, ...refPorts(MAX_REFS)],
-    outputs: [{ id: "image", label: "image", kind: "image" }],
-  },
-  refine: {
-    inputs: [{ id: "image", label: "image", kind: "image" }],
-    outputs: [{ id: "image", label: "image", kind: "image" }],
-  },
-  upscale: {
-    inputs: [{ id: "image", label: "image", kind: "image" }],
-    outputs: [{ id: "image", label: "image", kind: "image" }],
-  },
-  save: { inputs: [{ id: "image", label: "image", kind: "image" }], outputs: [] },
-}
-
-export const PALETTE: NodeKind[] = ["upload", "assist", "text", "edit", "save"]
-
-/** The ZooWork image aliases, as the model card names them. */
+/** The model names the render can use. The first is the Agent's default slot. */
 export const MODELS = ["GPT Image 2", "Gemini 3.1 Flash Image"]
 
 /** Which ZooWork alias each card label means. */
@@ -123,15 +78,27 @@ export const MODEL_ALIAS: Record<string, string> = {
   "Gemini 3.1 Flash Image": "litellm/gemini-3.1-flash-image",
 }
 
+const refPorts: PortSpec[] = REF_ROLES.map((role, index) => ({
+  id: `ref ${index + 1}`,
+  label: role,
+  kind: "image" as const,
+}))
+
+export const PORTS: Record<NodeKind, { inputs: PortSpec[]; outputs: PortSpec[] }> = {
+  upload: { inputs: [], outputs: [{ id: "image", label: "image", kind: "image" }] },
+  compose: {
+    inputs: refPorts,
+    outputs: [{ id: "image", label: "image", kind: "image" }],
+  },
+  save: { inputs: [{ id: "image", label: "image", kind: "image" }], outputs: [] },
+}
+
+export const PALETTE: NodeKind[] = ["upload", "compose", "save"]
+
 /** Fallback timings, used when the real call cannot run (no key, offline). */
 export const RUN_MS: Record<NodeKind, number> = {
   upload: 260,
-  assist: 4200,
-  text: 260,
-  prompt: 380,
-  edit: 9000,
-  refine: 1150,
-  upscale: 900,
+  compose: 60000,
   save: 320,
 }
 
@@ -143,7 +110,7 @@ export function initialNodes(refs: { name: string; image: string }[]): CanvasNod
     { x: 320, y: 388 },
   ]
   const referenceNodes: CanvasNode[] = refs.slice(0, 4).map((ref, index) => ({
-    id: index === 0 ? "ref-client" : `ref-${index}`,
+    id: `ref-${index + 1}`,
     kind: "upload",
     step: index + 1,
     x: spots[index].x,
@@ -154,25 +121,17 @@ export function initialNodes(refs: { name: string; image: string }[]): CanvasNod
   }))
   return [
     ...referenceNodes,
-    { id: "assist", kind: "assist", step: 5, x: 640, y: 196, status: "idle" },
-    { id: "text", kind: "text", step: 6, x: 940, y: 196, status: "idle", prompt: "" },
-    { id: "edit", kind: "edit", step: 7, x: 1240, y: 168, status: "idle", model: MODELS[0] },
-    { id: "save", kind: "save", step: 8, x: 1540, y: 168, status: "idle", filename: "look-27-v1.png" },
+    { id: "compose", kind: "compose", step: 5, x: 640, y: 196, status: "idle" },
+    { id: "save", kind: "save", step: 6, x: 960, y: 196, status: "idle", filename: "look-27-v1.png" },
   ]
 }
 
 export const INITIAL_EDGES: CanvasEdge[] = [
-  { id: "e-ref1-assist", from: "ref-client", to: "assist", port: "ref 1" },
-  { id: "e-ref2-assist", from: "ref-1", to: "assist", port: "ref 2" },
-  { id: "e-ref3-assist", from: "ref-2", to: "assist", port: "ref 3" },
-  { id: "e-ref4-assist", from: "ref-3", to: "assist", port: "ref 4" },
-  { id: "e-assist-text", from: "assist", to: "text", port: "prompt" },
-  { id: "e-text-edit", from: "text", to: "edit", port: "prompt" },
-  { id: "e-ref1-edit", from: "ref-client", to: "edit", port: "ref 1" },
-  { id: "e-ref2-edit", from: "ref-1", to: "edit", port: "ref 2" },
-  { id: "e-ref3-edit", from: "ref-2", to: "edit", port: "ref 3" },
-  { id: "e-ref4-edit", from: "ref-3", to: "edit", port: "ref 4" },
-  { id: "e-edit-save", from: "edit", to: "save", port: "image" },
+  { id: "e-ref1", from: "ref-1", to: "compose", port: "ref 1" },
+  { id: "e-ref2", from: "ref-2", to: "compose", port: "ref 2" },
+  { id: "e-ref3", from: "ref-3", to: "compose", port: "ref 3" },
+  { id: "e-ref4", from: "ref-4", to: "compose", port: "ref 4" },
+  { id: "e-compose-save", from: "compose", to: "save", port: "image" },
 ]
 
 /** Run order: sources first, ties broken left to right. */

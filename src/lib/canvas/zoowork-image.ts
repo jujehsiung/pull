@@ -1,15 +1,16 @@
 /**
- * The studio canvas's model calls, on ZooWork Managed Agents — server only.
+ * The look compose, on ZooWork Managed Agents — server only.
  *
- * Two passes, one agent:
- *   1. **assist** — a vision pass over the references with the stylist's borders baked in,
- *      which writes the image-edit prompt. Cheap reading model (`gemini-3.8-flash`).
- *   2. **render** — one `image_generate` call with the clean references as `images` and that
- *      prompt, on the Agent's `imageGenerationModel` slot (`gpt-image-2`), published as an
- *      Artifact and handed back as a data URL.
+ * One agent, one pass over the four references, one render:
+ *   1. **read** — a vision pass over the references (with the stylist's borders baked into
+ *      the copies it reads) writes the image-edit prompt.
+ *   2. **render** — one `image_generate` edit with the clean references and that prompt, on
+ *      the Agent's `imageGenerationModel` slot (`gpt-image-2`), published as an Artifact and
+ *      returned as a data URL.
  *
- * The API key never reaches the browser: the canvas posts data URLs, the route returns the
- * prompt or the render.
+ * The prompt comes back with the image so the card can show it and a re-run can reuse it;
+ * when the vision pass fails, a deterministic prompt built from the four roles keeps the
+ * render alive rather than failing the demo.
  */
 import {
   assistantText,
@@ -22,19 +23,29 @@ import {
 
 import { env } from "@/lib/env"
 
-const DEFAULT_BASE = "https://clawapi.ecap.gsmo.ai/service/v1"
 const LABELS = { app: "pull-canvas", role: "look-editor" }
 const AGENT_NAME = "pull-canvas-agent"
 /** Reading model: vision-capable and the cheapest row that is. */
 const ASSIST_MODEL = "litellm/gemini-3.8-flash"
-/** The Agent's image-generation default, named explicitly so billing is predictable. */
-const IMAGE_MODEL = "litellm/gpt-image-2"
 
-export interface CanvasRef {
-  /** Human name ("the client", "outfit 1") — used in the prompt text. */
+/** The four references this workflow reads, in socket order. */
+export const LOOK_ROLES = ["subject", "the jacket", "the top under the jacket", "the bottom"] as const
+
+export interface LookRef {
+  role?: string
   name: string
-  /** `data:image/…;base64,…` */
+  /** `data:image/…;base64,…` — the clean copy, used for the render. */
   dataUrl: string
+  /** The same image with the stylist's borders drawn on, read by the vision pass. */
+  markedDataUrl?: string
+}
+
+export interface LookResult {
+  prompt: string
+  promptSource: "assist" | "template" | "edited"
+  image: string
+  ms: number
+  artifactId: string | null
 }
 
 export function canvasConfigured(): boolean {
@@ -101,7 +112,7 @@ async function ensureAgent(c: ZooworkClient): Promise<string> {
 
 function toBuffer(dataUrl: string): Buffer {
   const comma = dataUrl.indexOf(",")
-  if (comma < 0) throw new Error("reference is not a data URL")
+  if (comma < 0) throw new Error("a reference is not a data URL")
   return Buffer.from(dataUrl.slice(comma + 1), "base64")
 }
 
@@ -112,20 +123,31 @@ function mimeOf(dataUrl: string): string {
 
 const EXT: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }
 
-/** Put the references into the agent's workspace and return their paths. */
-async function uploadRefs(c: ZooworkClient, agentId: string, folder: string, refs: CanvasRef[]): Promise<string[]> {
-  const paths: string[] = []
+function slug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ref"
+}
+
+/** Put one copy of each reference into the agent's workspace. */
+async function uploadRefs(
+  c: ZooworkClient,
+  agentId: string,
+  folder: string,
+  refs: LookRef[],
+  markedOnly: boolean,
+): Promise<(string | undefined)[]> {
+  const paths: (string | undefined)[] = []
   for (const [index, ref] of refs.entries()) {
-    const ext = EXT[mimeOf(ref.dataUrl)] ?? "png"
+    const source = markedOnly ? ref.markedDataUrl : ref.dataUrl
+    if (!source) {
+      paths.push(undefined)
+      continue
+    }
+    const ext = EXT[mimeOf(source)] ?? "png"
     const path = `refs/${folder}/${index + 1}-${slug(ref.name)}.${ext}`
-    const uploaded = await c.uploadFile(agentId, path, toBuffer(ref.dataUrl))
+    const uploaded = await c.uploadFile(agentId, path, toBuffer(source))
     paths.push(uploaded.path ?? `/workspace/${path}`)
   }
   return paths
-}
-
-function slug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "ref"
 }
 
 /** Read one turn to its end, collecting the assistant's text. */
@@ -166,71 +188,90 @@ function cleanPrompt(raw: string): string {
     .slice(0, 900)
 }
 
-/**
- * Pass 1 — the assistant reads the marked references and writes the prompt.
- * `refs` carry the borders drawn on; they are supplied by the client already baked in.
- */
-export async function assistPrompt(refs: CanvasRef[], note?: string): Promise<{ prompt: string; ms: number }> {
-  const started = Date.now()
-  const c = client()
-  const agentId = await ensureAgent(c)
-  const paths = await uploadRefs(c, agentId, "assist", refs)
-
-  const list = paths.map((path, index) => `${index + 1}. ${refs[index]?.name ?? "reference"} — ${path}`).join("\n")
-  const content = [
-    "You are helping a stylist build one look. The reference images are in the workspace:",
-    list,
-    "",
-    "Reference 1 is the client's face — the render must keep that likeness exactly. The other",
-    "references are garments. Every border drawn on an image marks the exact object to use from it.",
-    "Read the images with your image tool, then write ONE prompt for an image-edit model that dresses",
-    "the client in the bordered pieces, keeping the client's face and hair and letting the pose and",
-    "framing follow the garment photographs. Be concrete about garment, colour and fabric. No",
-    "preamble, no quotes, no markdown:",
-    "reply with the prompt only, at most 70 words.",
-    note ? `\nStylist's note: ${note}` : "",
-  ].join("\n")
-
-  const session = await c.createSession(agentId, {
-    initial_events: [{ type: "user.message", content }],
-    metadata: { app: "pull-canvas", step: "assist" },
-  })
-  const turn = await readTurn(c, agentId, session.session_id, 180_000)
-  if (turn.outcome !== "succeeded") {
-    throw new Error(`assist run did not succeed: ${turn.outcome ?? "stream closed"}`)
-  }
-  const prompt = cleanPrompt(turn.text)
-  if (prompt.length < 20) throw new Error(`assist returned no usable prompt (${prompt.length} chars)`)
-  return { prompt, ms: Date.now() - started }
+/** The prompt used when the vision pass cannot run: built from the four roles. */
+export function templatePrompt(refs: LookRef[]): string {
+  const role = (index: number) => refs[index]?.role ?? LOOK_ROLES[index] ?? `reference ${index + 1}`
+  return (
+    `Editorial full-length fashion photograph. Dress the ${role(0)} from reference 1 in the ` +
+    `${role(1)} from reference 2, worn over the ${role(2)} from reference 3, with the ` +
+    `${role(3)} from reference 4. Keep the face and hair of reference 1 exactly; carry each ` +
+    `garment's colour, cut and fabric exactly from its own reference. Plain studio background, ` +
+    `soft daylight, whole outfit visible.`
+  )
 }
 
 /**
- * Pass 2 — one `image_generate` edit with the clean references, published as an Artifact
- * and returned as a data URL so the canvas can show it without a bucket.
+ * Compose the look: read the references (or reuse a prompt the stylist edited), render it,
+ * publish the result. One function, one round trip from the canvas.
  */
-export async function renderLook(
-  prompt: string,
-  refs: CanvasRef[],
-  modelAlias = IMAGE_MODEL,
-): Promise<{ image: string; ms: number; artifactId: string | null }> {
+export async function composeLook(refs: LookRef[], givenPrompt?: string): Promise<LookResult> {
   const started = Date.now()
   const c = client()
   const agentId = await ensureAgent(c)
-  const paths = await uploadRefs(c, agentId, "render", refs)
 
-  // Only name the model when the stylist chose the non-default one: the Agent's
-  // `imageGenerationModel` slot already is gpt-image-2, and naming it asks the tool
-  // to override a slot it owns.
-  const modelLine = modelAlias && modelAlias !== IMAGE_MODEL ? [`- model: "${modelAlias}"`] : []
+  const cleanPaths = (await uploadRefs(c, agentId, "look", refs, false)).filter(
+    (path): path is string => Boolean(path),
+  )
+  if (cleanPaths.length === 0) throw new Error("no references to compose")
+
+  let prompt = givenPrompt?.trim() ?? ""
+  let promptSource: LookResult["promptSource"] = "edited"
+
+  if (prompt.length < 20) {
+    promptSource = "assist"
+    try {
+      const marked = refs.map((ref) => Boolean(ref.markedDataUrl))
+      const assistPaths = marked.some(Boolean)
+        ? await uploadRefs(c, agentId, "look-marked", refs, true)
+        : cleanPaths
+      const list = refs
+        .map((ref, index) => {
+          const path = assistPaths[index] ?? cleanPaths[index] ?? "(missing)"
+          const border = ref.markedDataUrl ? " — the stylist drew a border here" : ""
+          return `${index + 1}. ${LOOK_ROLES[index]} (${ref.name}) — ${path}${border}`
+        })
+        .join("\n")
+      const content = [
+        "You are dressing a client for one editorial look. The numbered references are:",
+        list,
+        "",
+        "Reference 1 is the client's face — the render must keep that likeness exactly.",
+        "Reference 2 is the jacket (the top layer), reference 3 is the top worn under it, and",
+        "reference 4 is the bottom (trousers or skirt). A border drawn on an image marks the",
+        "exact piece to use from it. Read the images with your image tool, then write ONE prompt",
+        "for an image-edit model that dresses the client in refs 2–4. Keep the face and hair of",
+        "ref 1, and let the pose and setting follow the garment photographs. Be concrete about",
+        "garment, colour and fabric. Reply with the prompt only, at most 70 words — no preamble,",
+        "no quotes, no markdown.",
+      ].join("\n")
+      const session = await c.createSession(agentId, {
+        initial_events: [{ type: "user.message", content }],
+        metadata: { app: "pull-canvas", step: "read" },
+      })
+      const turn = await readTurn(c, agentId, session.session_id, 150_000)
+      const written = cleanPrompt(turn.text)
+      if (turn.outcome === "succeeded" && written.length >= 20) {
+        prompt = written
+      } else {
+        prompt = templatePrompt(refs)
+        promptSource = "template"
+      }
+    } catch {
+      // The demo must render even when the reading model is unreachable.
+      prompt = templatePrompt(refs)
+      promptSource = "template"
+    }
+  }
+
+  // One image_generate edit: the clean references, the prompt, a published Artifact.
   const content = [
     "Use the image_generate tool now, with these arguments:",
     `- action: "edit"`,
-    ...modelLine,
-    `- images: ${JSON.stringify(paths)}`,
-    "- image: the first entry of images is the client; the rest are the garments to carry over",
+    `- images: ${JSON.stringify(cleanPaths)}`,
+    "- image: the first entry of images is the subject; the rest are the garments to carry over",
     `- prompt: ${JSON.stringify(prompt)}`,
-    "- size: \"1024x1024\"",
-    "- save: \"/workspace/out/look.png\"",
+    `- size: "1024x1024"`,
+    `- save: "/workspace/out/look.png"`,
     "",
     "Then publish /workspace/out/look.png with artifact_publish and report its artifact id.",
     "Do not substitute the prompt, and do not draw anything with exec.",
@@ -255,24 +296,12 @@ export async function renderLook(
   if (!response.ok) throw new Error(`artifact download failed: HTTP ${response.status}`)
   const buffer = Buffer.from(await response.arrayBuffer())
   const mime = response.headers.get("content-type") ?? "image/png"
+
   return {
+    prompt,
+    promptSource,
     image: `data:${mime};base64,${buffer.toString("base64")}`,
     ms: Date.now() - started,
     artifactId: ready.artifact_id,
-  }
-}
-
-/** Balance, for the canvas footer. Read-only; safe to call before a run. */
-export async function canvasBalance(): Promise<string | null> {
-  const e = env()
-  if (!e.ZOOWORK_API_KEY) return null
-  const base = (e.ZOOWORK_BASE_URL ?? DEFAULT_BASE).replace(/\/+$/, "")
-  try {
-    const res = await fetch(`${base}/balance`, { headers: { authorization: `Bearer ${e.ZOOWORK_API_KEY}` } })
-    if (!res.ok) return null
-    const body = (await res.json()) as { available_amount?: string }
-    return body.available_amount ?? null
-  } catch {
-    return null
   }
 }

@@ -21,12 +21,10 @@ import { imageDataUrl, postJson } from "./image-bits"
 import {
   INITIAL_EDGES,
   KIND,
-  MAX_REFS,
-  MODEL_ALIAS,
-  MODELS,
   PORTS,
   NODE_WIDTH,
   PALETTE,
+  REF_ROLES,
   RUN_MS,
   initialNodes,
   topologicalOrder,
@@ -42,18 +40,8 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
   switch (kind) {
     case "upload":
       return {}
-    case "assist":
+    case "compose":
       return {}
-    case "text":
-      return { prompt: "" }
-    case "prompt":
-      return { prompt: "" }
-    case "edit":
-      return { model: MODELS[0] }
-    case "refine":
-      return { strength: 0.35 }
-    case "upscale":
-      return { factor: 2 }
     case "save":
       return { filename: "untitled.png" }
   }
@@ -167,9 +155,9 @@ export function StudioCanvas({
   const copySelected = useCallback(() => {
     const node = nodesRef.current.find((candidate) => candidate.id === selected)
     if (!node) return
-    const { kind, x, y, image, prompt, model, strength, factor, filename } = node
+    const { kind, x, y, image, imageLabel, markup, prompt, filename } = node
     clipboardRef.current = {
-      node: { kind, x, y, image, prompt, model, strength, factor, filename },
+      node: { kind, x, y, image, imageLabel, markup, prompt, filename },
       count: 0,
     }
   }, [selected])
@@ -492,106 +480,76 @@ export function StudioCanvas({
         ...node,
         status: "idle" as const,
         durationMs: undefined,
-        output: undefined,
         error: undefined,
+        output: undefined,
       })),
     )
 
     const started = new Map<string, number>()
-    const prompts = new Map<string, string>()
-    const images = new Map<string, string>()
+    const renders = new Map<string, string>()
     const produced: string[] = []
+    let failed: { reason: string } | null = null
 
     const patch = (id: string, changes: Partial<CanvasNode>) =>
       setNodes((current) => current.map((item) => (item.id === id ? { ...item, ...changes } : item)))
 
-    /** The image references wired into a card, in socket order. */
+    /** The references wired into a card, in socket order, with their roles. */
     const refsInto = (id: string) =>
       edges
         .filter((edge) => edge.to === id && edge.port.startsWith("ref "))
         .sort((a, b) => Number(a.port.split(" ")[1]) - Number(b.port.split(" ")[1]))
-        .map((edge) => nodes.find((node) => node.id === edge.from))
+        .map((edge) => nodes.find((candidate) => candidate.id === edge.from))
         .filter((node): node is CanvasNode => Boolean(node?.image))
-        .map((node) => ({
+        .map((node, index) => ({
+          role: REF_ROLES[index] ?? "reference",
           name: node.imageLabel ?? node.id,
           image: node.image as string,
           markup: node.markup ?? [],
         }))
 
-    const sourceOf = (id: string, port: string) => {
-      const edge = edges.find((candidate) => candidate.to === id && candidate.port === port)
-      return edge ? nodes.find((node) => node.id === edge.from) : undefined
-    }
-
-    const promptInto = (id: string): string | undefined => {
-      const source = sourceOf(id, "prompt")
-      if (!source) return undefined
-      return prompts.get(source.id) ?? source.prompt
-    }
-
     const imageInto = (id: string): string | undefined => {
-      const source = sourceOf(id, "image")
-      if (!source) return undefined
-      return images.get(source.id) ?? source.output ?? source.image
+      const edge = edges.find((candidate) => candidate.to === id && candidate.port === "image")
+      if (!edge) return undefined
+      return renders.get(edge.from) ?? nodes.find((node) => node.id === edge.from)?.output
     }
-
-    let failed: { reason: string } | null = null
 
     for (const node of topologicalOrder(nodes, edges)) {
       started.set(node.id, performance.now())
       patch(node.id, { status: "running" })
 
       try {
-        if (node.kind === "assist") {
+        if (node.kind === "compose") {
           const refs = refsInto(node.id)
-          if (refs.length === 0) throw new Error("wire the references first")
-          // The vision pass reads the borders; the edit pass gets the clean copies.
+          if (refs.length === 0) throw new Error("wire the four references first")
           const payload = await Promise.all(
             refs.map(async (ref) => ({
+              role: ref.role,
               name: ref.name,
-              dataUrl: await imageDataUrl(ref.image, { markup: ref.markup }),
+              dataUrl: await imageDataUrl(ref.image),
+              ...(ref.markup.length > 0
+                ? { markedDataUrl: await imageDataUrl(ref.image, { markup: ref.markup }) }
+                : {}),
             })),
           )
-          const result = await postJson<{ ok: boolean; prompt?: string; reason?: string }>("/api/canvas/assist", {
-            refs: payload,
+          const result = await postJson<{
+            ok: boolean
+            prompt?: string
+            promptSource?: string
+            image?: string
+            reason?: string
+          }>("/api/canvas/look", { refs: payload, prompt: node.prompt || undefined })
+          if (!result.ok || !result.image) throw new Error(result.reason ?? "the compose step returned nothing")
+          if (result.image) renders.set(node.id, result.image)
+          patch(node.id, {
+            prompt: result.prompt ?? node.prompt,
+            promptSource: (result.promptSource as CanvasNode["promptSource"]) ?? "assist",
+            output: result.image,
           })
-          if (!result.ok || !result.prompt) throw new Error(result.reason ?? "the assist step returned nothing")
-          prompts.set(node.id, result.prompt)
-
-          // The prompt view is what the stylist reviews before the render.
-          const view = edges
-            .filter((edge) => edge.from === node.id)
-            .map((edge) => nodes.find((candidate) => candidate.id === edge.to))
-            .find((candidate) => candidate?.kind === "text" || candidate?.kind === "prompt")
-          if (view) {
-            prompts.set(view.id, result.prompt)
-            patch(view.id, { prompt: result.prompt })
-          }
-        } else if (node.kind === "edit") {
-          const prompt = promptInto(node.id)
-          if (!prompt) throw new Error("wire a prompt first")
-          const refs = refsInto(node.id)
-          const payload = await Promise.all(
-            refs.map(async (ref) => ({ name: ref.name, dataUrl: await imageDataUrl(ref.image) })),
-          )
-          const result = await postJson<{ ok: boolean; image?: string; reason?: string }>("/api/canvas/render", {
-            prompt,
-            refs: payload,
-            model: MODEL_ALIAS[node.model ?? MODELS[0]],
-          })
-          if (!result.ok || !result.image) throw new Error(result.reason ?? "the edit step returned nothing")
-          images.set(node.id, result.image)
-          patch(node.id, { output: result.image })
         } else if (node.kind === "save") {
           const image = imageInto(node.id)
           if (!image) throw new Error("nothing wired into save")
           produced.push(image)
           patch(node.id, { output: image })
-        } else if (node.kind === "refine" || node.kind === "upscale") {
-          // Not wired to a provider yet: carry the frame so the graph still walks.
-          const image = imageInto(node.id)
-          if (image) images.set(node.id, image)
-          await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
         } else {
           await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
         }
@@ -738,11 +696,6 @@ export function StudioCanvas({
                 onDisconnect={onDisconnect}
                 highlightPort={snapPort ?? undefined}
                 wired={wiring.get(node.id)?.wired ?? EMPTY_SET}
-                refImages={Array.from(
-                  { length: MAX_REFS },
-                  (_, index) => wiring.get(node.id)?.images[`ref ${index + 1}`],
-                )}
-                promptText={wiring.get(node.id)?.texts.prompt}
               />
             ))}
           </div>

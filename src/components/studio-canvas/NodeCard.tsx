@@ -4,27 +4,14 @@
  * One node on the studio canvas. Square, hairline, mono numbers — the canvas is
  * NERV-shaped: numbered steps, technical labels, nothing rounded.
  *
- * The socket rail is the node's interface, ComfyUI-style but drawn in Pull's
- * language: every input is a labelled square on the left edge, every output a labelled
- * square on the right. The body is the setting for that step.
- *
- * The image node carries the stylist's pen: press **mark**, drag a border around the
- * object that matters, and the border is baked into the copy the vision pass reads.
+ * Three kinds carry the whole demo: an image reference (which the stylist can mark),
+ * the compose step that reads all four and renders the look, and the save step that
+ * writes it into the assets.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react"
 
 import { Input } from "@/components/ui/input"
-import {
-  ASSIST_REFS,
-  KIND,
-  MAX_REFS,
-  MODELS,
-  NODE_WIDTH,
-  PORTS,
-  RUN_MS,
-  type CanvasNode,
-  type MarkupRect,
-} from "./types"
+import { KIND, NODE_WIDTH, PORTS, RUN_MS, type CanvasNode, type MarkupRect } from "./types"
 
 const DOT: Record<CanvasNode["status"], string> = {
   idle: "bg-border",
@@ -40,13 +27,8 @@ export interface NodeCardProps {
   selected: boolean
   /** Input ports that already have a wire. */
   wired: Set<string>
-  /** Images on the edit step's five reference sockets, in order. */
-  refImages: (string | undefined)[]
-  /** Text arriving on the edit step's prompt socket. */
-  promptText?: string
   /** `${nodeId}:${portId}` the wire is hovering, if any. */
   highlightPort?: string
-  /** Drop the wire on this input socket. */
   onDisconnect: (id: string, port: string) => void
   onChange: (id: string, patch: Partial<CanvasNode>) => void
   onHeaderDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
@@ -55,22 +37,24 @@ export interface NodeCardProps {
   onPortDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
   onPortMove: (event: PointerEvent<HTMLElement>) => void
   onPortUp: (event: PointerEvent<HTMLElement>) => void
-  /** Pressing an input circle either unpicks it or starts a wire from it. */
   onInputDown: (event: PointerEvent<HTMLElement>, node: CanvasNode, port: string) => void
   onMeasure: (id: string, height: number) => void
-  /** Reports where a socket sits on the card, so wires land on the right row. */
   onMeasurePort: (id: string, side: "in" | "out", port: string, x: number, y: number) => void
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
+
+const SOURCE_NOTE: Record<NonNullable<CanvasNode["promptSource"]>, string> = {
+  assist: "written by the assistant · editable",
+  template: "template prompt · the assistant was unreachable",
+  edited: "your prompt · the assistant is skipped",
+}
 
 export function NodeCard({
   node,
   step,
   selected,
   wired,
-  refImages,
-  promptText,
   highlightPort,
   onDisconnect,
   onChange,
@@ -149,8 +133,8 @@ export function NodeCard({
     }
   }, [node.id, onMeasure, onMeasurePort])
 
-  // Sockets move when the body grows (a wrapped prompt, a longer model name), so
-  // measure after every layout rather than once.
+  // Sockets move when the body grows (a wrapped prompt, a render), so measure after
+  // every layout rather than once.
   useLayoutEffect(() => {
     measure()
   })
@@ -296,7 +280,7 @@ export function NodeCard({
               <img src={node.image} alt="" draggable={false} className="size-full object-cover object-top" />
             ) : (
               <div className="flex size-full items-center justify-center text-[11px] text-muted-foreground-soft">
-                drop a screenshot
+                drop an image
               </div>
             )}
 
@@ -352,105 +336,38 @@ export function NodeCard({
         </div>
       ) : null}
 
-      {node.kind === "assist" ? (
-        <div className="p-2.5">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[11px] text-muted-foreground">Reads the borders</span>
-            <span className="font-mono text-[10px] tabular-nums text-foreground">
-              {refsIn} / {ASSIST_REFS}
-            </span>
-          </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
-            Vision pass over the references, then one prompt for the edit step.
-          </p>
-          <p className="mt-2 font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
-            gemini 3.8 flash · reads images
-          </p>
-        </div>
-      ) : null}
-
-      {node.kind === "text" ? (
-        <div className="p-2.5">
-          <textarea
-            value={node.prompt ?? ""}
-            onChange={(event) => onChange(node.id, { prompt: event.target.value })}
-            rows={5}
-            spellCheck={false}
-            aria-label="Prompt, review before the run"
-            placeholder="The assist step writes the prompt here — edit it before running."
-            className="w-full resize-none border-0 bg-transparent p-0 text-[12px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
-          />
-          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {(node.prompt ?? "").length} characters · editable
-          </p>
-        </div>
-      ) : null}
-
-      {node.kind === "prompt" ? (
-        <div className="p-2.5">
-          <textarea
-            value={node.prompt ?? ""}
-            onChange={(event) => onChange(node.id, { prompt: event.target.value })}
-            rows={4}
-            spellCheck={false}
-            aria-label="Prompt"
-            className="w-full resize-none border-0 bg-transparent p-0 text-[12px] leading-relaxed text-foreground outline-none"
-          />
-          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {(node.prompt ?? "").length} characters
-          </p>
-        </div>
-      ) : null}
-
-      {node.kind === "edit" ? (
+      {node.kind === "compose" ? (
         <div className="p-2.5">
           <div className="flex items-baseline justify-between">
             <span className="text-[11px] text-muted-foreground">References</span>
-            <span className="font-mono text-[10px] tabular-nums text-foreground">
-              {refImages.filter(Boolean).length} / {MAX_REFS}
-            </span>
+            <span className="font-mono text-[10px] tabular-nums text-foreground">{refsIn} / 4</span>
           </div>
 
-          <div className="mt-1.5 grid grid-cols-5 gap-1">
-            {Array.from({ length: MAX_REFS }, (_, index) => {
-              const image = refImages[index]
-              return image ? (
-                <div
-                  key={`ref-${index}`}
-                  className="aspect-square overflow-hidden rounded-sm border border-border bg-muted"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image} alt="" className="size-full object-cover object-top" />
-                </div>
-              ) : (
-                <div
-                  key={`ref-${index}`}
-                  className="flex aspect-square items-center justify-center rounded-sm border border-dashed border-border font-mono text-[9px] text-muted-foreground-soft"
-                >
-                  {index + 1}
-                </div>
-              )
-            })}
-          </div>
-
-          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-model`}>
-            Model
-          </label>
-          <select
-            id={`${node.id}-model`}
-            value={node.model ?? MODELS[0]}
-            onChange={(event) => onChange(node.id, { model: event.target.value })}
-            className="mt-1 w-full rounded-md border border-border bg-background px-1.5 py-1 text-[12px] text-foreground outline-none"
-          >
-            {MODELS.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
+          <div className="mt-1.5 grid grid-cols-4 gap-1">
+            {["subject", "jacket", "under", "bottom"].map((role) => (
+              <span
+                key={role}
+                className="rounded-sm border border-border px-1 py-0.5 text-center font-mono text-[9px] text-muted-foreground-soft"
+              >
+                {role}
+              </span>
             ))}
-          </select>
+          </div>
 
-          <p className="mt-1.5 line-clamp-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            {promptText ? promptText : "no prompt wired"}
+          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
+            Prompt
+          </label>
+          <textarea
+            id={`${node.id}-prompt`}
+            value={node.prompt ?? ""}
+            onChange={(event) => onChange(node.id, { prompt: event.target.value, promptSource: "edited" })}
+            rows={4}
+            spellCheck={false}
+            placeholder="Run once: the assistant writes it here. Edit it and run again to re-render without the assistant."
+            className="mt-1 w-full resize-none rounded-md border border-border bg-background px-1.5 py-1 text-[11px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
+          />
+          <p className="mt-1 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+            {node.prompt ? SOURCE_NOTE[node.promptSource ?? "assist"] : "gpt-image-2 · reads the four refs"}
           </p>
 
           {node.output ? (
@@ -459,61 +376,6 @@ export function NodeCard({
               <img src={node.output} alt="" className="size-full object-cover object-top" />
             </div>
           ) : null}
-        </div>
-      ) : null}
-
-      {node.kind === "refine" ? (
-        <div className="p-2.5">
-          <div className="flex items-baseline justify-between">
-            <label className="text-[11px] text-muted-foreground" htmlFor={`${node.id}-strength`}>
-              Strength
-            </label>
-            <span className="font-mono text-[10px] tabular-nums text-foreground">
-              {(node.strength ?? 0.35).toFixed(2)}
-            </span>
-          </div>
-          <input
-            id={`${node.id}-strength`}
-            type="range"
-            min={0.05}
-            max={0.9}
-            step={0.05}
-            value={node.strength ?? 0.35}
-            onChange={(event) => onChange(node.id, { strength: Number(event.target.value) })}
-            className="mt-2 w-full accent-[var(--brand)]"
-          />
-          <p className="mt-1 font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
-            keeps the face and the light
-          </p>
-        </div>
-      ) : null}
-
-      {node.kind === "upscale" ? (
-        <div className="p-2.5">
-          <p className="text-[11px] text-muted-foreground">Factor</p>
-          <div className="mt-1.5 flex gap-1.5">
-            {[2, 4].map((factor) => {
-              const active = (node.factor ?? 2) === factor
-              return (
-                <button
-                  key={factor}
-                  type="button"
-                  onClick={() => onChange(node.id, { factor })}
-                  aria-pressed={active}
-                  className={`rounded-md border px-2.5 py-1 font-mono text-[11px] ${
-                    active
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {factor}×
-                </button>
-              )
-            })}
-          </div>
-          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {node.factor === 4 ? "4×000 px wide" : "2880 px wide"}
-          </p>
         </div>
       ) : null}
 
@@ -551,7 +413,7 @@ export function NodeCard({
               ? "…"
               : node.status === "failed"
                 ? "failed"
-                : `${(RUN_MS[node.kind] / 1000).toFixed(1)}s`}
+                : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
         </span>
       </div>
     </article>
