@@ -5,19 +5,32 @@
  * NERV-shaped: numbered steps, technical labels, nothing rounded.
  *
  * The socket rail is the node's interface, ComfyUI-style but drawn in Pull's
- * language: every input is a labelled square on the left edge (the edit step has
- * five reference sockets and one prompt socket), every output a labelled square
- * on the right. The body is the setting for that step.
+ * language: every input is a labelled square on the left edge, every output a labelled
+ * square on the right. The body is the setting for that step.
+ *
+ * The image node carries the stylist's pen: press **mark**, drag a border around the
+ * object that matters, and the border is baked into the copy the vision pass reads.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, type PointerEvent } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react"
 
 import { Input } from "@/components/ui/input"
-import { KIND, MAX_REFS, MODELS, NODE_WIDTH, PORTS, RUN_MS, type CanvasNode } from "./types"
+import {
+  ASSIST_REFS,
+  KIND,
+  MAX_REFS,
+  MODELS,
+  NODE_WIDTH,
+  PORTS,
+  RUN_MS,
+  type CanvasNode,
+  type MarkupRect,
+} from "./types"
 
 const DOT: Record<CanvasNode["status"], string> = {
   idle: "bg-border",
   running: "bg-brand motion-safe:animate-pulse",
   done: "bg-success",
+  failed: "bg-destructive",
 }
 
 export interface NodeCardProps {
@@ -49,6 +62,8 @@ export interface NodeCardProps {
   onMeasurePort: (id: string, side: "in" | "out", port: string, x: number, y: number) => void
 }
 
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
+
 export function NodeCard({
   node,
   step,
@@ -72,6 +87,49 @@ export function NodeCard({
   const meta = KIND[node.kind]
   const cardRef = useRef<HTMLElement | null>(null)
   const ports = PORTS[node.kind]
+
+  /* ── the stylist's pen ─────────────────────────────────────────────────── */
+  const [marking, setMarking] = useState(false)
+  const [draft, setDraft] = useState<MarkupRect | null>(null)
+  const boxRef = useRef<HTMLDivElement | null>(null)
+
+  const pointIn = (event: PointerEvent<HTMLDivElement>) => {
+    const box = boxRef.current?.getBoundingClientRect()
+    if (!box) return null
+    return {
+      x: clamp01((event.clientX - box.left) / box.width),
+      y: clamp01((event.clientY - box.top) / box.height),
+    }
+  }
+
+  const onMarkDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!marking) return
+    const point = pointIn(event)
+    if (!point) return
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setDraft({ x: point.x, y: point.y, w: 0, h: 0 })
+  }
+
+  const onMarkMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!marking || !draft) return
+    const point = pointIn(event)
+    if (!point) return
+    setDraft({
+      x: Math.min(draft.x, point.x),
+      y: Math.min(draft.y, point.y),
+      w: Math.abs(point.x - draft.x),
+      h: Math.abs(point.y - draft.y),
+    })
+  }
+
+  const onMarkUp = () => {
+    if (!marking || !draft) return
+    const rect = draft
+    setDraft(null)
+    if (rect.w < 0.03 || rect.h < 0.03) return
+    onChange(node.id, { markup: [...(node.markup ?? []), rect] })
+  }
 
   const measure = useCallback(() => {
     const card = cardRef.current
@@ -105,6 +163,9 @@ export function NodeCard({
     return () => observer.disconnect()
   }, [measure])
 
+  const markup = node.markup ?? []
+  const refsIn = ports.inputs.filter((port) => port.kind === "image" && wired.has(port.id)).length
+
   return (
     <article
       ref={cardRef}
@@ -112,7 +173,11 @@ export function NodeCard({
       style={{ left: node.x, top: node.y, width: NODE_WIDTH }}
       onPointerDown={(event) => event.stopPropagation()}
       className={`pointer-events-auto absolute rounded-lg bg-card transition-colors ${
-        node.status === "running" ? "border border-brand" : "border border-border"
+        node.status === "running"
+          ? "border border-brand"
+          : node.status === "failed"
+            ? "border border-destructive"
+            : "border border-border"
       } ${selected ? "outline outline-1 outline-offset-0 outline-foreground/40" : ""}`}
     >
       <div
@@ -215,18 +280,108 @@ export function NodeCard({
 
       {node.kind === "upload" ? (
         <div className="p-2.5">
-          {node.image ? (
-            <div className="aspect-square w-full overflow-hidden rounded-md border border-border bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={node.image} alt="" className="size-full object-cover object-top" />
-            </div>
-          ) : (
-            <div className="flex aspect-square w-full items-center justify-center rounded-md border border-dashed border-border text-[11px] text-muted-foreground-soft">
-              drop a screenshot
-            </div>
-          )}
-          <p className="mt-2 truncate font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
-            {node.image?.split("/").pop() ?? "—"}
+          <div
+            ref={boxRef}
+            data-markup-box
+            onPointerDown={onMarkDown}
+            onPointerMove={onMarkMove}
+            onPointerUp={onMarkUp}
+            onPointerCancel={onMarkUp}
+            className={`relative aspect-square w-full touch-none overflow-hidden rounded-md border border-border bg-muted ${
+              marking ? "cursor-crosshair" : ""
+            }`}
+          >
+            {node.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={node.image} alt="" draggable={false} className="size-full object-cover object-top" />
+            ) : (
+              <div className="flex size-full items-center justify-center text-[11px] text-muted-foreground-soft">
+                drop a screenshot
+              </div>
+            )}
+
+            {[...markup, ...(draft ? [draft] : [])].map((rect, index) => (
+              <span
+                key={index}
+                aria-hidden
+                className="pointer-events-none absolute border-2 border-brand bg-brand/10"
+                style={{
+                  left: `${rect.x * 100}%`,
+                  top: `${rect.y * 100}%`,
+                  width: `${rect.w * 100}%`,
+                  height: `${rect.h * 100}%`,
+                }}
+              />
+            ))}
+
+            {marking ? (
+              <span className="pointer-events-none absolute inset-x-0 top-0 bg-brand/90 px-1.5 py-0.5 font-mono text-[9px] text-background">
+                drag a border around the piece
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="min-w-0 truncate font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
+              {node.imageLabel ?? node.image?.split("/").pop() ?? "—"}
+            </span>
+            <span className="flex shrink-0 items-center gap-1">
+              {markup.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onChange(node.id, { markup: [] })}
+                  className="rounded-md px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  clear
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setMarking((value) => !value)}
+                aria-pressed={marking}
+                className={`rounded-md border px-1.5 py-0.5 font-mono text-[10px] ${
+                  marking
+                    ? "border-brand bg-brand text-background"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {marking ? "done" : markup.length > 0 ? `marked ${markup.length}` : "mark"}
+              </button>
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {node.kind === "assist" ? (
+        <div className="p-2.5">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] text-muted-foreground">Reads the borders</span>
+            <span className="font-mono text-[10px] tabular-nums text-foreground">
+              {refsIn} / {ASSIST_REFS}
+            </span>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+            Vision pass over the references, then one prompt for the edit step.
+          </p>
+          <p className="mt-2 font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
+            gemini 3.8 flash · reads images
+          </p>
+        </div>
+      ) : null}
+
+      {node.kind === "text" ? (
+        <div className="p-2.5">
+          <textarea
+            value={node.prompt ?? ""}
+            onChange={(event) => onChange(node.id, { prompt: event.target.value })}
+            rows={5}
+            spellCheck={false}
+            aria-label="Prompt, review before the run"
+            placeholder="The assist step writes the prompt here — edit it before running."
+            className="w-full resize-none border-0 bg-transparent p-0 text-[12px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
+          />
+          <p className="mt-2 font-mono text-[10px] tracking-[0.02em] text-muted-foreground-soft">
+            {(node.prompt ?? "").length} characters · editable
           </p>
         </div>
       ) : null}
@@ -297,6 +452,13 @@ export function NodeCard({
           <p className="mt-1.5 line-clamp-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
             {promptText ? promptText : "no prompt wired"}
           </p>
+
+          {node.output ? (
+            <div className="mt-2 aspect-square w-full overflow-hidden rounded-sm border border-border bg-muted">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={node.output} alt="" className="size-full object-cover object-top" />
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -379,13 +541,17 @@ export function NodeCard({
       ) : null}
 
       <div className="flex items-center justify-between gap-2 border-t border-border px-2.5 py-1">
-        <span className="truncate text-[10px] text-muted-foreground-soft">{meta.note}</span>
+        <span className="truncate text-[10px] text-muted-foreground-soft" title={node.error}>
+          {node.status === "failed" && node.error ? node.error : meta.note}
+        </span>
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground-soft">
           {node.status === "done" && node.durationMs
             ? `${(node.durationMs / 1000).toFixed(1)}s`
             : node.status === "running"
               ? "…"
-              : (RUN_MS[node.kind] / 1000).toFixed(1) + "s"}
+              : node.status === "failed"
+                ? "failed"
+                : `${(RUN_MS[node.kind] / 1000).toFixed(1)}s`}
         </span>
       </div>
     </article>

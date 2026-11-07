@@ -17,10 +17,12 @@ import type { PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
+import { imageDataUrl, postJson } from "./image-bits"
 import {
   INITIAL_EDGES,
   KIND,
   MAX_REFS,
+  MODEL_ALIAS,
   MODELS,
   PORTS,
   NODE_WIDTH,
@@ -40,6 +42,10 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
   switch (kind) {
     case "upload":
       return {}
+    case "assist":
+      return {}
+    case "text":
+      return { prompt: "" }
     case "prompt":
       return { prompt: "" }
     case "edit":
@@ -54,13 +60,13 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
 }
 
 export function StudioCanvas({
-  uploadImage,
+  refs,
   sampleAssets,
 }: {
-  uploadImage: string
+  refs: { name: string; image: string }[]
   sampleAssets: string[]
 }) {
-  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(uploadImage))
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs))
   const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
@@ -68,6 +74,7 @@ export function StudioCanvas({
   const [running, setRunning] = useState(false)
   const [completed, setCompleted] = useState(0)
   const [assets, setAssets] = useState<string[]>([])
+  const [stubNote, setStubNote] = useState<string | null>(null)
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [linkFrom, setLinkFrom] = useState<{ x: number; y: number } | null>(null)
@@ -143,6 +150,12 @@ export function StudioCanvas({
     observer.observe(element)
     setPanelWidth(element.offsetWidth)
     return () => observer.disconnect()
+  }, [])
+
+  // Open on the whole graph: the demo should show every card without hunting for it.
+  useEffect(() => {
+    const timer = setTimeout(() => fitRef.current(), 140)
+    return () => clearTimeout(timer)
   }, [])
 
   // The assets panel takes width from the canvas; refit so nothing hides behind it.
@@ -473,33 +486,141 @@ export function StudioCanvas({
     setRunning(true)
     setCompleted(0)
     setAssets([])
-    setNodes((current) => current.map((node) => ({ ...node, status: "idle" as const, durationMs: undefined })))
+    setStubNote(null)
+    setNodes((current) =>
+      current.map((node) => ({
+        ...node,
+        status: "idle" as const,
+        durationMs: undefined,
+        output: undefined,
+        error: undefined,
+      })),
+    )
 
-    for (const node of topologicalOrder(nodes, edges)) {
-      setNodes((current) =>
-        current.map((candidate) =>
-          candidate.id === node.id ? { ...candidate, status: "running" as const } : candidate,
-        ),
-      )
-      await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
-      setNodes((current) =>
-        current.map((candidate) =>
-          candidate.id === node.id
-            ? {
-                ...candidate,
-                status: "done" as const,
-                durationMs: RUN_MS[node.kind],
-                ...(candidate.kind === "save" ? { output: sampleAssets[0] } : {}),
-              }
-            : candidate,
-        ),
-      )
-      setCompleted((current) => current + 1)
+    const started = new Map<string, number>()
+    const prompts = new Map<string, string>()
+    const images = new Map<string, string>()
+    const produced: string[] = []
+
+    const patch = (id: string, changes: Partial<CanvasNode>) =>
+      setNodes((current) => current.map((item) => (item.id === id ? { ...item, ...changes } : item)))
+
+    /** The image references wired into a card, in socket order. */
+    const refsInto = (id: string) =>
+      edges
+        .filter((edge) => edge.to === id && edge.port.startsWith("ref "))
+        .sort((a, b) => Number(a.port.split(" ")[1]) - Number(b.port.split(" ")[1]))
+        .map((edge) => nodes.find((node) => node.id === edge.from))
+        .filter((node): node is CanvasNode => Boolean(node?.image))
+        .map((node) => ({
+          name: node.imageLabel ?? node.id,
+          image: node.image as string,
+          markup: node.markup ?? [],
+        }))
+
+    const sourceOf = (id: string, port: string) => {
+      const edge = edges.find((candidate) => candidate.to === id && candidate.port === port)
+      return edge ? nodes.find((node) => node.id === edge.from) : undefined
     }
 
-    setRunning(false)
-    setAssets(sampleAssets)
+    const promptInto = (id: string): string | undefined => {
+      const source = sourceOf(id, "prompt")
+      if (!source) return undefined
+      return prompts.get(source.id) ?? source.prompt
+    }
+
+    const imageInto = (id: string): string | undefined => {
+      const source = sourceOf(id, "image")
+      if (!source) return undefined
+      return images.get(source.id) ?? source.output ?? source.image
+    }
+
+    let failed: { reason: string } | null = null
+
+    for (const node of topologicalOrder(nodes, edges)) {
+      started.set(node.id, performance.now())
+      patch(node.id, { status: "running" })
+
+      try {
+        if (node.kind === "assist") {
+          const refs = refsInto(node.id)
+          if (refs.length === 0) throw new Error("wire the references first")
+          // The vision pass reads the borders; the edit pass gets the clean copies.
+          const payload = await Promise.all(
+            refs.map(async (ref) => ({
+              name: ref.name,
+              dataUrl: await imageDataUrl(ref.image, { markup: ref.markup }),
+            })),
+          )
+          const result = await postJson<{ ok: boolean; prompt?: string; reason?: string }>("/api/canvas/assist", {
+            refs: payload,
+          })
+          if (!result.ok || !result.prompt) throw new Error(result.reason ?? "the assist step returned nothing")
+          prompts.set(node.id, result.prompt)
+
+          // The prompt view is what the stylist reviews before the render.
+          const view = edges
+            .filter((edge) => edge.from === node.id)
+            .map((edge) => nodes.find((candidate) => candidate.id === edge.to))
+            .find((candidate) => candidate?.kind === "text" || candidate?.kind === "prompt")
+          if (view) {
+            prompts.set(view.id, result.prompt)
+            patch(view.id, { prompt: result.prompt })
+          }
+        } else if (node.kind === "edit") {
+          const prompt = promptInto(node.id)
+          if (!prompt) throw new Error("wire a prompt first")
+          const refs = refsInto(node.id)
+          const payload = await Promise.all(
+            refs.map(async (ref) => ({ name: ref.name, dataUrl: await imageDataUrl(ref.image) })),
+          )
+          const result = await postJson<{ ok: boolean; image?: string; reason?: string }>("/api/canvas/render", {
+            prompt,
+            refs: payload,
+            model: MODEL_ALIAS[node.model ?? MODELS[0]],
+          })
+          if (!result.ok || !result.image) throw new Error(result.reason ?? "the edit step returned nothing")
+          images.set(node.id, result.image)
+          patch(node.id, { output: result.image })
+        } else if (node.kind === "save") {
+          const image = imageInto(node.id)
+          if (!image) throw new Error("nothing wired into save")
+          produced.push(image)
+          patch(node.id, { output: image })
+        } else if (node.kind === "refine" || node.kind === "upscale") {
+          // Not wired to a provider yet: carry the frame so the graph still walks.
+          const image = imageInto(node.id)
+          if (image) images.set(node.id, image)
+          await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, RUN_MS[node.kind]))
+        }
+
+        patch(node.id, {
+          status: "done",
+          durationMs: Math.round(performance.now() - (started.get(node.id) ?? 0)),
+        })
+        setCompleted((current) => current + 1)
+      } catch (error) {
+        failed = { reason: error instanceof Error ? error.message : "run failed" }
+        patch(node.id, {
+          status: "failed",
+          error: failed.reason,
+          durationMs: Math.round(performance.now() - (started.get(node.id) ?? 0)),
+        })
+        break
+      }
+    }
+
+    if (failed) {
+      // A demo that dead-ends is worse than a labelled fallback: keep the graph, say so.
+      setStubNote(`provider unavailable — ${failed.reason}`)
+      setAssets(sampleAssets)
+    } else {
+      setAssets(produced)
+    }
     setAssetsOpen(true)
+    setRunning(false)
     runRef.current = false
   }
 
@@ -525,7 +646,8 @@ export function StudioCanvas({
             Look workflow
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            A folder of screenshots in, a finished look out — and every step visible while it runs.
+            Four references in, one look out — the assistant reads your borders, you review the
+            prompt, gpt-image-2 renders it.
           </p>
         </div>
 
@@ -751,7 +873,7 @@ export function StudioCanvas({
           </div>
 
           <p className="border-t border-border px-3 py-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            saved by the graph · sample output
+            {stubNote ?? "saved by the graph · gpt-image-2"}
           </p>
         </aside>
       </div>
