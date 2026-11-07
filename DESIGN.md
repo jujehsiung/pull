@@ -229,6 +229,10 @@ import { Card, CardContent } from "@/components/ui/card"
   variant (and register it here) instead of overriding its classes at the call site.
 - **Dialog titles read `--title-size`** (§3). A dialog title is never sized at its call site; the
   token is the single number.
+- **Markup is a marker, not ink.** A client circles a piece with the status red (`--destructive`,
+  5px translucent) over a 9px paper halo, so the ring reads on a white sleeve, a black coat and a
+  lawn, and the photograph still shows through it. It marks a photograph, never a control — red
+  stays a status colour in the chrome.
 - **Icons are hairlines.** Every Lucide icon strokes at **1.5** in the 24-unit box — one rendered
   pixel at a 16px icon, set once for `.lucide` in `globals.css`, never the library's 2. An icon is a
   rule that happens to bend.

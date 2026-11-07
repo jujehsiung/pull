@@ -7,9 +7,9 @@
  * out of it. So the brush is not decoration, it is the selection: draw a ring
  * around the jacket and the stylist knows to request the jacket, not the look.
  *
- * Freehand on a canvas over the image. Each stroke is drawn twice — a paper
- * halo under an ink line — so the mark stays legible on a white sleeve and a
- * black coat alike, without leaving the palette for a highlighter colour.
+ * Freehand on a canvas over the image, drawn like a marker: a paper halo under
+ * a translucent red line, so a ring reads on a white sleeve, a black coat and a
+ * lawn alike — and the photograph still shows through the ink.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Eraser, Undo2 } from "lucide-react"
@@ -26,10 +26,13 @@ import type { Look } from "@/components/start-job/ReviewBoard"
 
 type Point = { x: number; y: number }
 
-const INK = "#0a0a0a"
-const HALO = "rgba(249, 249, 248, 0.92)"
-const INK_WIDTH = 3
-const HALO_WIDTH = 7
+// Marker red: the status red, translucent so the cloth shows through, over a
+// paper halo that keeps it legible on any photograph. It marks a photograph,
+// never a button — red stays a status colour in the chrome.
+const INK = "rgba(179, 38, 30, 0.85)"
+const HALO = "rgba(249, 249, 248, 0.9)"
+const INK_WIDTH = 5
+const HALO_WIDTH = 9
 
 function trace(ctx: CanvasRenderingContext2D, stroke: Point[]) {
   if (stroke.length < 2) {
