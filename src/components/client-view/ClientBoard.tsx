@@ -12,10 +12,12 @@
  * Static surface: decisions live in this page's state and nothing is sent.
  */
 import { useMemo, useState } from "react"
-import { Check, X } from "lucide-react"
+import { Brush, Check, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { Look } from "@/components/start-job/ReviewBoard"
+
+import { LookMarkupDialog } from "./LookMarkupDialog"
 
 export interface ClientBoardJob {
   /** The job, e.g. "Dune Tour". */
@@ -48,6 +50,9 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
   const [approved, setApproved] = useState<string[]>([])
   const [passed, setPassed] = useState<string[]>([])
   const [sent, setSent] = useState(false)
+  /** Circled pieces, one PNG data URL per look id. Design surface: local only. */
+  const [markups, setMarkups] = useState<Record<string, string>>({})
+  const [markupLook, setMarkupLook] = useState<Look | null>(null)
 
   const grouped = useMemo(() => groupByBrand(looks), [looks])
   const remaining = looks.length - approved.length - passed.length
@@ -59,6 +64,27 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
     setPassed((current) => current.filter((x) => x !== id))
     setApproved((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
   }
+  const saveMarkup = (dataUrl: string | null) => {
+    const id = markupLook?.id
+    setMarkupLook(null)
+    if (!id) return
+
+    if (!dataUrl) {
+      // Cleared: drop the markup, keep whatever decision the look already had.
+      setMarkups((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
+      return
+    }
+
+    setMarkups((current) => ({ ...current, [id]: dataUrl }))
+    setSent(false)
+    setPassed((current) => current.filter((x) => x !== id))
+    setApproved((current) => (current.includes(id) ? current : [...current, id]))
+  }
+
   const pass = (id: string) => {
     setSent(false)
     setApproved((current) => current.filter((x) => x !== id))
@@ -175,6 +201,19 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                           </button>
                           <button
                             type="button"
+                            aria-label={`Mark up pieces in look ${look.lookNo}`}
+                            aria-pressed={Boolean(markups[look.id])}
+                            onClick={() => setMarkupLook(look)}
+                            className={
+                              markups[look.id]
+                                ? "inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground ring-1 ring-foreground"
+                                : "inline-flex size-7 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-foreground"
+                            }
+                          >
+                            <Brush className="size-3.5" aria-hidden />
+                          </button>
+                          <button
+                            type="button"
                             aria-label={`Pass look ${look.lookNo}`}
                             aria-pressed={isPassed}
                             onClick={() => pass(look.id)}
@@ -195,7 +234,14 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                           {look.season ? ` · ${look.season}` : ""}
                         </span>
                         {isApproved ? (
-                          <span className="text-[10px] tracking-[0.02em] text-success">Approved</span>
+                          <span className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.02em] text-success">
+                            <Brush
+                              className={markups[look.id] ? "size-3" : "hidden"}
+                              aria-label={markups[look.id] ? "Pieces circled" : undefined}
+                              role="img"
+                            />
+                            Approved
+                          </span>
                         ) : isPassed ? (
                           <span className="text-[10px] tracking-[0.02em] text-muted-foreground">Passed</span>
                         ) : null}
@@ -209,6 +255,12 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
         </div>
       </div>
 
+      <LookMarkupDialog
+        look={markupLook}
+        initial={markupLook ? markups[markupLook.id] : null}
+        onClose={() => setMarkupLook(null)}
+        onSave={saveMarkup}
+      />
     </div>
   )
 }
