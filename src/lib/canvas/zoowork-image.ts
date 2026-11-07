@@ -260,15 +260,29 @@ export async function composeLook(
         "with the prompt only, at most 70 words — no preamble, no quotes, no markdown.",
       ].join("\n")
       say("reading the pictures")
-      const session = await c.createSession(agentId, {
-        initial_events: [{ type: "user.message", content }],
-        metadata: { app: "pull-canvas", step: "read" },
-      })
-      const turn = await readTurn(c, agentId, session.session_id, 150_000)
-      const written = cleanPrompt(turn.text)
-      if (turn.outcome === "succeeded" && written.length >= 20) {
-        prompt = written
-      } else {
+      // One retry: a cold agent or a dropped stream is transient, and the render is
+      // cheap next to the demo falling back to the template for a network blip.
+      let lastError: unknown = null
+      for (let attempt = 0; attempt < 2 && promptSource !== "assist"; attempt += 1) {
+        try {
+          const session = await c.createSession(agentId, {
+            initial_events: [{ type: "user.message", content }],
+            metadata: { app: "pull-canvas", step: "read" },
+          })
+          const turn = await readTurn(c, agentId, session.session_id, 240_000)
+          const written = cleanPrompt(turn.text)
+          if (turn.outcome === "succeeded" && written.length >= 20) {
+            prompt = written
+            promptSource = "assist"
+          } else {
+            lastError = new Error(`read turn ${turn.outcome ?? "ended early"} (${written.length} chars)`)
+          }
+        } catch (error) {
+          lastError = error
+        }
+      }
+      if (promptSource !== "assist") {
+        console.error("canvas: vision pass failed, using the template prompt —", lastError)
         prompt = templatePrompt(refs)
         promptSource = "template"
       }
