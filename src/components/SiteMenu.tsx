@@ -14,7 +14,6 @@ const LINKS = [
   { label: "Board", href: "/board" },
   { label: "Client page", href: "/client" },
   { label: "Request emails", href: "/requests" },
-  { label: "Agent trace", href: "/trace" },
 ]
 
 export function SiteMenu() {

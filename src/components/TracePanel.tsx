@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+
 import { AgentTrace } from "@/components/AgentTrace"
+import { Button } from "@/components/ui/button"
 import type { AgentStep } from "@/lib/agent/trace"
 
 /**
@@ -46,14 +48,22 @@ export function TracePanel({ jobId, initialSteps }: { jobId: string; initialStep
   }, [jobId, live])
 
   return (
-    <div className="stack" style={{ gap: 10 }}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <span className="mono" style={{ color: live ? "var(--ok)" : "var(--muted-foreground-soft)", fontSize: 10, letterSpacing: ".12em" }}>
-          {live ? "● LIVE" : "○ PAUSED"}
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <span
+          className={`inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.02em] ${
+            live ? "text-success" : "text-muted-foreground-soft"
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`size-1.5 rounded-full ${live ? "bg-success motion-safe:animate-pulse" : "bg-border"}`}
+          />
+          {live ? "Live" : "Paused"}
         </span>
-        <button className="btn btn-ghost btn-sm" onClick={() => setLive((value) => !value)}>
+        <Button variant="outline" size="sm" onClick={() => setLive((value) => !value)}>
           {live ? "Pause" : "Resume"}
-        </button>
+        </Button>
       </div>
       <AgentTrace steps={steps} title="Agent trace" />
     </div>
