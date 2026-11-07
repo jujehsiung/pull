@@ -13,7 +13,7 @@
  */
 import { useMemo, useRef, useState } from "react"
 
-import { describeTaste, nearestToTaste } from "@/lib/taste"
+import { centreOf, describeTaste, nearestToTaste, rankByTaste } from "@/lib/taste"
 import { MIN_PER_ROW, ReviewBoard, suggestionId, type BoardJob, type Look } from "./ReviewBoard"
 import { BoardSwitcher, type BoardOption } from "./BoardSwitcher"
 
@@ -83,8 +83,13 @@ function BoardSurface({
   options: BoardOption[]
   onSelect: (id: string) => void
 }) {
+  /** The board's own looks: replaced wholesale when the pattern reseeds it. */
+  const [base, setBase] = useState<Look[]>(board.looks)
   /** Replacements and freshly suggested houses added during this visit. */
   const [added, setAdded] = useState<Look[]>([])
+  /** Bumped on reseed so the board drops its removed/shortlist state with the old selection. */
+  const [reseedKey, setReseedKey] = useState(0)
+  const [reseeding, setReseeding] = useState(false)
   const [reserve, setReserve] = useState<Record<string, Look[]>>(board.reserve ?? {})
   const [suggesting, setSuggesting] = useState(false)
   const [suggestError, setSuggestError] = useState<string | null>(null)
@@ -94,7 +99,7 @@ function BoardSurface({
   /** A double click must not start two runs: both would append the same houses. */
   const inFlight = useRef(false)
 
-  const looks = useMemo(() => [...board.looks, ...added], [board.looks, added])
+  const looks = useMemo(() => [...base, ...added], [base, added])
 
   /**
    * Taste picks the replacement: it reads the row that is left and takes the look from the same
@@ -191,8 +196,46 @@ function BoardSurface({
     }
   }
 
+  /**
+   * Reseed: every house re-picks its five from its whole collection — what the board already shows
+   * plus what it still has in reserve — nearest to the pattern the chips read. The rows change; the
+   * houses do not.
+   */
+  const reseed = async () => {
+    if (reseeding) return
+    setReseeding(true)
+    try {
+      const centre = await centreOf(looks.flatMap((look) => (look.src ? [look.src] : [])))
+      if (!centre) return
+      const brands = [...new Set(looks.map((look) => look.brand))]
+      const nextBase: Look[] = []
+      const nextReserve: Record<string, Look[]> = {}
+      for (const brand of brands) {
+        const current = looks.filter((look) => look.brand === brand)
+        const spare = reserve[brand] ?? []
+        const pool = [...current, ...spare].filter((look) => look.src)
+        if (!pool.length) continue
+        const order = await rankByTaste(
+          centre,
+          pool.map((look) => look.src as string),
+        )
+        nextBase.push(...order.slice(0, MIN_PER_ROW).map((index) => pool[index]))
+        const rest = order.slice(MIN_PER_ROW).map((index) => pool[index])
+        if (rest.length) nextReserve[brand] = rest
+      }
+      if (!nextBase.length) return
+      setBase(nextBase)
+      setAdded([])
+      setReserve(nextReserve)
+      setReseedKey((key) => key + 1)
+    } finally {
+      setReseeding(false)
+    }
+  }
+
   return (
     <ReviewBoard
+      key={`${board.id}-${reseedKey}`}
       chrome="page"
       looks={looks}
       job={board.job}
@@ -202,6 +245,8 @@ function BoardSurface({
       suggesting={suggesting}
       suggestError={suggestError}
       tasteNote={tasteNote}
+      onReseed={() => void reseed()}
+      reseeding={reseeding}
       switcher={<BoardSwitcher boards={options} currentId={board.id} onSelect={onSelect} />}
     />
   )

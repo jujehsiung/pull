@@ -286,6 +286,27 @@ function majority(values: string[], take = 1): string[] {
     .map(([value]) => value)
 }
 
+/** The mean signature of a set of looks — what the board reads as, before it is put into words. */
+export async function centreOf(srcs: string[], limit = 80): Promise<TasteSignature | null> {
+  const signatures = (await Promise.all(srcs.slice(0, limit).map((src) => readTaste(src)))).filter(
+    (sig): sig is TasteSignature => Boolean(sig),
+  )
+  if (signatures.length < 3) return null
+  return mean(signatures)
+}
+
+/** Indices of `candidates`, nearest to a centre first — the order a reseed picks in. */
+export async function rankByTaste(centre: TasteSignature, candidates: string[]): Promise<number[]> {
+  const signatures = await Promise.all(candidates.map((src) => readTaste(src)))
+  return signatures
+    .map((signature, index) => ({
+      index,
+      distance: signature ? distance(centre, signature) : Number.POSITIVE_INFINITY,
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .map((entry) => entry.index)
+}
+
 /**
  * Index of the reserve look closest to what the row kept. `0` when nothing can be read — the caller
  * falls back to the next look in the collection, which is the old behaviour.

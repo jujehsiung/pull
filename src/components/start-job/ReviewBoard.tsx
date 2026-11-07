@@ -97,6 +97,9 @@ interface ReviewBoardProps {
   suggestError?: string | null
   /** One line from the Taste skill: which look it picked and why. */
   tasteNote?: string | null
+  /** Re-pick every house from its collection against the pattern the chips read. */
+  onReseed?: () => void
+  reseeding?: boolean
 }
 
 /** One direction of the Taste read — colour, texture or shape — as a labelled chip group. */
@@ -142,6 +145,8 @@ export function ReviewBoard({
   suggesting = false,
   suggestError,
   tasteNote,
+  onReseed,
+  reseeding = false,
 }: ReviewBoardProps) {
   const [added, setAdded] = useState<string[]>([])
   const [sendState, setSendState] = useState<"idle" | "needs-backend">("idle")
@@ -150,7 +155,19 @@ export function ReviewBoard({
   // restored. Nothing is persisted, so the seeded board comes back on reload.
   const [removed, setRemoved] = useState<Look[]>([])
   const removedIds = useMemo(() => new Set(removed.map((look) => look.id)), [removed])
-  const visible = useMemo(() => looks.filter((l) => !removedIds.has(l.id)), [looks, removedIds])
+  const visible = useMemo(() => {
+    // One house cannot show the same look twice. Two runs can hand back the same look under
+    // different ids (a re-press, a reserve that overlapped), so the board is unambiguous here
+    // even when the data is not.
+    const seen = new Set<string>()
+    return looks.filter((look) => {
+      if (removedIds.has(look.id)) return false
+      const key = `${look.brand}|${look.lookNo}|${look.season ?? ""}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [looks, removedIds])
   const grouped = useMemo(() => groupByBrand(visible), [visible])
   const addedLooks = useMemo(() => visible.filter((l) => added.includes(l.id)), [visible, added])
 
@@ -406,6 +423,18 @@ export function ReviewBoard({
             <ChipGroup label="colour" values={chips.color} />
             <ChipGroup label="texture" values={chips.texture} />
             <ChipGroup label="shape" values={chips.shape} />
+            {onReseed ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto shrink-0"
+                onClick={onReseed}
+                disabled={reseeding}
+              >
+                <Sparkles className="size-3.5" aria-hidden />
+                {reseeding ? "Reseeding…" : "Reseed from taste"}
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </header>
