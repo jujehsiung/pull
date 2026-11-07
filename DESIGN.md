@@ -295,6 +295,11 @@ taking its colours: numbered steps, technical labels, hairlines, and the same ne
   as a bundle of anonymous lines. Each socket is 8px, square, and filled when it has a wire.
 - **One wire per socket**: dropping a second wire on an occupied input replaces the first — the same way
   the model takes one prompt, not two. Dropping requires the socket you mean; there is no "nearest port".
+- **The noodle is a direct object** (2026-11-07): pressing an output socket starts a wire *at that socket*
+  (anchored on the element, not on arithmetic), the socket under the pointer lights olive while dragging,
+  and releasing over an input row — the whole row, dot and label — wires that socket. Releasing over
+  anything else cancels. There are two ways to unpick, because a wire has two ends to name: click a wired
+  input socket, or click the wire itself (it has a 14px invisible hit stroke and thickens on hover).
 - **One olive state, one green state**: the step in flight turns its border olive and its dot pulses;
   a finished step is a green dot. There is no third colour on the canvas.
 - **The run is visible, not implied** — `Agent run · n/6` in the surface header, and each card's footer

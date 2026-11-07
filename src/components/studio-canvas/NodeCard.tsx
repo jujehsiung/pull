@@ -31,6 +31,10 @@ export interface NodeCardProps {
   refImages: (string | undefined)[]
   /** Text arriving on the edit step's prompt socket. */
   promptText?: string
+  /** `${nodeId}:${portId}` the wire is hovering, if any. */
+  highlightPort?: string
+  /** Drop the wire on this input socket. */
+  onDisconnect: (id: string, port: string) => void
   onChange: (id: string, patch: Partial<CanvasNode>) => void
   onHeaderDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
   onHeaderMove: (event: PointerEvent<HTMLElement>) => void
@@ -50,6 +54,8 @@ export function NodeCard({
   wired,
   refImages,
   promptText,
+  highlightPort,
+  onDisconnect,
   onChange,
   onHeaderDown,
   onHeaderMove,
@@ -120,21 +126,50 @@ export function NodeCard({
       {ports.inputs.length > 0 || ports.outputs.length > 0 ? (
         <div className="flex items-start justify-between gap-3 border-b border-border py-1.5 pr-2.5">
           <div className="flex flex-col gap-1">
-            {ports.inputs.map((port) => (
-              <div key={port.id} className="flex items-center gap-1.5">
-                <span
-                  data-input-port={`${node.id}:${port.id}`}
+            {ports.inputs.map((port) => {
+              const key = `${node.id}:${port.id}`
+              const connected = wired.has(port.id)
+              const highlight = highlightPort === key
+              return (
+                <div
+                  key={port.id}
+                  data-input-port={key}
                   data-port-id={port.id}
                   data-port-side="in"
-                  className={`-ml-[5px] size-2 shrink-0 border ${
-                    wired.has(port.id) ? "border-success bg-success" : "border-border bg-card"
-                  }`}
-                />
-                <span className="font-mono text-[9px] leading-none tracking-[0.02em] text-muted-foreground">
-                  {port.label}
-                </span>
-              </div>
-            ))}
+                  role="button"
+                  tabIndex={-1}
+                  aria-label={connected ? `Unpick ${port.label}` : `${port.label} socket`}
+                  title={connected ? "Click to unpick" : "Drop a wire here"}
+                  onClick={(event) => {
+                    if (!connected) return
+                    event.stopPropagation()
+                    onDisconnect(node.id, port.id)
+                  }}
+                  className="group flex cursor-crosshair items-center gap-1.5 py-px"
+                >
+                  <span
+                    className={`-ml-[5px] size-2 shrink-0 border transition-colors ${
+                      highlight
+                        ? "border-brand bg-brand"
+                        : connected
+                          ? "border-success bg-success"
+                          : "border-border bg-card group-hover:border-foreground"
+                    }`}
+                  />
+                  <span
+                    className={`font-mono text-[9px] leading-none tracking-[0.02em] transition-colors ${
+                      highlight
+                        ? "text-foreground"
+                        : connected
+                          ? "text-foreground"
+                          : "text-muted-foreground group-hover:text-foreground"
+                    }`}
+                  >
+                    {port.label}
+                  </span>
+                </div>
+              )
+            })}
           </div>
 
           <div className="flex flex-col items-end gap-1">
@@ -153,7 +188,7 @@ export function NodeCard({
                   onPointerMove={onPortMove}
                   onPointerUp={onPortUp}
                   onPointerCancel={onPortUp}
-                  className="-mr-[5px] size-2 shrink-0 cursor-crosshair border border-border bg-card hover:border-foreground hover:bg-brand"
+                  className="relative -mr-[5px] size-2 shrink-0 cursor-crosshair border border-border bg-card before:absolute before:-inset-2 before:content-[''] hover:border-foreground hover:bg-brand"
                 />
               </div>
             ))}

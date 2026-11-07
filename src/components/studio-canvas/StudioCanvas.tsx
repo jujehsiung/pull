@@ -71,6 +71,8 @@ export function StudioCanvas({
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [linkFrom, setLinkFrom] = useState<{ x: number; y: number } | null>(null)
+  const [snapPort, setSnapPort] = useState<string | null>(null)
+  const [hoverEdge, setHoverEdge] = useState<string | null>(null)
   const [linkPoint, setLinkPoint] = useState<{ x: number; y: number } | null>(null)
   const [heights, setHeights] = useState<Record<string, number>>({})
   const [portY, setPortY] = useState<Record<string, { in: Record<string, number>; out: Record<string, number> }>>({})
@@ -295,6 +297,7 @@ export function StudioCanvas({
   /* ── panning the canvas ────────────────────────────────────────────────── */
 
   const onCanvasDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
     setSelected(null)
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
     panRef.current = { startX: event.clientX, startY: event.clientY, camX: camera.x, camY: camera.y }
@@ -356,15 +359,31 @@ export function StudioCanvas({
   const onPortDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
     event.stopPropagation()
     ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-    const y = outputY(node)
-    linkRef.current = { from: node.id, x: node.x + NODE_WIDTH, y }
-    setLinkFrom({ x: camera.x + (node.x + NODE_WIDTH) * zoom, y: camera.y + y * zoom })
+    // Anchor on the socket itself, not on arithmetic: the wire must leave the dot.
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const canvasRect = canvasRef.current?.getBoundingClientRect()
+    const point = canvasRect
+      ? { x: rect.left + rect.width / 2 - canvasRect.left, y: rect.top + rect.height / 2 - canvasRect.top }
+      : { x: 0, y: 0 }
+    linkRef.current = { from: node.id, x: node.x + NODE_WIDTH, y: outputY(node) }
+    setLinkFrom(point)
+    setSnapPort(null)
   }
+
+  const portUnder = (clientX: number, clientY: number) => {
+    const target = document.elementFromPoint(clientX, clientY)?.closest("[data-input-port]")
+    return target?.getAttribute("data-input-port") ?? null
+  }
+
+  const onDisconnect = useCallback((id: string, port: string) => {
+    setEdges((current) => current.filter((edge) => !(edge.to === id && edge.port === port)))
+  }, [])
 
   const onPortMove = (event: PointerEvent<HTMLElement>) => {
     if (!linkRef.current) return
     const rect = canvasRef.current?.getBoundingClientRect()
     if (rect) setLinkPoint({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+    setSnapPort(portUnder(event.clientX, event.clientY))
   }
 
   const onPortUp = (event: PointerEvent<HTMLElement>) => {
@@ -374,8 +393,8 @@ export function StudioCanvas({
     setLinkPoint(null)
     if (!link) return
 
-    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest("[data-input-port]")
-    const value = target?.getAttribute("data-input-port")
+    const value = portUnder(event.clientX, event.clientY)
+    setSnapPort(null)
     if (!value) return
     const separator = value.indexOf(":")
     const to = value.slice(0, separator)
@@ -510,14 +529,33 @@ export function StudioCanvas({
                 const from = nodes.find((node) => node.id === edge.from)
                 const to = nodes.find((node) => node.id === edge.to)
                 if (!from || !to) return null
+                const path = pathFor(from, to, edge.port)
+                const active = hoverEdge === edge.id
                 return (
-                  <path
-                    key={edge.id}
-                    d={pathFor(from, to, edge.port)}
-                    fill="none"
-                    stroke="color-mix(in srgb, var(--foreground) 22%, transparent)"
-                    strokeWidth={1.25}
-                  />
+                  <g key={edge.id}>
+                    <path
+                      d={path}
+                      fill="none"
+                      stroke={active ? "var(--foreground)" : "color-mix(in srgb, var(--foreground) 22%, transparent)"}
+                      strokeWidth={active ? 1.5 : 1.25}
+                    />
+                    {/* a wide invisible stroke, so the wire is easy to hit and click off */}
+                    <path
+                      d={path}
+                      data-wire={edge.id}
+                      fill="none"
+                      stroke="transparent"
+                      strokeWidth={14}
+                      pointerEvents="stroke"
+                      className="cursor-pointer"
+                      onPointerEnter={() => setHoverEdge(edge.id)}
+                      onPointerLeave={() => setHoverEdge(null)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setEdges((current) => current.filter((candidate) => candidate.id !== edge.id))
+                      }}
+                    />
+                  </g>
                 )
               })}
             </svg>
@@ -539,6 +577,8 @@ export function StudioCanvas({
                 onPortUp={onPortUp}
                 onMeasure={onMeasure}
                 onMeasurePort={onMeasurePort}
+                onDisconnect={onDisconnect}
+                highlightPort={snapPort ?? undefined}
                 wired={wiring.get(node.id)?.wired ?? EMPTY_SET}
                 refImages={Array.from(
                   { length: MAX_REFS },
@@ -679,8 +719,8 @@ export function StudioCanvas({
 
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-6 py-2.5 md:px-10">
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
-          ⌘C / ⌘V copies a node · scroll to zoom · drag the canvas to pan · drag a port to connect ·
-          backspace deletes
+          drag socket to socket to wire · click a wire or a wired socket to unpick · ⌘C / ⌘V copies ·
+          scroll zooms · drag the canvas to pan · backspace deletes
         </p>
         <p className="font-mono text-[9px] tracking-[0.02em] text-muted-foreground-soft">
           {nodes.length} nodes · {edges.length} links · {order.length} in the run
