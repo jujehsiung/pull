@@ -30,6 +30,8 @@ export interface CanvasNode {
   status: NodeStatus
   /** How long this step took, once it has run. */
   durationMs?: number
+  /** Card width in canvas units; follows the resize handle. Defaults to NODE_WIDTH. */
+  width?: number
   /** upload — the reference image, its role, and the stylist's borders. */
   image?: string
   imageLabel?: string
@@ -56,6 +58,9 @@ export interface CanvasEdge {
 }
 
 export const NODE_WIDTH = 260
+/** The resize handle's range: readable at the bottom, useful at the top. */
+export const MIN_NODE_WIDTH = 220
+export const MAX_NODE_WIDTH = 640
 /** Where a port sits when the card has not been measured yet. */
 export const PORT_Y = 18
 

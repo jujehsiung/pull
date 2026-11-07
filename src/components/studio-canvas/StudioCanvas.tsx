@@ -100,7 +100,7 @@ export function StudioCanvas({
     const rect = element.getBoundingClientRect()
     const minX = Math.min(...nodes.map((node) => node.x)) - 64
     const minY = Math.min(...nodes.map((node) => node.y)) - 64
-    const maxX = Math.max(...nodes.map((node) => node.x + NODE_WIDTH)) + 64
+    const maxX = Math.max(...nodes.map((node) => node.x + (node.width ?? NODE_WIDTH))) + 64
     const maxY = Math.max(...nodes.map((node) => node.y)) + 360
     const raw = Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY), 1)
     // Never shrink the cards into illegibility; on a narrow frame the graph pans instead.
@@ -155,9 +155,9 @@ export function StudioCanvas({
   const copySelected = useCallback(() => {
     const node = nodesRef.current.find((candidate) => candidate.id === selected)
     if (!node) return
-    const { kind, x, y, image, imageLabel, markup, prompt, filename } = node
+    const { kind, x, y, width, image, imageLabel, markup, prompt, filename } = node
     clipboardRef.current = {
-      node: { kind, x, y, image, imageLabel, markup, prompt, filename },
+      node: { kind, x, y, width, image, imageLabel, markup, prompt, filename },
       count: 0,
     }
   }, [selected])
@@ -695,6 +695,7 @@ export function StudioCanvas({
                 onMeasurePort={onMeasurePort}
                 onDisconnect={onDisconnect}
                 highlightPort={snapPort ?? undefined}
+                zoom={zoom}
                 wired={wiring.get(node.id)?.wired ?? EMPTY_SET}
               />
             ))}

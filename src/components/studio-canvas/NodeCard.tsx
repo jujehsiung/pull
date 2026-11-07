@@ -8,10 +8,27 @@
  * the compose step that reads all four and renders the look, and the save step that
  * writes it into the assets.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent,
+} from "react"
 
 import { Input } from "@/components/ui/input"
-import { KIND, NODE_WIDTH, PORTS, RUN_MS, type CanvasNode, type MarkupRect } from "./types"
+import {
+  KIND,
+  MAX_NODE_WIDTH,
+  MIN_NODE_WIDTH,
+  NODE_WIDTH,
+  PORTS,
+  RUN_MS,
+  type CanvasNode,
+  type MarkupRect,
+} from "./types"
 
 const DOT: Record<CanvasNode["status"], string> = {
   idle: "bg-border",
@@ -29,6 +46,8 @@ export interface NodeCardProps {
   wired: Set<string>
   /** `${nodeId}:${portId}` the wire is hovering, if any. */
   highlightPort?: string
+  /** Canvas zoom, so a resize drag converts screen pixels to canvas units. */
+  zoom: number
   onDisconnect: (id: string, port: string) => void
   onChange: (id: string, patch: Partial<CanvasNode>) => void
   onHeaderDown: (event: PointerEvent<HTMLElement>, node: CanvasNode) => void
@@ -56,6 +75,7 @@ export function NodeCard({
   selected,
   wired,
   highlightPort,
+  zoom,
   onDisconnect,
   onChange,
   onHeaderDown,
@@ -147,6 +167,38 @@ export function NodeCard({
     return () => observer.disconnect()
   }, [measure])
 
+  /* ── resizing the card ─────────────────────────────────────────────────── */
+  const width = node.width ?? NODE_WIDTH
+  const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
+
+  const clampWidth = (value: number) => Math.round(Math.min(MAX_NODE_WIDTH, Math.max(MIN_NODE_WIDTH, value)))
+
+  const onResizeDown = (event: PointerEvent<HTMLSpanElement>) => {
+    event.stopPropagation()
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    resizeRef.current = { startX: event.clientX, startWidth: width }
+  }
+
+  const onResizeMove = (event: PointerEvent<HTMLSpanElement>) => {
+    const drag = resizeRef.current
+    if (!drag) return
+    onChange(node.id, { width: clampWidth(drag.startWidth + (event.clientX - drag.startX) / zoom) })
+  }
+
+  const onResizeUp = (event: PointerEvent<HTMLSpanElement>) => {
+    resizeRef.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const onResizeKey = (event: ReactKeyboardEvent<HTMLSpanElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+    event.preventDefault()
+    onChange(node.id, { width: clampWidth(width + (event.key === "ArrowRight" ? 24 : -24)) })
+  }
+
   const markup = node.markup ?? []
   const refsIn = ports.inputs.filter((port) => port.kind === "image" && wired.has(port.id)).length
 
@@ -154,7 +206,8 @@ export function NodeCard({
     <article
       ref={cardRef}
       data-node-id={node.id}
-      style={{ left: node.x, top: node.y, width: NODE_WIDTH }}
+      style={{ left: node.x, top: node.y, width }}
+      aria-label={`${meta.name} card, ${Math.round(width)} wide`}
       onPointerDown={(event) => event.stopPropagation()}
       className={`pointer-events-auto absolute rounded-lg bg-card transition-colors ${
         node.status === "running"
@@ -416,6 +469,23 @@ export function NodeCard({
                 : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
         </span>
       </div>
+
+      {/* The resize grip: drag the corner, or focus it and use ← →. */}
+      <span
+        role="separator"
+        aria-label="Resize card"
+        aria-orientation="horizontal"
+        tabIndex={0}
+        title="Drag to resize the card"
+        onPointerDown={onResizeDown}
+        onPointerMove={onResizeMove}
+        onPointerUp={onResizeUp}
+        onPointerCancel={onResizeUp}
+        onKeyDown={onResizeKey}
+        className="absolute bottom-0 right-0 z-10 flex size-5 cursor-nwse-resize touch-none items-end justify-end p-1 text-muted-foreground-soft hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        <span aria-hidden className="size-2 border-b border-r border-current" />
+      </span>
     </article>
   )
 }
