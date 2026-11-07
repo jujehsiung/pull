@@ -428,3 +428,27 @@ body.dark-page { background: var(--dark); color: var(--dark-text); }
   gap: 10px;
   max-height: 240px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ICONS — hairlines, like everything else.
+   Lucide draws in a 24-unit box, so the stroke scales with the icon: at 1.5
+   a 16px icon renders a 1px line, a 14px icon 0.88px. That is the target — one
+   rendered pixel, the same weight as the rules and borders around it.
+   ══════════════════════════════════════════════════════════════════════════ */
+.lucide {
+  stroke-width: 1.5;
+}
+
+/* On the client's page a decision is a state, not a gesture: a decided look
+   keeps its mark when the pointer is away. Hovering swaps in the full pair of
+   actions; touch, which has no hover, goes straight to the pair. */
+.tile-marker {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+}
+.group:hover .tile-marker,
+.group:focus-within .tile-marker { display: none; }
+@media (hover: none) {
+  .tile-marker { display: none; }
+}
