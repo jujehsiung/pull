@@ -76,6 +76,10 @@ interface ReviewBoardProps {
   chrome?: "sheet" | "page"
   /** Rendered beside the client's name — the board switcher, on the static page. */
   switcher?: ReactNode
+  /** The agent's next move on a live board: pull more houses while the stylist is selecting. */
+  onSuggest?: () => void
+  suggesting?: boolean
+  suggestError?: string | null
 }
 
 function groupByBrand(looks: Look[]) {
@@ -99,6 +103,9 @@ export function ReviewBoard({
   canRemove,
   chrome = "sheet",
   switcher,
+  onSuggest,
+  suggesting = false,
+  suggestError,
 }: ReviewBoardProps) {
   const [added, setAdded] = useState<string[]>([])
   const [sendState, setSendState] = useState<"idle" | "needs-backend">("idle")
@@ -143,6 +150,11 @@ export function ReviewBoard({
             {job.description.trim() && job.title ? (
               <p className="text-[12px] tracking-[0.02em] text-muted-foreground">{job.title}</p>
             ) : null}
+            {suggestError ? (
+              <p role="status" className="text-[11px] text-[var(--destructive)]">
+                {suggestError}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex items-start justify-between gap-3 md:ml-auto md:justify-end">
@@ -159,6 +171,18 @@ export function ReviewBoard({
                 {job.email || "No contact email"}
               </span>
             </div>
+
+            {onSuggest ? (
+              <Button
+                variant="ghost"
+                className="agent-action shrink-0"
+                onClick={onSuggest}
+                disabled={suggesting}
+              >
+                <Sparkles className="size-4" aria-hidden />
+                {suggesting ? "Finding looks…" : "Suggest looks"}
+              </Button>
+            ) : null}
 
             {/* Cart in the header: the count is always visible, the shortlist is one click away. */}
             <Popover>

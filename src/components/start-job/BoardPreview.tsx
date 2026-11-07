@@ -11,10 +11,43 @@
  * house keeps its five looks instead of thinning out. Once the reserve is spent
  * the five are a floor: the remove control is held rather than allowed below it.
  */
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 
 import { MIN_PER_ROW, ReviewBoard, type BoardJob, type Look } from "./ReviewBoard"
 import { BoardSwitcher, type BoardOption } from "./BoardSwitcher"
+
+/** The research route's shape, as much of it as the static board needs. */
+interface SourceLook {
+  lookNo: number
+  image: string
+}
+
+interface SourceDesigner {
+  brand: string
+  slug: string
+  season: string
+  looks: SourceLook[]
+  reserve: SourceLook[]
+}
+
+/** The route relays Vogue photos same-origin so the board's canvas crop stays readable. */
+function imageSource(image: string): string {
+  return `/api/skills/suggest-looks/image?u=${encodeURIComponent(image)}`
+}
+
+function lookFrom(designer: SourceDesigner, look: SourceLook): Look {
+  return {
+    id: `suggested:${designer.slug}:${look.lookNo}:${Date.now()}`,
+    fileName: `${designer.slug}-look-${look.lookNo}.jpg`,
+    brand: designer.brand,
+    lookNo: look.lookNo,
+    season: designer.season,
+    suggested: true,
+    source: imageSource(look.image),
+    status: "ready",
+    src: imageSource(look.image),
+  }
+}
 
 export interface PreviewBoard {
   id: string
@@ -49,9 +82,13 @@ function BoardSurface({
   options: BoardOption[]
   onSelect: (id: string) => void
 }) {
-  /** Replacements added during this visit — the seeded looks come back on reload. */
+  /** Replacements and freshly suggested houses added during this visit. */
   const [added, setAdded] = useState<Look[]>([])
   const [reserve, setReserve] = useState<Record<string, Look[]>>(board.reserve ?? {})
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggestError, setSuggestError] = useState<string | null>(null)
+  /** Where the next press continues in the season; the six seeded houses came first. */
+  const offset = useRef(6)
 
   const looks = useMemo(() => [...board.looks, ...added], [board.looks, added])
 
@@ -71,6 +108,56 @@ function BoardSurface({
     return (reserve[look.brand]?.length ?? 0) > 0
   }
 
+  /**
+   * More houses from the same season, pulled while the stylist is already selecting. A house the
+   * board already carries is skipped, and a press that returns only known houses tries the next
+   * slice once before saying the season is spent.
+   */
+  const suggestMore = async () => {
+    if (suggesting) return
+    setSuggesting(true)
+    setSuggestError(null)
+    const client = board.job.description.trim()
+    try {
+      const known = new Set(looks.map((look) => look.brand))
+      let fresh: Look[] = []
+      let extraReserve: Record<string, Look[]> = {}
+      for (let attempt = 0; attempt < 2 && !fresh.length; attempt++) {
+        const response = await fetch("/api/skills/suggest-looks", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ clientName: client, offset: offset.current, limit: 5 }),
+        })
+        const data = (await response.json()) as {
+          designers?: SourceDesigner[]
+          hasMore?: boolean
+          error?: string
+        }
+        if (!response.ok) throw new Error(data.error ?? "The research run failed.")
+        const designers = data.designers ?? []
+        offset.current += designers.length
+        fresh = designers
+          .filter((designer) => !known.has(designer.brand))
+          .flatMap((designer) => designer.looks.map((look) => lookFrom(designer, look)))
+        for (const designer of designers) {
+          if (known.has(designer.brand)) continue
+          extraReserve[designer.brand] = designer.reserve.map((look) => lookFrom(designer, look))
+        }
+        if (!data.hasMore) break
+      }
+      if (!fresh.length) {
+        setSuggestError("No new houses left in this season.")
+        return
+      }
+      setReserve((current) => ({ ...current, ...extraReserve }))
+      setAdded((current) => [...current, ...fresh])
+    } catch (error) {
+      setSuggestError(error instanceof Error ? error.message : "Could not load more houses.")
+    } finally {
+      setSuggesting(false)
+    }
+  }
+
   return (
     <ReviewBoard
       chrome="page"
@@ -78,6 +165,9 @@ function BoardSurface({
       job={board.job}
       onRemoveLook={refill}
       canRemove={canRemove}
+      onSuggest={() => void suggestMore()}
+      suggesting={suggesting}
+      suggestError={suggestError}
       switcher={<BoardSwitcher boards={options} currentId={board.id} onSelect={onSelect} />}
     />
   )

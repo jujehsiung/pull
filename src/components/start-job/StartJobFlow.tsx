@@ -318,44 +318,6 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
     }
   }, [clientName, loadingSuggestions, streamResearch])
 
-  /** More designers, five at a time, eight looks each. */
-  /** More designers, five at a time, eight looks each. */
-  const suggestMore = useCallback(async () => {
-    if (moreLoading || !suggestMeta?.hasMore) return
-    const client = clientName.trim()
-    if (!client) return
-    setMoreLoading(true)
-    setNote(null)
-    try {
-      const data = await streamResearch(client, designerCount, 5, {
-        step: (step) => setSuggestTrace((current) => [...current, step]),
-        designer: (designer) => {
-          setSuggested((current) => [...current, ...looksFromDesigners([designer])])
-          setDesignerSources((current) => [...current, designer])
-          setDesignerCount((count) => count + 1)
-          setReserve((current) => ({
-            ...current,
-            [designer.brand]: [...(current[designer.brand] ?? []), ...designer.reserve],
-          }))
-        },
-      })
-      setSuggestMeta((current) =>
-        current
-          ? { ...current, hasMore: data.hasMore, nextOffset: data.nextOffset, totalDesigners: data.totalDesigners }
-          : data,
-      )
-    } catch (error) {
-      setNote(error instanceof Error ? error.message : "Could not load more designers.")
-    } finally {
-      setMoreLoading(false)
-    }
-  }, [clientName, designerCount, moreLoading, streamResearch, suggestMeta?.hasMore])
-
-  const pool = useMemo(() => [...looks, ...suggested], [looks, suggested])
-
-  const canBuild =
-    Boolean(jobName.trim()) && Boolean(clientName.trim()) && Boolean(contactEmail.trim()) && pool.length > 0
-
   /** Work the queue: one look at a time, on screen, with its real durations. */
   const processQueue = useCallback(async (queue: Look[]) => {
     setProgress({ done: 0, total: queue.length, label: "queued" })
@@ -390,6 +352,48 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
    * Removing a suggested look refills its row from the same collection. The route sends six spare
    * looks per designer, so the board keeps eight looks per house instead of thinning out on stage.
    */
+  /** More designers, five at a time, eight looks each. */
+  const suggestMore = useCallback(async () => {
+    if (moreLoading || !suggestMeta?.hasMore) return
+    const client = clientName.trim()
+    if (!client) return
+    setMoreLoading(true)
+    setNote(null)
+    const added: Look[] = []
+    try {
+      const data = await streamResearch(client, designerCount, 5, {
+        step: (step) => setSuggestTrace((current) => [...current, step]),
+        designer: (designer) => {
+          const fresh = looksFromDesigners([designer])
+          added.push(...fresh)
+          setSuggested((current) => [...current, ...fresh])
+          setDesignerSources((current) => [...current, designer])
+          setDesignerCount((count) => count + 1)
+          setReserve((current) => ({
+            ...current,
+            [designer.brand]: [...(current[designer.brand] ?? []), ...designer.reserve],
+          }))
+        },
+      })
+      setSuggestMeta((current) =>
+        current
+          ? { ...current, hasMore: data.hasMore, nextOffset: data.nextOffset, totalDesigners: data.totalDesigners }
+          : data,
+      )
+      // New houses arrive ready to work: crop and read them while the board is already on screen.
+      void processQueue(added)
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Could not load more designers.")
+    } finally {
+      setMoreLoading(false)
+    }
+  }, [clientName, designerCount, moreLoading, processQueue, streamResearch, suggestMeta?.hasMore])
+
+  const pool = useMemo(() => [...looks, ...suggested], [looks, suggested])
+
+  const canBuild =
+    Boolean(jobName.trim()) && Boolean(clientName.trim()) && Boolean(contactEmail.trim()) && pool.length > 0
+
   const refillSuggestion = useCallback(
     (removed: Look) => {
       if (!removed.suggested) return
@@ -718,6 +722,9 @@ export function StartJobFlow({ kind }: { kind: "nav" | "hero" }) {
           progress={progress}
           onRemoveLook={refillSuggestion}
           canRemove={canRemoveLook}
+          onSuggest={suggestMeta?.hasMore ? () => void suggestMore() : undefined}
+          suggesting={moreLoading}
+          suggestError={note}
           onBack={() => {
             clearStoredBoard()
             setStage("details")
