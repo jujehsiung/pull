@@ -283,9 +283,11 @@ Visual review: `/design` (the living canvas — both modes, every primitive).
 The studio (`/canvas`) is the one surface that is a **canvas**, and it takes the NERV language without
 taking its colours: numbered steps, technical labels, hairlines, and the same near-white paper.
 
-- **Cards are square and hairline**, exactly like every other card — no radius, no shadow except the
-  1px lift that says "this can be picked up". A card is `bg-card` + `border-border`; the selected one is
-  the only thing that changes, to `outline-foreground/40`.
+- **Cards carry the `lg` radius** (6px, `rounded-lg`) and a hairline — the same shape a card takes
+  everywhere else. A socket is still a **square**, flush to the edge: the radius belongs to the card, not
+  to the plug (2026-11-07). The selected card is the only one that changes, to `outline-foreground/40`.
+- **Floating chrome takes the `xl` step** (8.4px) — the toolbox and the node palette are sheets above the
+  canvas, so they round one step more than a card, per §5.
 - **The step number is mono, 10px, muted** (`01`…`06`) and it is the only thing on the card's left edge
   before the name. It is data, not a label, which is why it may keep its width.
 - **Sockets are rows, not a mid-line** (2026-11-07): every input is a labelled square on the card's left

@@ -102,7 +102,7 @@ export function NodeCard({
       data-node-id={node.id}
       style={{ left: node.x, top: node.y, width: NODE_WIDTH }}
       onPointerDown={(event) => event.stopPropagation()}
-      className={`pointer-events-auto absolute bg-card transition-colors ${
+      className={`pointer-events-auto absolute rounded-lg bg-card transition-colors ${
         node.status === "running" ? "border border-brand" : "border border-border"
       } ${selected ? "outline outline-1 outline-offset-0 outline-foreground/40" : ""}`}
     >

@@ -605,7 +605,7 @@ export function StudioCanvas({
 
         {/* The toolbox, centred at the bottom: the things you do to the canvas. */}
         <div
-          className={`absolute bottom-4 left-1/2 z-30 -translate-x-1/2 border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)] transition-opacity duration-300 ${
+          className={`absolute bottom-4 left-1/2 z-30 -translate-x-1/2 rounded-xl border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.08)] transition-opacity duration-300 ${
             assetsOpen && !wide ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
         >
@@ -620,7 +620,7 @@ export function StudioCanvas({
                 Add node
               </button>
               {addOpen ? (
-                <div className="absolute bottom-full left-0 z-30 mb-1 w-[300px] border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.12)]">
+                <div className="absolute bottom-full left-0 z-30 mb-1 w-[300px] rounded-xl border border-border bg-card shadow-[0_8px_24px_rgba(10,10,10,0.12)]">
                   {PALETTE.map((kind) => (
                     <button
                       key={kind}
