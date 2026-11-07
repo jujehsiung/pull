@@ -269,7 +269,7 @@ export function ReviewBoard({
                 disabled={suggesting}
               >
                 <Sparkles className="size-4" aria-hidden />
-                {suggesting ? "Finding looks…" : "Suggest looks"}
+                {suggesting ? "Finding more looks…" : "Find more looks"}
               </Button>
             ) : null}
 
