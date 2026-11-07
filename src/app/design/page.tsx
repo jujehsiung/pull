@@ -13,6 +13,7 @@
  * Delete this route before shipping if you do not want it public.
  */
 
+import { SiteHeader } from "@/components/SiteHeader"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -116,7 +117,9 @@ function Section({
 
 export default function DesignPage() {
   return (
-    <main className="mx-auto max-w-[1180px] px-6 py-14">
+    <>
+      <SiteHeader />
+      <main className="mx-auto max-w-[1180px] px-6 py-14">
       {/* ── masthead ─────────────────────────────────────────────────────── */}
       <header className="pb-10">
         <p className="font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
@@ -395,6 +398,7 @@ export default function DesignPage() {
       <footer className="mt-16 border-t border-border pt-8 font-mono text-[11px] tracking-[0.02em] text-muted-foreground-soft">
         Pull · EVA theme · {new Date().getFullYear()} · tokens checked by scripts/check-tokens.mjs
       </footer>
-    </main>
+      </main>
+    </>
   )
 }
