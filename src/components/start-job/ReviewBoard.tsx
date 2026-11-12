@@ -127,6 +127,8 @@ function useSheetChromeTop(enabled: boolean): number {
 interface ReviewBoardProps {
   looks: Look[]
   job: BoardJob
+  /** The occasion the board was researched for, shown beside "Review board". */
+  brief?: string
   /** Live ingest progress; omitted on the static board. */
   progress?: { done: number; total: number; label: string } | null
   onBack?: () => void
@@ -192,6 +194,7 @@ function groupByBrand(looks: Look[]) {
 export function ReviewBoard({
   looks,
   job,
+  brief,
   progress,
   onBack,
   onRemoveLook,
@@ -294,7 +297,9 @@ export function ReviewBoard({
         {/* Left: what the job is. Right: when it is due and where it goes. */}
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-6 py-5 md:flex-row md:items-start md:gap-6 md:px-10">
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Review board</p>
+            <p className="text-[10px] tracking-[0.02em] text-muted-foreground">
+              Review board{brief ? ` · ${brief}` : ""}
+            </p>
             <div className="flex items-center gap-3">
               <h2 className="min-w-0 text-[clamp(30px,3.4vw,46px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
                 {job.description.trim() || job.title.trim() || "Untitled client"}
