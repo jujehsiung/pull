@@ -5,7 +5,7 @@ import { DemoGuide } from "@/components/DemoGuide"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Pull — from screenshots to signed-off looks",
+  title: "Pull — from selects to confirmed looks",
   description:
     "Drop a folder of look screenshots. Pull crops them, reads the look numbers, builds the boards, sends your client one link — and turns their approvals into request emails and prepaid labels.",
 }
