@@ -181,6 +181,12 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                 <span className="flex flex-col items-end gap-1 text-[12px] text-success">
                   Sent to your stylist
                   <Link
+                    href="/canvas"
+                    className="text-[11px] font-normal text-foreground underline underline-offset-2"
+                  >
+                    Compose the mockup →
+                  </Link>
+                  <Link
                     href="/requests"
                     className="text-[11px] font-normal text-muted-foreground underline underline-offset-2"
                   >

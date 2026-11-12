@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
 import { imageDataUrl, streamJson } from "./image-bits"
 import {
-  INITIAL_EDGES,
+  initialEdges,
   KIND,
   PORTS,
   NODE_WIDTH,
@@ -49,12 +49,15 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
 export function StudioCanvas({
   refs,
   sampleAssets,
+  context,
 }: {
   refs: { name: string; image: string }[]
   sampleAssets: string[]
+  /** Where these references came from, named above the graph. */
+  context?: string
 }) {
   const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs))
-  const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
+  const [edges, setEdges] = useState<CanvasEdge[]>(() => initialEdges(refs.length))
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
   const [selected, setSelected] = useState<string | null>(null)
@@ -607,7 +610,9 @@ export function StudioCanvas({
     <>
       <section className="mx-auto flex max-w-[1440px] flex-wrap items-end justify-between gap-4 px-6 pt-5 md:px-10">
         <div className="min-w-0">
-          <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Studio</p>
+          <p className="text-[10px] tracking-[0.02em] text-muted-foreground">
+            Studio{context ? ` · from ${context}` : ""}
+          </p>
           <h1 className="mt-1.5 text-[clamp(26px,2.8vw,38px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
             Look workflow
           </h1>

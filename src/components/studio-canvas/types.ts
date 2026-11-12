@@ -133,13 +133,16 @@ export function initialNodes(refs: { name: string; image: string }[]): CanvasNod
   ]
 }
 
-export const INITIAL_EDGES: CanvasEdge[] = [
-  { id: "e-ref1", from: "ref-1", to: "compose", port: "ref 1" },
-  { id: "e-ref2", from: "ref-2", to: "compose", port: "ref 2" },
-  { id: "e-ref3", from: "ref-3", to: "compose", port: "ref 3" },
-  { id: "e-ref4", from: "ref-4", to: "compose", port: "ref 4" },
-  { id: "e-compose-save", from: "compose", to: "save", port: "image" },
-]
+/** Only the references that exist are wired: two approved looks read as 2 / 4, not 4 / 4. */
+export function initialEdges(referenceCount: number): CanvasEdge[] {
+  const refs: CanvasEdge[] = Array.from({ length: Math.min(referenceCount, 4) }, (_, index) => ({
+    id: `e-ref${index + 1}`,
+    from: `ref-${index + 1}`,
+    to: "compose",
+    port: `ref ${index + 1}`,
+  }))
+  return [...refs, { id: "e-compose-save", from: "compose", to: "save", port: "image" }]
+}
 
 /** Run order: sources first, ties broken left to right. */
 export function topologicalOrder(nodes: CanvasNode[], edges: CanvasEdge[]): CanvasNode[] {

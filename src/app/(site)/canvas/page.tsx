@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { StudioCanvas } from "@/components/studio-canvas/StudioCanvas"
+import { CanvasFromApproval } from "@/components/studio-canvas/CanvasFromApproval"
 
 export const metadata = { title: "Pull — studio" }
 
@@ -53,7 +53,7 @@ export default function StudioPage() {
 
   return (
     <main>
-      <StudioCanvas refs={refs} sampleAssets={sampleAssets} />
+      <CanvasFromApproval fallbackRefs={refs} sampleAssets={sampleAssets} />
     </main>
   )
 }
