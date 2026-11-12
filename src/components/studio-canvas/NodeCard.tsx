@@ -68,7 +68,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
 
 const SOURCE_NOTE: Record<NonNullable<CanvasNode["promptSource"]>, string> = {
   assist: "written by the assistant · editable",
-  template: "template prompt · the assistant was unreachable",
+  template: "template prompt · the assistant did not answer in time",
   edited: "your prompt · the assistant is skipped",
 }
 
@@ -376,18 +376,32 @@ export function NodeCard({
             onPointerMove={onMarkMove}
             onPointerUp={onMarkUp}
             onPointerCancel={onMarkUp}
-            className={`relative aspect-square w-full touch-none overflow-hidden rounded-md border border-border bg-muted ${
+            className={`relative w-full touch-none overflow-hidden rounded-md border border-border bg-muted ${
               marking ? "cursor-crosshair" : ""
             }`}
           >
             {node.image ? (
+              // The whole picture, never a crop: a reference is the outfit, and a cropped
+              // thumbnail hides the very thing the stylist is drawing a border around.
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={node.image} alt="" draggable={false} className="size-full object-cover object-top" />
+              <img src={node.image} alt="" draggable={false} className="block h-auto w-full" />
             ) : (
-              <div className="flex size-full items-center justify-center text-[11px] text-muted-foreground-soft">
+              <div className="flex aspect-square w-full items-center justify-center text-[11px] text-muted-foreground-soft">
                 drop an image
               </div>
             )}
+
+            {node.overlay ? (
+              // The client's pen, exactly as they drew it, over the same photograph.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={node.overlay}
+                alt=""
+                aria-hidden
+                draggable={false}
+                className="pointer-events-none absolute inset-0 size-full object-cover"
+              />
+            ) : null}
 
             {[...markup, ...(draft ? [draft] : [])].map((rect, index) => (
               <span
@@ -455,41 +469,26 @@ export function NodeCard({
           </div>
 
           <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground-soft">
-            {node.collage
-              ? "separates, styled together — each circled piece keeps its own rectangle; nothing is merged."
-              : "no roles to fill in — the assistant reads each picture and the red border you drew."}
+            no roles to fill in — the assistant reads each picture and the red border you drew.
           </p>
 
-          {node.collage ? (
-            <p className="mt-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-              collage · {refsIn} piece{refsIn === 1 ? "" : "s"}
-            </p>
-          ) : (
-            <>
-              <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
-                Prompt
-              </label>
-              <textarea
-                id={`${node.id}-prompt`}
-                value={node.prompt ?? ""}
-                onChange={(event) => onChange(node.id, { prompt: event.target.value, promptSource: "edited" })}
-                rows={4}
-                spellCheck={false}
-                placeholder="Run once: the assistant writes it here. Edit it and run again to re-render without the assistant."
-                className="mt-1 w-full resize-none rounded-md border border-border bg-background px-1.5 py-1 text-[11px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
-              />
-              <p className="mt-1 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-                {node.prompt ? SOURCE_NOTE[node.promptSource ?? "assist"] : "gpt-image-2 · reads the four refs"}
-              </p>
-            </>
-          )}
-
-          {node.output ? (
-            <div className="mt-2 aspect-square w-full overflow-hidden rounded-sm border border-border bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={node.output} alt="" className="size-full object-cover object-top" />
-            </div>
-          ) : null}
+          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
+            Prompt
+          </label>
+          <textarea
+            id={`${node.id}-prompt`}
+            value={node.prompt ?? ""}
+            onChange={(event) => onChange(node.id, { prompt: event.target.value, promptSource: "edited" })}
+            rows={4}
+            spellCheck={false}
+            placeholder="Run once: the assistant writes it here. Edit it and run again to re-render without the assistant."
+            className="mt-1 w-full resize-none rounded-md border border-border bg-background px-1.5 py-1 text-[11px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
+          />
+          <p className="mt-1 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+            {node.prompt ? SOURCE_NOTE[node.promptSource ?? "assist"] : "gpt-image-2 · reads the four refs"}
+          </p>
+          {/* No render preview here: the save card shows the finished look once, and a second
+              copy inside the model card only competes with the prompt for the same eye. */}
         </div>
       ) : null}
 
@@ -526,9 +525,7 @@ export function NodeCard({
             ? node.progress
             : node.status === "failed" && node.error
               ? node.error
-              : node.collage
-                ? "collages the pieces as separates"
-                : meta.note}
+              : meta.note}
         </span>
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground-soft">
           {node.status === "done" && node.durationMs
@@ -537,9 +534,7 @@ export function NodeCard({
               ? "…"
               : node.status === "failed"
                 ? "failed"
-                : node.collage
-                  ? "instant"
-                  : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
+                : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
         </span>
       </div>
 

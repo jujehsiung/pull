@@ -405,3 +405,24 @@ The studio's six-card graph is the demo's picture of the product: **four referen
   render preview grows with the card: the save card is where the look is finally looked at, so it is
   the card people make big. The width survives copy/paste with the rest of the card's settings; it
   resets with the canvas, because the graph itself is not persisted.
+
+---
+
+## 12. The client approval, back to the stylist (2026-11-07)
+
+Approval is a hand-off, and the point of it is that neither side has to describe what happened.
+
+- **One record, three readers.** The client board writes what was approved — look, brand, season, the
+  photograph, and the pen — when the client presses *Send approvals*. The bell, `/approved` and the
+  studio's Approved tab all read that record, so they cannot disagree. In the demo it lives in
+  `localStorage` (`src/lib/approved-store.ts`); in production it is `jobs.reviewSubmittedAt` plus the
+  looks' status and markup, the same three reads against Postgres.
+- **The bell is derived, not a table.** A submission newer than the stylist's last look is unread; the
+  notice names the client, the job and how many selects carry a markup, and opens `/approved`. Opening
+  it marks it seen, so the badge clears the way the DB bell's badge clears.
+- **`/approved` is the client's board, not a summary.** Same order, same tiles, same markups over the
+  same photographs — a stylist reads the actual pen, and can say what the client meant without asking.
+- **The studio inherits them.** The assets panel gains a third tab, **Approved**, with the selects and
+  their markups. A select is **draggable onto the canvas**: it drops as a reference card whose overlay is
+  the client's markup, so the reading pass gets that pen baked into its copy while the render still gets
+  the clean photograph. The stylist wires it into the compose card exactly like a fixture.

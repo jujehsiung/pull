@@ -12,14 +12,15 @@
  * wired to a provider. The node vocabulary is the real one from PRODUCT.md Phase 4.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { X } from "lucide-react"
+import { Loader2Icon, X } from "lucide-react"
 import type { PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
-import { collageDataUrl, imageDataUrl, streamJson } from "./image-bits"
+import { imageDataUrl, streamJson } from "./image-bits"
+import { approvedAssets, readApproval, subscribeApproval, type ApprovedLook } from "@/lib/approved-store"
 import {
-  initialEdges,
+  INITIAL_EDGES,
   KIND,
   PORTS,
   NODE_WIDTH,
@@ -33,6 +34,18 @@ import {
 } from "./types"
 
 const EMPTY_SET = new Set<string>()
+
+/** One look the compose card rendered this session. */
+interface StudioGeneration {
+  id: string
+  image: string
+  prompt: string
+  model: string
+  ms: number
+}
+
+const PANEL_TABS = ["generations", "assets", "approved"] as const
+type PanelTab = (typeof PANEL_TABS)[number]
 const DOTS = "radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 0)"
 
 function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
@@ -49,27 +62,22 @@ function defaultsFor(kind: NodeKind): Partial<CanvasNode> {
 export function StudioCanvas({
   refs,
   sampleAssets,
-  context,
-  mode = "render",
-  filename,
 }: {
   refs: { name: string; image: string }[]
   sampleAssets: string[]
-  /** Where these references came from, named above the graph. */
-  context?: string
-  /** collage: the pieces are the work, laid out as themselves; render: the image model. */
-  mode?: "collage" | "render"
-  /** What the save card calls the file; the job's name when opened from an approval. */
-  filename?: string
 }) {
-  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs, mode, filename))
-  const [edges, setEdges] = useState<CanvasEdge[]>(() => initialEdges(refs.length))
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs))
+  const [edges, setEdges] = useState<CanvasEdge[]>(INITIAL_EDGES)
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
   const [selected, setSelected] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
   const [completed, setCompleted] = useState(0)
   const [assets, setAssets] = useState<string[]>([])
+  const [generations, setGenerations] = useState<StudioGeneration[]>([])
+  /** What the client approved — the same record the bell and /approved read. */
+  const [approved, setApproved] = useState<ApprovedLook[]>([])
+  const [tab, setTab] = useState<PanelTab>("generations")
   const [stubNote, setStubNote] = useState<string | null>(null)
   const [assetsOpen, setAssetsOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -109,7 +117,7 @@ export function StudioCanvas({
     const minX = Math.min(...nodes.map((node) => node.x)) - 64
     const minY = Math.min(...nodes.map((node) => node.y)) - 64
     const maxX = Math.max(...nodes.map((node) => node.x + (node.width ?? NODE_WIDTH))) + 64
-    const maxY = Math.max(...nodes.map((node) => node.y)) + 360
+    const maxY = Math.max(...nodes.map((node) => node.y + (heights[node.id] ?? 360))) + 64
     const raw = Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY), 1)
     // Never shrink the cards into illegibility; on a narrow frame the graph pans instead.
     const next = Math.min(Math.max(raw, 0.45), 1)
@@ -119,7 +127,7 @@ export function StudioCanvas({
       x: contentWidth > rect.width ? 24 - minX * next : (rect.width - contentWidth) / 2 - minX * next,
       y: (rect.height - (maxY - minY) * next) / 2 - minY * next,
     })
-  }, [nodes])
+  }, [nodes, heights])
 
   // Frame the graph once, after the canvas has been measured.
   const fitRef = useRef(fit)
@@ -146,6 +154,21 @@ export function StudioCanvas({
     observer.observe(element)
     setPanelWidth(element.offsetWidth)
     return () => observer.disconnect()
+  }, [])
+
+  // The client's approval is a store, not a prop: the studio picks it up when it lands.
+  useEffect(() => {
+    const sync = () => setApproved(approvedAssets(readApproval()))
+    sync()
+    return subscribeApproval(sync)
+  }, [])
+
+  // The approval hand-off links here with ?tab=approved, so the selects are the first thing seen.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (new URLSearchParams(window.location.search).get("tab") !== "approved") return
+    setTab("approved")
+    setAssetsOpen(true)
   }, [])
 
   // Open on the whole graph: the demo should show every card without hunting for it.
@@ -481,7 +504,6 @@ export function StudioCanvas({
     runRef.current = true
     setRunning(true)
     setCompleted(0)
-    setAssets([])
     setStubNote(null)
     setNodes((current) =>
       current.map((node) => ({
@@ -512,6 +534,7 @@ export function StudioCanvas({
         .map((node) => ({
           name: node.imageLabel ?? node.id,
           image: node.image as string,
+          overlay: node.overlay,
           markup: node.markup ?? [],
         }))
 
@@ -526,23 +549,21 @@ export function StudioCanvas({
       patch(node.id, { status: "running" })
 
       try {
-        if (node.kind === "compose" && node.collage) {
-          const refs = refsInto(node.id)
-          if (refs.length === 0) throw new Error("wire the references first")
-          patch(node.id, { progress: "collaging the pieces" })
-          const image = await collageDataUrl(refs.map((ref) => ref.image))
-          renders.set(node.id, image)
-          patch(node.id, { output: image, progress: undefined })
-        } else if (node.kind === "compose") {
+        if (node.kind === "compose") {
           const refs = refsInto(node.id)
           if (refs.length === 0) throw new Error("wire the four references first")
           const payload = await Promise.all(
             refs.map(async (ref) => ({
               name: ref.name,
+              // The render gets the clean picture; the reading pass gets a small copy with
+              // the stylist's border baked in, so vision stays fast enough to answer in time.
               dataUrl: await imageDataUrl(ref.image),
-              ...(ref.markup.length > 0
-                ? { markedDataUrl: await imageDataUrl(ref.image, { markup: ref.markup }) }
-                : {}),
+              assistDataUrl: await imageDataUrl(ref.image, {
+                maxSize: 640,
+                markup: ref.markup,
+                overlay: ref.overlay,
+              }),
+              marked: ref.markup.length > 0 || Boolean(ref.overlay),
             })),
           )
           // The route streams a line per phase, so the card can say what is happening
@@ -552,6 +573,7 @@ export function StudioCanvas({
             prompt?: string
             promptSource?: string
             image?: string
+            ms?: number
             reason?: string
           }>(
             "/api/canvas/look",
@@ -561,7 +583,17 @@ export function StudioCanvas({
             },
           )
           if (!result.ok || !result.image) throw new Error(result.reason ?? "the compose step returned nothing")
-          if (result.image) renders.set(node.id, result.image)
+          if (result.image) {
+            renders.set(node.id, result.image)
+            const generation: StudioGeneration = {
+              id: `gen-${Date.now()}`,
+              image: result.image,
+              prompt: result.prompt ?? "",
+              model: "gpt-image-2",
+              ms: Math.round(result.ms ?? 0),
+            }
+            setGenerations((current) => [generation, ...current])
+          }
           patch(node.id, {
             prompt: result.prompt ?? node.prompt,
             promptSource: (result.promptSource as CanvasNode["promptSource"]) ?? "assist",
@@ -597,9 +629,9 @@ export function StudioCanvas({
     if (failed) {
       // A demo that dead-ends is worse than a labelled fallback: keep the graph, say so.
       setStubNote(`provider unavailable — ${failed.reason}`)
-      setAssets(sampleAssets)
+      setAssets((current) => (current.length > 0 ? current : sampleAssets))
     } else {
-      setAssets(produced)
+      setAssets((current) => [...produced, ...current])
     }
     setAssetsOpen(true)
     setRunning(false)
@@ -623,16 +655,13 @@ export function StudioCanvas({
     <>
       <section className="mx-auto flex max-w-[1440px] flex-wrap items-end justify-between gap-4 px-6 pt-5 md:px-10">
         <div className="min-w-0">
-          <p className="text-[10px] tracking-[0.02em] text-muted-foreground">
-            Studio{context ? ` · from ${context}` : ""}
-          </p>
+          <p className="text-[10px] tracking-[0.02em] text-muted-foreground">Studio</p>
           <h1 className="mt-1.5 text-[clamp(26px,2.8vw,38px)] font-semibold leading-[0.95] tracking-[-0.035em] text-foreground">
             Look workflow
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            {mode === "collage"
-              ? "The circled pieces in, one styled look out — each garment keeps its own rectangle; nothing is merged."
-              : "Four references in, one look out — the assistant reads your borders, you review the prompt, gpt-image-2 renders it."}
+            Four references in, one look out — the assistant reads your borders, you review the
+            prompt, gpt-image-2 renders it.
           </p>
         </div>
 
@@ -641,8 +670,21 @@ export function StudioCanvas({
             Agent run · {done ? `${completed}/${nodes.length}` : `0/${nodes.length}`}
           </span>
 
-          <Button size="sm" className="agent-action" onClick={run} disabled={running}>
-            {running ? "Running…" : "Run"}
+          <Button
+            size="sm"
+            className="agent-action"
+            onClick={run}
+            disabled={running}
+            aria-busy={running}
+          >
+            {running ? (
+              <>
+                <Loader2Icon aria-hidden className="animate-spin motion-reduce:animate-none" />
+                Running…
+              </>
+            ) : (
+              "Run"
+            )}
           </Button>
         </div>
       </section>
@@ -655,6 +697,41 @@ export function StudioCanvas({
           onPointerMove={onCanvasMove}
           onPointerUp={onCanvasUp}
           onPointerCancel={onCanvasUp}
+          onDragOver={(event) => {
+            if (!event.dataTransfer.types.includes("application/x-pull-approved")) return
+            event.preventDefault()
+            event.dataTransfer.dropEffect = "copy"
+          }}
+          onDrop={(event) => {
+            const raw = event.dataTransfer.getData("application/x-pull-approved")
+            if (!raw) return
+            event.preventDefault()
+            try {
+              const look = JSON.parse(raw) as ApprovedLook
+              const point = toCanvas(event.clientX, event.clientY)
+              const id = `upl-${Math.random().toString(36).slice(2, 7)}`
+              // The select becomes a reference card, with the client's markup as its overlay:
+              // the stylist wires it into the compose card and the reading pass sees the pen.
+              setNodes((current) => [
+                ...current,
+                {
+                  id,
+                  kind: "upload",
+                  step: nextStep(),
+                  // Keep the card on the canvas: a drop near an edge should not park it off-canvas.
+                  x: Math.max(0, Math.round(point.x) - NODE_WIDTH / 2),
+                  y: Math.max(0, Math.round(point.y) - 20),
+                  status: "idle",
+                  image: look.image,
+                  ...(look.markup ? { overlay: look.markup } : {}),
+                  imageLabel: `approved · ${look.brand} ${look.lookNo}`,
+                },
+              ])
+              setSelected(id)
+            } catch {
+              // A payload we cannot read is not worth an error on stage.
+            }
+          }}
           className="absolute inset-y-0 left-0 cursor-grab touch-none select-none bg-background transition-[right] duration-500 ease-out active:cursor-grabbing"
           style={{
             right: assetsOpen && wide ? panelWidth : 0,
@@ -819,43 +896,169 @@ export function StudioCanvas({
             assetsOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <p className="text-[11px] tracking-[0.02em] text-muted-foreground">Assets · {assets.length}</p>
+          <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1.5">
+            <div role="tablist" aria-label="Studio panel" className="flex items-center gap-1">
+              {PANEL_TABS.map((key) => {
+                const selected = tab === key
+                const label = key === "generations" ? "Generations" : key === "assets" ? "Assets" : "Approved"
+                const count =
+                  key === "generations" ? generations.length : key === "assets" ? assets.length : approved.length
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    id={`studio-tab-${key}`}
+                    aria-selected={selected}
+                    aria-controls={`studio-panel-${key}`}
+                    onClick={() => setTab(key)}
+                    className={`rounded-md px-2 py-1 text-[11px] tracking-[0.02em] transition-colors ${
+                      selected
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    }`}
+                  >
+                    {label} · {count}
+                  </button>
+                )
+              })}
+            </div>
             <button
               type="button"
               onClick={() => setAssetsOpen(false)}
-              aria-label="Close assets"
+              aria-label="Close the studio panel"
               className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {assets.length === 0 ? (
-              <p className="px-3 py-6 text-[11px] leading-relaxed text-muted-foreground">
-                Nothing yet. Run the graph and the images land here.
-              </p>
-            ) : (
-              <ul className="grid grid-cols-2 gap-px bg-border">
-                {assets.map((src, index) => (
-                  <li key={`${src}-${index}`} className="bg-card">
-                    <div className="aspect-[4/5] overflow-hidden bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt="" className="size-full object-cover" />
-                    </div>
-                    <div className="flex items-baseline justify-between px-1.5 py-1 font-mono text-[9px] text-muted-foreground-soft">
-                      <span className="truncate">look-27-v{index + 1}.png</span>
-                      <span>2×</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {/* Generations is the default view: what this session made, newest first, with its prompt. */}
+          {tab === "generations" ? (
+            <div
+              role="tabpanel"
+              id="studio-panel-generations"
+              aria-labelledby="studio-tab-generations"
+              className="flex-1 overflow-y-auto"
+            >
+              {generations.length === 0 ? (
+                <p className="px-3 py-6 text-[11px] leading-relaxed text-muted-foreground">
+                  Nothing generated yet. Run the graph and every look lands here, newest first.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {generations.map((generation) => (
+                    <li key={generation.id} className="bg-card">
+                      <div className="aspect-square overflow-hidden bg-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={generation.image} alt="" className="size-full object-cover" />
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <p className="line-clamp-2 text-[10px] leading-relaxed text-muted-foreground">
+                          {generation.prompt || "no prompt · rendered from the references"}
+                        </p>
+                        <p className="mt-1 font-mono text-[9px] text-muted-foreground-soft">
+                          {generation.model} · {generation.ms > 0 ? `${(generation.ms / 1000).toFixed(0)}s` : "—"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : tab === "assets" ? (
+            <div
+              role="tabpanel"
+              id="studio-panel-assets"
+              aria-labelledby="studio-tab-assets"
+              className="flex-1 overflow-y-auto"
+            >
+              {assets.length === 0 ? (
+                <p className="px-3 py-6 text-[11px] leading-relaxed text-muted-foreground">
+                  Nothing saved yet. The save card writes the look into the job&apos;s assets.
+                </p>
+              ) : (
+                <ul className="grid grid-cols-2 gap-px bg-border">
+                  {assets.map((src, index) => (
+                    <li key={`${src.slice(-24)}-${index}`} className="bg-card">
+                      <div className="aspect-[4/5] overflow-hidden bg-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt="" className="size-full object-cover" />
+                      </div>
+                      <div className="flex items-baseline justify-between px-1.5 py-1 font-mono text-[9px] text-muted-foreground-soft">
+                        <span className="truncate">look-27-v{index + 1}.png</span>
+                        <span>2×</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <div
+              role="tabpanel"
+              id="studio-panel-approved"
+              aria-labelledby="studio-tab-approved"
+              className="flex-1 overflow-y-auto"
+            >
+              {approved.length === 0 ? (
+                <p className="px-3 py-6 text-[11px] leading-relaxed text-muted-foreground">
+                  Nothing approved yet. When the client sends approvals, their selects land here with
+                  the markups they drew — drag one onto the canvas to build a look from it.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {approved.map((look) => (
+                    <li key={look.id} className="bg-card p-2">
+                      <div
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData("application/x-pull-approved", JSON.stringify(look))
+                          event.dataTransfer.effectAllowed = "copy"
+                        }}
+                        title="Drag onto the canvas"
+                        className="cursor-grab active:cursor-grabbing"
+                      >
+                        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={look.image} alt="" className="size-full object-cover" />
+                          {look.markup ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={look.markup}
+                              alt=""
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 size-full object-cover"
+                            />
+                          ) : null}
+                          <span className="absolute left-1.5 top-1.5 bg-success px-1.5 py-0.5 font-mono text-[9px] text-background">
+                            approved
+                          </span>
+                        </div>
+                        <div className="flex items-baseline justify-between px-0.5 py-1 font-mono text-[9px] text-muted-foreground-soft">
+                          <span className="truncate">
+                            {look.brand} · look {look.lookNo}
+                          </span>
+                          <span className="shrink-0">{look.markup ? "markup" : "no markup"}</span>
+                        </div>
+                        <p className="px-0.5 pb-0.5 font-mono text-[9px] text-muted-foreground-soft">
+                          drag onto the canvas →
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           <p className="border-t border-border px-3 py-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            {stubNote ?? (mode === "collage" ? "collaged by the graph · separates, kept" : "saved by the graph · gpt-image-2")}
+            {stubNote ??
+              (tab === "generations"
+                ? "posted by the graph · gpt-image-2"
+                : tab === "assets"
+                  ? "saved by the save card"
+                  : "client-approved · drag one onto the canvas")}
           </p>
         </aside>
       </div>

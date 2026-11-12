@@ -35,13 +35,13 @@ export interface CanvasNode {
   /** upload — the reference image, its role, and the stylist's borders. */
   image?: string
   imageLabel?: string
+  /** A transparent PNG layer over the picture — the client's own markup, from /approved. */
+  overlay?: string
   markup?: MarkupRect[]
   /** compose — the prompt the assistant wrote (editable), and the render. */
   prompt?: string
   /** compose — how the prompt was produced. */
   promptSource?: "assist" | "template" | "edited"
-  /** compose — build a flat-lay collage of the pieces instead of an image edit. */
-  collage?: boolean
   /** compose — the live phase while a run is in flight. */
   progress?: string
   /** compose / save */
@@ -111,16 +111,14 @@ export const RUN_MS: Record<NodeKind, number> = {
   save: 320,
 }
 
-export function initialNodes(
-  refs: { name: string; image: string }[],
-  mode: "collage" | "render" = "render",
-  filename = "look-27-v1.png",
-): CanvasNode[] {
+export function initialNodes(refs: { name: string; image: string }[]): CanvasNode[] {
+  // One row of four: the portraits are tall now that thumbnails are not cropped, and a
+  // two-by-two grid would overlap once each card follows its picture's height.
   const spots = [
     { x: 32, y: 24 },
     { x: 320, y: 24 },
-    { x: 32, y: 388 },
-    { x: 320, y: 388 },
+    { x: 608, y: 24 },
+    { x: 896, y: 24 },
   ]
   const referenceNodes: CanvasNode[] = refs.slice(0, 4).map((ref, index) => ({
     id: `ref-${index + 1}`,
@@ -134,21 +132,18 @@ export function initialNodes(
   }))
   return [
     ...referenceNodes,
-    { id: "compose", kind: "compose", step: 5, x: 640, y: 196, status: "idle", collage: mode === "collage" },
-    { id: "save", kind: "save", step: 6, x: 960, y: 196, status: "idle", filename },
+    { id: "compose", kind: "compose", step: 5, x: 1204, y: 196, status: "idle" },
+    { id: "save", kind: "save", step: 6, x: 1504, y: 196, status: "idle", filename: "look-27-v1.png" },
   ]
 }
 
-/** Only the references that exist are wired: two approved looks read as 2 / 4, not 4 / 4. */
-export function initialEdges(referenceCount: number): CanvasEdge[] {
-  const refs: CanvasEdge[] = Array.from({ length: Math.min(referenceCount, 4) }, (_, index) => ({
-    id: `e-ref${index + 1}`,
-    from: `ref-${index + 1}`,
-    to: "compose",
-    port: `ref ${index + 1}`,
-  }))
-  return [...refs, { id: "e-compose-save", from: "compose", to: "save", port: "image" }]
-}
+export const INITIAL_EDGES: CanvasEdge[] = [
+  { id: "e-ref1", from: "ref-1", to: "compose", port: "ref 1" },
+  { id: "e-ref2", from: "ref-2", to: "compose", port: "ref 2" },
+  { id: "e-ref3", from: "ref-3", to: "compose", port: "ref 3" },
+  { id: "e-ref4", from: "ref-4", to: "compose", port: "ref 4" },
+  { id: "e-compose-save", from: "compose", to: "save", port: "image" },
+]
 
 /** Run order: sources first, ties broken left to right. */
 export function topologicalOrder(nodes: CanvasNode[], edges: CanvasEdge[]): CanvasNode[] {

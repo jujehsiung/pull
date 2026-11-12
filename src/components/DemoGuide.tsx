@@ -62,7 +62,7 @@ const STORAGE_KEY = "pull:demo-guide"
 
 /** Which act the current route belongs to. Ordered most specific first. */
 function actFor(pathname: string): number {
-  if (pathname.startsWith("/b/") || pathname.startsWith("/client")) return 1
+  if (pathname.startsWith("/b/") || pathname.startsWith("/client") || pathname.startsWith("/approved")) return 1
   if (pathname === "/requests" || pathname.startsWith("/requests/")) return 2
   if (pathname.startsWith("/i/")) return 2
   // The requests page lives under the job it belongs to — this is where Act 3 starts.

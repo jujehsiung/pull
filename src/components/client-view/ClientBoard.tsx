@@ -19,6 +19,7 @@ import { ShareButton } from "./ShareButton"
 
 import { Button } from "@/components/ui/button"
 import type { Look } from "@/components/start-job/ReviewBoard"
+import { readApproval, saveApproval, type ApprovedLook } from "@/lib/approved-store"
 import { readDemoReview, saveDemoReview, type PieceBox } from "@/lib/demo-session"
 
 import { LookMarkupDialog } from "./LookMarkupDialog"
@@ -62,23 +63,56 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
   /** One switch for every markup layer: the eye in the page bar. */
   const [markupVisible, setMarkupVisible] = useState(true)
 
-  // A reopened link keeps the decisions the client already sent.
+  // A reopened link keeps the decisions and the pen the client already sent.
   useEffect(() => {
+    const ids = new Set(looks.map((look) => look.id))
+    const approval = readApproval()
+    if (approval) {
+      setApproved(approval.looks.map((look) => look.id).filter((id) => ids.has(id)))
+      setPassed(approval.passed.filter((id) => ids.has(id)))
+      setMarkups(
+        Object.fromEntries(
+          approval.looks
+            .filter((look) => look.markup)
+            .map((look) => [look.id, look.markup as string]),
+        ),
+      )
+      setSent(true)
+      return
+    }
     const review = readDemoReview()
     if (!review) return
-    const ids = new Set(looks.map((look) => look.id))
     setApproved(review.approved.filter((id) => ids.has(id)))
     setPassed(review.passed.filter((id) => ids.has(id)))
     setSent(true)
-    // Runs once: the review is read when the link is opened, not on every render.
+    // Runs once: the record is read when the link is opened, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /** Hand the decisions to the request screen — the demo's "sent to the stylist". */
+  /** Hand the decisions to both readers: the Saturday approval hand-off and the demo's requests. */
   const submit = () => {
+    const ids = new Set(approved)
+    const approvedLooks: ApprovedLook[] = looks
+      .filter((look) => ids.has(look.id))
+      .map((look) => ({
+        id: look.id,
+        brand: look.brand,
+        lookNo: look.lookNo,
+        season: look.season,
+        image: look.src ?? "",
+        ...(markups[look.id] ? { markup: markups[look.id] } : {}),
+        approvedAt: Date.now(),
+      }))
     const pieces = Object.entries(markupBoxes)
       .filter(([lookId]) => approved.includes(lookId))
       .flatMap(([lookId, boxes]) => boxes.map((box) => ({ lookId, box })))
+    saveApproval({
+      job: job.title,
+      client: job.client,
+      submittedAt: Date.now(),
+      passed,
+      looks: approvedLooks,
+    })
     saveDemoReview({
       approved,
       passed,
@@ -191,9 +225,9 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
               </span>
               {sent ? (
                 <span className="flex flex-col items-end gap-1 text-[12px] text-success">
-                  Sent to your stylist
+                  Sent — Juje has the approved looks and your markups
                   <Link
-                    href="/canvas"
+                    href="/canvas?tab=approved"
                     className="text-[11px] font-normal text-foreground underline underline-offset-2"
                   >
                     Compose the mockup →

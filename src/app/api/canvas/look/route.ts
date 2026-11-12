@@ -16,19 +16,19 @@ function readRefs(value: unknown): LookRef[] {
   if (!Array.isArray(value)) throw new Error("refs must be an array")
   if (value.length === 0 || value.length > 4) throw new Error("1–4 references are allowed")
   return value.map((entry, index) => {
-    const row = entry as { name?: unknown; dataUrl?: unknown; markedDataUrl?: unknown }
+    const row = entry as { name?: unknown; dataUrl?: unknown; assistDataUrl?: unknown; marked?: unknown }
     const name = typeof row.name === "string" && row.name.trim() ? row.name.trim() : `reference ${index + 1}`
     const dataUrl = typeof row.dataUrl === "string" ? row.dataUrl : ""
     if (!dataUrl.startsWith("data:image/")) throw new Error(`reference ${index + 1} is not an image`)
     if (dataUrl.length > 8_000_000) throw new Error(`reference ${index + 1} is too large`)
-    const markedDataUrl =
-      typeof row.markedDataUrl === "string" && row.markedDataUrl.startsWith("data:image/")
-        ? row.markedDataUrl
+    const assistDataUrl =
+      typeof row.assistDataUrl === "string" && row.assistDataUrl.startsWith("data:image/")
+        ? row.assistDataUrl
         : undefined
-    if (markedDataUrl && markedDataUrl.length > 8_000_000) {
-      throw new Error(`reference ${index + 1} marked copy is too large`)
+    if (assistDataUrl && assistDataUrl.length > 8_000_000) {
+      throw new Error(`reference ${index + 1} reading copy is too large`)
     }
-    return { name, dataUrl, markedDataUrl }
+    return { name, dataUrl, assistDataUrl, marked: row.marked === true }
   })
 }
 
