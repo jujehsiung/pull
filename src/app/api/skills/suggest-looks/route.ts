@@ -24,7 +24,9 @@ import {
   isOccasion,
   rankHouses,
   type OccasionKey,
+  type Register,
 } from "@/lib/agent/skills/occasion"
+import { registersFromText, type Presentation } from "@/lib/agent/skills/record"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -154,11 +156,29 @@ async function resolveGender(clientName: string): Promise<{ gender: "male" | "fe
   return { gender: "unknown", evidence: "No confident source found", sourceUrl: "https://en.wikipedia.org/", ms: Date.now() - started }
 }
 
-const SEASONS = {
-  male: ["spring-2027-menswear", "fall-2026-menswear", "spring-2026-menswear"],
-  female: ["spring-2027-ready-to-wear", "fall-2026-ready-to-wear", "spring-2026-ready-to-wear"],
-  unknown: ["spring-2027-ready-to-wear", "spring-2027-menswear"],
+const SEASON_KIND = {
+  menswear: "menswear",
+  womenswear: "ready-to-wear",
 } as const
+type SeasonKind = (typeof SEASON_KIND)[keyof typeof SEASON_KIND]
+
+/** The newest collections Vogue indexes, in the order we try them. */
+function latestSeasons(kind: SeasonKind): string[] {
+  return [`spring-2027-${kind}`, `fall-2026-${kind}`, `spring-2026-${kind}`]
+}
+
+/**
+ * A job delivered in the second half of the year is wearing the fall collection in store; the first
+ * half, the spring one. A November 2026 job therefore asks Vogue for fall-2026.
+ */
+function deliverySeason(kind: SeasonKind, dateISO: string): string | null {
+  const date = new Date(`${dateISO}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return null
+  const month = date.getMonth() + 1
+  const year = date.getFullYear()
+  const part = month >= 7 ? "fall" : "spring"
+  return `${part}-${year}-${kind}`
+}
 
 const SEASON_LABEL: Record<string, string> = {
   spring: "Spring",
@@ -197,8 +217,18 @@ function brandFromSlug(slug: string): string {
     .join(" ")
 }
 
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+}
+
 function brandFromTitle(title: string, slug: string): string {
-  const cleaned = title.split("|")[0].replace(/Collection.*$/i, "").trim()
+  const cleaned = decodeEntities(title.split("|")[0]).replace(/Collection.*$/i, "").trim()
   const stripped = cleaned.replace(/\s+(Spring|Fall|Resort|Pre-Fall|Cruise)\s+\d{4}.*$/i, "").trim()
   return stripped || brandFromSlug(slug)
 }
@@ -263,7 +293,9 @@ type RunResult =
       payload: {
         clientName: string
         gender: { value: string; evidence: string; sourceUrl: string }
+        presentation: Presentation
         season: { slug: string; label: string; url: string }
+        seasons: { slug: string; label: string; url: string }[]
         occasion: { key: OccasionKey; label: string; formality: number }
         designers: Designer[]
         trace: AgentStep[]
@@ -293,14 +325,50 @@ async function resolveGenderCached(name: string) {
   return value
 }
 
+/** Only strings count — the request body is untrusted. */
+function stringList(value: unknown, max = 40): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim().slice(0, 80))
+    .filter(Boolean)
+    .slice(0, max)
+}
+
+/** Stable FNV-1a, for choosing where each client enters a house's collection. */
+function stableHash(input: string): number {
+  let h = 2166136261
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
 async function runResearch(input: {
   clientName: string
   occasion: OccasionKey
+  presentation: Presentation
+  seasonMode: "latest" | "delivery"
+  deliveryDate: string
+  styleBrief: string
+  record: { brandsWorn: string[]; brandsAvoid: string[]; registers: string[]; silhouettes: string[] }
   offset: number
   limit: number
   emit?: (event: Record<string, unknown>) => void
 }): Promise<RunResult> {
-  const { clientName, occasion, offset, limit, emit } = input
+  const {
+    clientName,
+    occasion,
+    presentation,
+    seasonMode,
+    deliveryDate,
+    styleBrief,
+    record,
+    offset,
+    limit,
+    emit,
+  } = input
   const started = Date.now()
   const trace: AgentStep[] = []
   const at = () => new Date().toISOString()
@@ -321,8 +389,28 @@ async function runResearch(input: {
     at: at(),
   })
 
-  // 2 · the brief: what the looks are for. The occasion sets formality and registers; the client's
-  // own record will refine the same score once it exists.
+  // 2 · the client's own record: houses worn are the strongest signal, the brief adds registers.
+  const extraRegisters = [
+    ...record.registers,
+    ...registersFromText(styleBrief, record.silhouettes.join(" ")),
+  ] as Register[]
+  push({
+    id: "suggest.record",
+    tool: "client.record",
+    status: "ok",
+    args: {
+      presentation,
+      brandsWorn: record.brandsWorn.length,
+      brandsAvoid: record.brandsAvoid.length,
+      brief: Boolean(styleBrief.trim()),
+    },
+    result: { worn: record.brandsWorn.slice(0, 8), registers: extraRegisters },
+    durationMs: 0,
+    at: at(),
+  })
+
+  // 3 · the brief: what the looks are for. The occasion sets formality and registers; the client's
+  // own record refines the same score.
   const occasionProfile = OCCASIONS[occasion]
   push({
     id: "suggest.occasion",
@@ -338,55 +426,99 @@ async function runResearch(input: {
     at: at(),
   })
 
-  // 3 · the season that matches them
-  let season = ""
-  let slugs: string[] = []
-  for (const candidate of SEASONS[gender.gender]) {
-    const found = await seasonSlugs(candidate)
-    if (found.length) {
-      season = candidate
-      slugs = found
+  // 4 · the season: presentation picks the rail; the delivery date or the latest show picks which.
+  const kinds: SeasonKind[] =
+    presentation === "both"
+      ? ["ready-to-wear", "menswear"]
+      : presentation === "menswear"
+        ? ["menswear"]
+        : presentation === "womenswear"
+          ? ["ready-to-wear"]
+          : gender.gender === "male"
+            ? ["menswear"]
+            : ["ready-to-wear"]
+
+  const seasonSources: { season: string; slugs: string[] }[] = []
+  let fellBack = false
+  for (const kind of kinds) {
+    const requested = seasonMode === "delivery" ? deliverySeason(kind, deliveryDate) : null
+    const candidates = [...new Set([requested, ...latestSeasons(kind)].filter((value): value is string => Boolean(value)))]
+    for (const [index, candidate] of candidates.entries()) {
+      const found = await seasonSlugs(candidate)
+      if (!found.length) continue
+      seasonSources.push({ season: candidate, slugs: found })
+      if (index > 0) fellBack = true
       break
     }
   }
-  if (!season) return { error: "Vogue Runway returned no season for that client.", status: 502 }
+  if (!seasonSources.length) return { error: "Vogue Runway returned no season for that client.", status: 502 }
   push({
     id: "suggest.season",
     tool: "vogue.season",
     status: "ok",
-    args: { gender: gender.gender, season },
-    result: { designers: slugs.length, url: `https://www.vogue.com/fashion-shows/${season}` },
+    args: {
+      gender: gender.gender,
+      presentation,
+      source: seasonMode,
+      requested: seasonMode === "delivery" ? deliveryDate : "latest",
+    },
+    result: {
+      seasons: seasonSources.map((source) => seasonLabel(source.season)),
+      designers: seasonSources.reduce((count, source) => count + source.slugs.length, 0),
+      fallback: fellBack,
+    },
     durationMs: Date.now() - started,
     at: at(),
   })
 
-  // 4 · the designers on this slice — ranked for the occasion, then the season's remaining order.
-  // The score is deterministic for a given client/occasion pair (ties hash the client's name), so a
-  // second press continues the same order while another client gets a different opening set.
+  // 5 · the houses: record brands are boosted, avoided houses dropped, the brief adds registers.
+  // A house the client wears opens the board (up to four); the rest is discovery among its register.
+  const entryBySlug = new Map<string, { season: string; slug: string }>()
+  for (const source of seasonSources) {
+    for (const slug of source.slugs) if (!entryBySlug.has(slug)) entryBySlug.set(slug, { season: source.season, slug })
+  }
+  const seed = clientName.trim().toLowerCase()
+  const ranking = rankHouses([...entryBySlug.keys()], occasion, seed, {
+    brandsWorn: record.brandsWorn,
+    brandsAvoid: record.brandsAvoid,
+    registers: extraRegisters,
+  })
+  const usable = ranking.filter((house) => !house.avoided)
+  const WORN_CAP = 4
+  const wornHouses = usable.filter((house) => house.worn)
+  const freshHouses = usable.filter((house) => !house.worn)
+  const order = [...wornHouses.slice(0, WORN_CAP), ...freshHouses, ...wornHouses.slice(WORN_CAP)]
+  const picked = order.slice(offset, offset + limit)
+
   // Each house is streamed the moment its collection lands, so the board fills in rather than
-  // waiting for the slowest slideshow.
-  const ranking = rankHouses(slugs, occasion, clientName.trim().toLowerCase())
-  const picked = ranking.slice(offset, offset + limit).map((house) => house.slug)
+  // waiting for the slowest slideshow. The looks are rotated per client, so two clients sharing a
+  // house get overlapping but different rows.
   const crawlStarted = Date.now()
-  const results = await mapLimit(picked, CONCURRENCY, async (slug) => {
+  const results = await mapLimit(picked, CONCURRENCY, async (house) => {
     try {
-      const designer = await readDesigner(season, slug, DESIGNER_TIMEOUT_MS)
+      const entry = entryBySlug.get(house.slug)
+      if (!entry) return null
+      const designer = await readDesigner(entry.season, house.slug, DESIGNER_TIMEOUT_MS)
       if (!designer) return null
+      const shift = designer.looks.length
+        ? stableHash(`${seed}|${occasion}|${house.slug}`) % designer.looks.length
+        : 0
+      const rotated = [...designer.looks.slice(shift), ...designer.looks.slice(0, shift)]
       const complete: Designer = {
         brand: designer.brand,
-        slug,
-        season: seasonLabel(season),
-        collectionUrl: `https://www.vogue.com/fashion-shows/${season}/${slug}`,
-        slideshowUrl: `https://www.vogue.com/fashion-shows/${season}/${slug}/slideshow/collection`,
-        looks: designer.looks.slice(0, SHOWN_PER_DESIGNER),
+        slug: house.slug,
+        season: seasonLabel(entry.season),
+        collectionUrl: `https://www.vogue.com/fashion-shows/${entry.season}/${house.slug}`,
+        slideshowUrl: `https://www.vogue.com/fashion-shows/${entry.season}/${house.slug}/slideshow/collection`,
+        looks: rotated.slice(0, SHOWN_PER_DESIGNER),
         // Everything the collection has left backs a deletion, so a house can hold its five.
-        reserve: designer.looks.slice(SHOWN_PER_DESIGNER),
+        reserve: rotated.slice(SHOWN_PER_DESIGNER),
       }
       push({
         id: `suggest.runway.${complete.slug}`,
         tool: "vogue.runway",
         status: "ok",
-        args: { brand: complete.brand, season, url: complete.slideshowUrl },
+        args: { brand: complete.brand, season: entry.season, url: complete.slideshowUrl, worn: house.worn },
         result: { shown: complete.looks.length, reserve: complete.reserve.length },
         durationMs: designer.ms,
         at: at(),
@@ -412,23 +544,26 @@ async function runResearch(input: {
       designers: designers.length,
       looks: designers.reduce((n, d) => n + d.looks.length, 0),
       brief: occasionProfile.label,
-      order: ranking
-        .slice(offset, offset + picked.length)
-        .map((house) => `${brandFromSlug(house.slug)} ${house.score}`),
+      wornHouses: picked.filter((house) => house.worn).map((house) => brandFromSlug(house.slug)),
+      order: picked.map((house) => `${brandFromSlug(house.slug)} ${house.score}${house.worn ? " · worn" : ""}`),
     },
     durationMs: Date.now() - crawlStarted,
     at: at(),
   })
 
+  const seasons = seasonSources.map((source) => ({
+    slug: source.season,
+    label: seasonLabel(source.season),
+    url: `https://www.vogue.com/fashion-shows/${source.season}`,
+  }))
+
   return {
     payload: {
       clientName,
       gender: { value: gender.gender, evidence: gender.evidence, sourceUrl: gender.sourceUrl },
-      season: {
-        slug: season,
-        label: seasonLabel(season),
-        url: `https://www.vogue.com/fashion-shows/${season}`,
-      },
+      presentation,
+      season: seasons[0],
+      seasons,
       occasion: {
         key: occasion,
         label: occasionProfile.label,
@@ -436,9 +571,9 @@ async function runResearch(input: {
       },
       designers,
       trace,
-      hasMore: offset + picked.length < slugs.length,
+      hasMore: offset + picked.length < order.length,
       nextOffset: offset + picked.length,
-      totalDesigners: Math.min(slugs.length, MAX_DESIGNERS),
+      totalDesigners: Math.min(order.length, MAX_DESIGNERS),
     },
   }
 }
@@ -458,6 +593,16 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     clientName?: string
     occasion?: string
+    presentation?: string
+    seasonMode?: string
+    deliveryDate?: string
+    styleBrief?: string
+    record?: {
+      brandsWorn?: unknown
+      brandsAvoid?: unknown
+      registers?: unknown
+      silhouettes?: unknown
+    }
     offset?: number
     limit?: number
     stream?: boolean
@@ -465,6 +610,19 @@ export async function POST(request: Request) {
   const clientName = (body.clientName ?? "").trim()
   if (!clientName) return NextResponse.json({ error: "A client name is required." }, { status: 400 })
   const occasion = isOccasion(body.occasion) ? body.occasion : DEFAULT_OCCASION
+  const presentation: Presentation =
+    body.presentation === "menswear" || body.presentation === "womenswear" || body.presentation === "both"
+      ? body.presentation
+      : "unknown"
+  const seasonMode = body.seasonMode === "delivery" ? "delivery" : "latest"
+  const deliveryDate = typeof body.deliveryDate === "string" ? body.deliveryDate.slice(0, 10) : ""
+  const styleBrief = typeof body.styleBrief === "string" ? body.styleBrief.slice(0, 500) : ""
+  const record = {
+    brandsWorn: stringList(body.record?.brandsWorn),
+    brandsAvoid: stringList(body.record?.brandsAvoid),
+    registers: stringList(body.record?.registers),
+    silhouettes: stringList(body.record?.silhouettes),
+  }
   const offset = Math.max(0, Math.min(MAX_DESIGNERS, Number(body.offset) || 0))
   const limit = Math.max(1, Math.min(30, Number(body.limit) || 10))
 
@@ -478,7 +636,18 @@ export async function POST(request: Request) {
         const send = (event: Record<string, unknown>) =>
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
         try {
-          const result = await runResearch({ clientName, occasion, offset, limit, emit: send })
+          const result = await runResearch({
+            clientName,
+            occasion,
+            presentation,
+            seasonMode,
+            deliveryDate,
+            styleBrief,
+            record,
+            offset,
+            limit,
+            emit: send,
+          })
           if ("error" in result) send({ type: "error", message: result.error })
           else send({ type: "done", ...result.payload })
         } catch (error) {
@@ -500,7 +669,17 @@ export async function POST(request: Request) {
     })
   }
 
-  const result = await runResearch({ clientName, occasion, offset, limit })
+  const result = await runResearch({
+    clientName,
+    occasion,
+    presentation,
+    seasonMode,
+    deliveryDate,
+    styleBrief,
+    record,
+    offset,
+    limit,
+  })
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status })
   return NextResponse.json(result.payload)
 }

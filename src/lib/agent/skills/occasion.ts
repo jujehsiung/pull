@@ -206,10 +206,8 @@ const HOUSES: House[] = [
   { slugs: ["calvin-klein-collection"], formality: 3, registers: ["minimal", "sport"] },
 ]
 
-const UNTAGGED: Pick<House, "formality" | "registers"> = { formality: 3, registers: [] }
-
 /** Exact, then longest prefix match, so `dior`/`christian-dior` and `comme-des-garcons-*` resolve. */
-function houseFor(slug: string): Pick<House, "formality" | "registers"> {
+function houseFor(slug: string): House | null {
   let best: { house: House; length: number } | null = null
   for (const house of HOUSES) {
     for (const alias of house.slugs) {
@@ -217,7 +215,28 @@ function houseFor(slug: string): Pick<House, "formality" | "registers"> {
       if (matches && (!best || alias.length > best.length)) best = { house, length: alias.length }
     }
   }
-  return best?.house ?? UNTAGGED
+  return best?.house ?? null
+}
+
+/** Brand name → slug, so "Dior" reaches dior-homme and "Saint Laurent" reaches saint-laurent. */
+function brandSlug(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+/** A brand the record names matches a house by any of the house's Vogue aliases. */
+function houseMatchesBrand(slug: string, house: House | null, brand: string): boolean {
+  const target = brandSlug(brand)
+  if (!target) return false
+  const aliases = house?.slugs ?? [slug]
+  return aliases.some(
+    (alias) => alias === target || alias.startsWith(`${target}-`) || target.startsWith(`${alias}-`),
+  )
 }
 
 /** Stable FNV-1a hash — a tie-break, not randomness: the same client always gets the same order. */
@@ -230,33 +249,65 @@ function hash(input: string): number {
   return h >>> 0
 }
 
+/** What the client record adds to the occasion's own brief. */
+export interface RankingSignals {
+  /** Houses the client has worn — boosted so the research shows on the board. */
+  brandsWorn?: string[]
+  /** Houses to leave off the board entirely. */
+  brandsAvoid?: string[]
+  /** Registers the record or the style brief adds to the occasion's own. */
+  registers?: Register[]
+}
+
 export interface HouseScore {
   slug: string
   score: number
   formality: 1 | 2 | 3 | 4 | 5
   registers: Register[]
+  /** True when the client's own record names the house. */
+  worn: boolean
+  /** True when the record says to avoid it — the route drops these. */
+  avoided: boolean
 }
 
 /**
- * Score every house the season carries, best first. Integer scores keep the tiers legible; the
- * seed only orders houses that are already equal, so a second client with the same brief still sees
- * a different opening set while the brief itself is respected.
+ * Score every house the season carries, best first. The occasion sets the base; the client's own
+ * brands worn are boosted by more than any register tier can earn, because a house the client wears
+ * has to appear — then the rest of the board is filled with adjacent houses. Integer scores keep the
+ * tiers legible; the seed only orders houses that are already equal, so two clients on the same
+ * brief start in different houses.
  */
-export function rankHouses(slugs: string[], occasion: OccasionKey, seed: string): HouseScore[] {
+export function rankHouses(
+  slugs: string[],
+  occasion: OccasionKey,
+  seed: string,
+  signals: RankingSignals = {},
+): HouseScore[] {
   const profile = OCCASIONS[occasion]
+  const wanted = [...new Set([...profile.registers, ...(signals.registers ?? [])])]
+  const worn = signals.brandsWorn ?? []
+  const avoid = signals.brandsAvoid ?? []
+
   return slugs
     .map((slug) => {
       const house = houseFor(slug)
-      const formalityFit = 2 * (5 - Math.abs(house.formality - profile.formality))
-      const registerMatches = house.registers.filter((register) => profile.registers.includes(register))
+      const formality = house?.formality ?? 3
+      const registers = house?.registers ?? []
+      const formalityFit = 2 * (5 - Math.abs(formality - profile.formality))
+      const registerMatches = registers.filter((register) => wanted.includes(register))
+      const isWorn = worn.some((brand) => houseMatchesBrand(slug, house, brand))
+      const isAvoided = avoid.some((brand) => houseMatchesBrand(slug, house, brand))
       return {
         slug,
-        score: formalityFit + registerMatches.length * 3,
-        formality: house.formality,
-        registers: house.registers,
+        score: formalityFit + registerMatches.length * 3 + (isWorn ? 14 : 0),
+        formality,
+        registers,
+        worn: isWorn,
+        avoided: isAvoided,
       }
     })
     .sort((a, b) => {
+      if (a.avoided !== b.avoided) return a.avoided ? 1 : -1
       if (b.score !== a.score) return b.score - a.score
       return hash(`${seed}|${occasion}|${a.slug}`) - hash(`${seed}|${occasion}|${b.slug}`)
     })
