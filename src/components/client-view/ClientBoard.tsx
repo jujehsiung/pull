@@ -19,7 +19,7 @@ import { ShareButton } from "./ShareButton"
 
 import { Button } from "@/components/ui/button"
 import type { Look } from "@/components/start-job/ReviewBoard"
-import { readDemoReview, saveDemoReview } from "@/lib/demo-session"
+import { readDemoReview, saveDemoReview, type PieceBox } from "@/lib/demo-session"
 
 import { LookMarkupDialog } from "./LookMarkupDialog"
 
@@ -56,6 +56,8 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
   const [sent, setSent] = useState(false)
   /** Circled pieces, one PNG data URL per look id. Design surface: local only. */
   const [markups, setMarkups] = useState<Record<string, string>>({})
+  /** The rectangle behind each ring, so the pieces can be cropped later. */
+  const [markupBoxes, setMarkupBoxes] = useState<Record<string, PieceBox[]>>({})
   const [markupLook, setMarkupLook] = useState<Look | null>(null)
   /** One switch for every markup layer: the eye in the page bar. */
   const [markupVisible, setMarkupVisible] = useState(true)
@@ -74,9 +76,13 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
 
   /** Hand the decisions to the request screen — the demo's "sent to the stylist". */
   const submit = () => {
+    const pieces = Object.entries(markupBoxes)
+      .filter(([lookId]) => approved.includes(lookId))
+      .flatMap(([lookId, boxes]) => boxes.map((box) => ({ lookId, box })))
     saveDemoReview({
       approved,
       passed,
+      pieces,
       submittedAt: new Date().toISOString(),
     })
     setSent(true)
@@ -92,14 +98,19 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
     setPassed((current) => current.filter((x) => x !== id))
     setApproved((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]))
   }
-  const saveMarkup = (dataUrl: string | null) => {
+  const saveMarkup = (dataUrl: string | null, boxes: PieceBox[]) => {
     const id = markupLook?.id
     setMarkupLook(null)
     if (!id) return
 
     if (!dataUrl) {
-      // Cleared: drop the markup, keep whatever decision the look already had.
+      // Cleared: drop the markup and its boxes, keep whatever decision the look already had.
       setMarkups((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
+      setMarkupBoxes((current) => {
         const next = { ...current }
         delete next[id]
         return next
@@ -108,6 +119,7 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
     }
 
     setMarkups((current) => ({ ...current, [id]: dataUrl }))
+    setMarkupBoxes((current) => ({ ...current, [id]: boxes }))
     setSent(false)
     setPassed((current) => current.filter((x) => x !== id))
     setApproved((current) => (current.includes(id) ? current : [...current, id]))
@@ -345,6 +357,7 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
       <LookMarkupDialog
         look={markupLook}
         initial={markupLook ? markups[markupLook.id] : null}
+        initialBoxes={markupLook ? markupBoxes[markupLook.id] : undefined}
         onClose={() => setMarkupLook(null)}
         onSave={saveMarkup}
       />

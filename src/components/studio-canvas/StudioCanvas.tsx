@@ -17,7 +17,7 @@ import type { PointerEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { NodeCard } from "./NodeCard"
-import { imageDataUrl, streamJson } from "./image-bits"
+import { collageDataUrl, imageDataUrl, streamJson } from "./image-bits"
 import {
   initialEdges,
   KIND,
@@ -50,13 +50,19 @@ export function StudioCanvas({
   refs,
   sampleAssets,
   context,
+  mode = "render",
+  filename,
 }: {
   refs: { name: string; image: string }[]
   sampleAssets: string[]
   /** Where these references came from, named above the graph. */
   context?: string
+  /** collage: the pieces are the work, laid out as themselves; render: the image model. */
+  mode?: "collage" | "render"
+  /** What the save card calls the file; the job's name when opened from an approval. */
+  filename?: string
 }) {
-  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs))
+  const [nodes, setNodes] = useState<CanvasNode[]>(() => initialNodes(refs, mode, filename))
   const [edges, setEdges] = useState<CanvasEdge[]>(() => initialEdges(refs.length))
   const [camera, setCamera] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(0.85)
@@ -520,7 +526,14 @@ export function StudioCanvas({
       patch(node.id, { status: "running" })
 
       try {
-        if (node.kind === "compose") {
+        if (node.kind === "compose" && node.collage) {
+          const refs = refsInto(node.id)
+          if (refs.length === 0) throw new Error("wire the references first")
+          patch(node.id, { progress: "collaging the pieces" })
+          const image = await collageDataUrl(refs.map((ref) => ref.image))
+          renders.set(node.id, image)
+          patch(node.id, { output: image, progress: undefined })
+        } else if (node.kind === "compose") {
           const refs = refsInto(node.id)
           if (refs.length === 0) throw new Error("wire the four references first")
           const payload = await Promise.all(
@@ -617,8 +630,9 @@ export function StudioCanvas({
             Look workflow
           </h1>
           <p className="mt-1.5 text-[12px] text-muted-foreground">
-            Four references in, one look out — the assistant reads your borders, you review the
-            prompt, gpt-image-2 renders it.
+            {mode === "collage"
+              ? "The circled pieces in, one styled look out — each garment keeps its own rectangle; nothing is merged."
+              : "Four references in, one look out — the assistant reads your borders, you review the prompt, gpt-image-2 renders it."}
           </p>
         </div>
 
@@ -841,7 +855,7 @@ export function StudioCanvas({
           </div>
 
           <p className="border-t border-border px-3 py-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            {stubNote ?? "saved by the graph · gpt-image-2"}
+            {stubNote ?? (mode === "collage" ? "collaged by the graph · separates, kept" : "saved by the graph · gpt-image-2")}
           </p>
         </aside>
       </div>

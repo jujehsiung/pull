@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import type { Look } from "@/components/start-job/ReviewBoard"
+import type { PieceBox } from "@/lib/demo-session"
 
 type Point = { x: number; y: number }
 
@@ -52,15 +53,18 @@ function trace(ctx: CanvasRenderingContext2D, stroke: Point[]) {
 export function LookMarkupDialog({
   look,
   initial,
+  initialBoxes,
   onClose,
   onSave,
 }: {
   look: Look | null
   /** Existing markup for this look, a PNG data URL. */
   initial?: string | null
+  /** Boxes from the existing markup, so an edit that only clears strokes keeps them. */
+  initialBoxes?: PieceBox[]
   onClose: () => void
   /** null means no markup: the canvas was cleared. */
-  onSave: (dataUrl: string | null) => void
+  onSave: (dataUrl: string | null, boxes: PieceBox[]) => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -162,14 +166,35 @@ export function LookMarkupDialog({
     redraw()
   }
 
+  /** Each stroke is one circled piece; its bounds become the rectangle we crop to. */
   const save = () => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    const box = boxRef.current
+    if (!canvas || !box) return
     if (!hasMarks) {
-      onSave(null)
+      onSave(null, [])
       return
     }
-    onSave(canvas.toDataURL("image/png"))
+    const width = Math.max(1, box.clientWidth)
+    const height = Math.max(1, box.clientHeight)
+    const padding = 6
+    const boxes: PieceBox[] = strokes.current
+      .map((stroke) => {
+        const xs = stroke.map((point) => point.x)
+        const ys = stroke.map((point) => point.y)
+        const minX = Math.max(0, Math.min(...xs) - padding)
+        const minY = Math.max(0, Math.min(...ys) - padding)
+        const maxX = Math.min(width, Math.max(...xs) + padding)
+        const maxY = Math.min(height, Math.max(...ys) + padding)
+        return {
+          x: minX / width,
+          y: minY / height,
+          w: (maxX - minX) / width,
+          h: (maxY - minY) / height,
+        }
+      })
+      .filter((box) => box.w > 0.01 && box.h > 0.01)
+    onSave(canvas.toDataURL("image/png"), boxes.length ? boxes : (initialBoxes ?? []))
   }
 
   return (

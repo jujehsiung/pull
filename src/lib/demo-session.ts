@@ -29,9 +29,19 @@ export interface DemoBoard {
   sentAt: string
 }
 
+/** A rectangle on the client's 3:4 view, normalized 0–1. */
+export interface PieceBox {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export interface DemoReview {
   approved: string[]
   passed: string[]
+  /** What the client circled — one box per piece, in the 3:4 client view's coordinates. */
+  pieces?: { lookId: string; box: PieceBox }[]
   priorities?: Record<string, number>
   notes?: Record<string, string>
   submittedAt: string

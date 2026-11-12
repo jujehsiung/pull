@@ -40,6 +40,8 @@ export interface CanvasNode {
   prompt?: string
   /** compose — how the prompt was produced. */
   promptSource?: "assist" | "template" | "edited"
+  /** compose — build a flat-lay collage of the pieces instead of an image edit. */
+  collage?: boolean
   /** compose — the live phase while a run is in flight. */
   progress?: string
   /** compose / save */
@@ -109,7 +111,11 @@ export const RUN_MS: Record<NodeKind, number> = {
   save: 320,
 }
 
-export function initialNodes(refs: { name: string; image: string }[]): CanvasNode[] {
+export function initialNodes(
+  refs: { name: string; image: string }[],
+  mode: "collage" | "render" = "render",
+  filename = "look-27-v1.png",
+): CanvasNode[] {
   const spots = [
     { x: 32, y: 24 },
     { x: 320, y: 24 },
@@ -128,8 +134,8 @@ export function initialNodes(refs: { name: string; image: string }[]): CanvasNod
   }))
   return [
     ...referenceNodes,
-    { id: "compose", kind: "compose", step: 5, x: 640, y: 196, status: "idle" },
-    { id: "save", kind: "save", step: 6, x: 960, y: 196, status: "idle", filename: "look-27-v1.png" },
+    { id: "compose", kind: "compose", step: 5, x: 640, y: 196, status: "idle", collage: mode === "collage" },
+    { id: "save", kind: "save", step: 6, x: 960, y: 196, status: "idle", filename },
   ]
 }
 

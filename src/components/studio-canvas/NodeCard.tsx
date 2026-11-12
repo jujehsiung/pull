@@ -455,24 +455,34 @@ export function NodeCard({
           </div>
 
           <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground-soft">
-            no roles to fill in — the assistant reads each picture and the red border you drew.
+            {node.collage
+              ? "separates, styled together — each circled piece keeps its own rectangle; nothing is merged."
+              : "no roles to fill in — the assistant reads each picture and the red border you drew."}
           </p>
 
-          <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
-            Prompt
-          </label>
-          <textarea
-            id={`${node.id}-prompt`}
-            value={node.prompt ?? ""}
-            onChange={(event) => onChange(node.id, { prompt: event.target.value, promptSource: "edited" })}
-            rows={4}
-            spellCheck={false}
-            placeholder="Run once: the assistant writes it here. Edit it and run again to re-render without the assistant."
-            className="mt-1 w-full resize-none rounded-md border border-border bg-background px-1.5 py-1 text-[11px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
-          />
-          <p className="mt-1 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
-            {node.prompt ? SOURCE_NOTE[node.promptSource ?? "assist"] : "gpt-image-2 · reads the four refs"}
-          </p>
+          {node.collage ? (
+            <p className="mt-2 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+              collage · {refsIn} piece{refsIn === 1 ? "" : "s"}
+            </p>
+          ) : (
+            <>
+              <label className="mt-2.5 block text-[11px] text-muted-foreground" htmlFor={`${node.id}-prompt`}>
+                Prompt
+              </label>
+              <textarea
+                id={`${node.id}-prompt`}
+                value={node.prompt ?? ""}
+                onChange={(event) => onChange(node.id, { prompt: event.target.value, promptSource: "edited" })}
+                rows={4}
+                spellCheck={false}
+                placeholder="Run once: the assistant writes it here. Edit it and run again to re-render without the assistant."
+                className="mt-1 w-full resize-none rounded-md border border-border bg-background px-1.5 py-1 text-[11px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground-soft"
+              />
+              <p className="mt-1 font-mono text-[9px] leading-relaxed text-muted-foreground-soft">
+                {node.prompt ? SOURCE_NOTE[node.promptSource ?? "assist"] : "gpt-image-2 · reads the four refs"}
+              </p>
+            </>
+          )}
 
           {node.output ? (
             <div className="mt-2 aspect-square w-full overflow-hidden rounded-sm border border-border bg-muted">
@@ -516,7 +526,9 @@ export function NodeCard({
             ? node.progress
             : node.status === "failed" && node.error
               ? node.error
-              : meta.note}
+              : node.collage
+                ? "collages the pieces as separates"
+                : meta.note}
         </span>
         <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground-soft">
           {node.status === "done" && node.durationMs
@@ -525,7 +537,9 @@ export function NodeCard({
               ? "…"
               : node.status === "failed"
                 ? "failed"
-                : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
+                : node.collage
+                  ? "instant"
+                  : `${(RUN_MS[node.kind] / 1000).toFixed(0)}s`}
         </span>
       </div>
 
