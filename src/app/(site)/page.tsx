@@ -125,8 +125,9 @@ export default function LandingPage() {
 
         <div className="mt-10 border-t border-border pt-6">
           <p className="max-w-[440px] text-[15px] leading-relaxed text-muted-foreground">
-            Pull reads every look, builds the boards, and sends your client one link to approve — then
-            turns those approvals into showroom requests and labels.
+            Pull. guides you through the entire process of prep. It reads every look, builds styling
+            boards, and sends off for client approval — then turn those approvals to pre-styled
+            mockups, showroom requests, and shipping labels.
           </p>
         </div>
       </section>
