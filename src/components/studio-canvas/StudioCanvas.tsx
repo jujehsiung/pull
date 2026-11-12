@@ -703,6 +703,8 @@ export function StudioCanvas({
             event.dataTransfer.dropEffect = "copy"
           }}
           onDrop={(event) => {
+            // A drop on a card is a replacement, handled there; never spawn a second card for it.
+            if ((event.target as HTMLElement).closest("[data-node-id]")) return
             const raw = event.dataTransfer.getData("application/x-pull-approved")
             if (!raw) return
             event.preventDefault()

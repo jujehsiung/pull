@@ -423,6 +423,8 @@ Approval is a hand-off, and the point of it is that neither side has to describe
 - **`/approved` is the client's board, not a summary.** Same order, same tiles, same markups over the
   same photographs — a stylist reads the actual pen, and can say what the client meant without asking.
 - **The studio inherits them.** The assets panel gains a third tab, **Approved**, with the selects and
-  their markups. A select is **draggable onto the canvas**: it drops as a reference card whose overlay is
-  the client's markup, so the reading pass gets that pen baked into its copy while the render still gets
-  the clean photograph. The stylist wires it into the compose card exactly like a fixture.
+  their markups. A select is **draggable onto the canvas**: dropped on empty canvas it becomes a new
+  reference card; dropped on an existing reference it **replaces that reference in place**, keeping its
+  position and wires. Either way its overlay is the client's markup, so the reading pass gets that pen
+  baked into its copy while the render still gets the clean photograph. The stylist wires it into the
+  compose card exactly like a fixture.

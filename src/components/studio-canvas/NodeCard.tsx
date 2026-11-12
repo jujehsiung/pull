@@ -20,6 +20,7 @@ import {
 } from "react"
 
 import { fileToDataUrl } from "./image-bits"
+import type { ApprovedLook } from "@/lib/approved-store"
 
 import { Input } from "@/components/ui/input"
 import {
@@ -202,14 +203,17 @@ export function NodeCard({
     onChange(node.id, { width: clampWidth(width + (event.key === "ArrowRight" ? 24 : -24)) })
   }
 
-  /* ── dropping a file from Finder ───────────────────────────────────────── */
+  /* ── dropping onto a reference: a Finder file, or a client-approved look ── */
   const [dropping, setDropping] = useState(false)
 
-  const acceptsFiles = (event: ReactDragEvent<HTMLElement>) =>
-    node.kind === "upload" && Array.from(event.dataTransfer.types).includes("Files")
+  const acceptsDrop = (event: ReactDragEvent<HTMLElement>) => {
+    if (node.kind !== "upload") return false
+    const types = Array.from(event.dataTransfer.types)
+    return types.includes("Files") || types.includes("application/x-pull-approved")
+  }
 
   const onDragOver = (event: ReactDragEvent<HTMLElement>) => {
-    if (!acceptsFiles(event)) return
+    if (!acceptsDrop(event)) return
     event.preventDefault()
     event.stopPropagation()
     event.dataTransfer.dropEffect = "copy"
@@ -229,11 +233,31 @@ export function NodeCard({
     event.preventDefault()
     event.stopPropagation()
     setDropping(false)
+
+    // A look dragged in from the Approved tab replaces this reference in place: the card keeps
+    // its position and its wires, the client's pen becomes the overlay, and the render still
+    // gets the clean photograph. A handled drop must not also spawn a new card on the canvas.
+    const rawApproved = event.dataTransfer.getData("application/x-pull-approved")
+    if (rawApproved) {
+      try {
+        const look = JSON.parse(rawApproved) as ApprovedLook
+        onChange(node.id, {
+          image: look.image,
+          imageLabel: `approved · ${look.brand} ${look.lookNo}`,
+          overlay: look.markup,
+          markup: [],
+        })
+      } catch {
+        // A payload we cannot read leaves the card as it was.
+      }
+      return
+    }
+
     const file = event.dataTransfer.files?.[0]
     if (!file || !file.type.startsWith("image/")) return
     try {
       const dataUrl = await fileToDataUrl(file)
-      onChange(node.id, { image: dataUrl, imageLabel: file.name, markup: [] })
+      onChange(node.id, { image: dataUrl, imageLabel: file.name, markup: [], overlay: undefined })
     } catch {
       // A file the browser cannot decode leaves the card as it was.
     }
