@@ -30,6 +30,10 @@ body {
 }
 img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
+/* The start-job board sheet opens below the site chrome, so the page underneath is pinned:
+   the demo guide and header cannot scroll out from under it. A class, not an inline style,
+   because the dialog's own scroll lock owns `body.style.overflow` and restores it on close. */
+body.sheet-scroll-lock { overflow: hidden; }
 /* Buttons do not inherit the page font from the UA stylesheet, so the family is
    inherited explicitly — but ONLY the family. `font: inherit` is a shorthand: it
    also reset size, weight and line-height, and because this rule is unlayered it

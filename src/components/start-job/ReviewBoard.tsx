@@ -9,7 +9,7 @@
  *
  * Type: one typeface throughout, per Juje. No mono.
  */
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react"
 import { Check, Plus, RotateCcw, Sparkles, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -65,6 +65,63 @@ function formatDue(iso: string): string {
   const date = new Date(`${iso}T00:00:00`)
   if (Number.isNaN(date.getTime())) return iso
   return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+}
+
+/**
+ * A layout effect that is honest on the server too: the sheet only mounts in the browser, but the
+ * board it renders is part of the SSR HTML when a stored board is restored, so the server pass must
+ * not warn about `useLayoutEffect`.
+ */
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect
+
+/**
+ * The sheet sits below the site chrome rather than over it.
+ *
+ * The demo guide (board / approval / intake) and the site header are the chrome that has to survive
+ * every screen, and a `fixed inset-0` panel covered both. Measuring the chrome's bottom and starting
+ * the sheet there keeps the real guide and header on screen — the same top the board has at `/board`
+ * — and pinning the page underneath stops the chrome scrolling away while the board is open.
+ */
+function useSheetChromeTop(enabled: boolean): number {
+  const [top, setTop] = useState(0)
+
+  useIsomorphicLayoutEffect(() => {
+    if (!enabled) return
+    const guide = document.querySelector(".demo-guide")
+    const header = document.querySelector("[data-site-header]")
+    const measure = () => {
+      const guideBottom = guide?.getBoundingClientRect().bottom ?? 0
+      const headerBottom = header?.getBoundingClientRect().bottom ?? 0
+      setTop(Math.round(Math.max(0, guideBottom, headerBottom)))
+    }
+
+    // The chrome sits in the page flow, so it is only readable (and only visible above the sheet)
+    // from scroll zero. Pin the page there while the sheet is open — the sheet is its own scroll
+    // container. A scroll listener catches the start-job dialog's own scroll lock, which restores
+    // the previous scroll position when it unmounts, after this effect has already run.
+    const pin = () => {
+      if (window.scrollY !== 0) window.scrollTo(0, 0)
+      measure()
+    }
+
+    pin()
+    document.body.classList.add("sheet-scroll-lock")
+    window.addEventListener("resize", pin)
+    window.addEventListener("scroll", pin, { passive: true })
+    // The dialog's restore lands after the commit: run once more on the next frame and after it.
+    const frame = requestAnimationFrame(pin)
+    const timer = window.setTimeout(pin, 150)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+      window.removeEventListener("resize", pin)
+      window.removeEventListener("scroll", pin)
+      document.body.classList.remove("sheet-scroll-lock")
+    }
+  }, [enabled])
+
+  return top
 }
 
 interface ReviewBoardProps {
@@ -150,6 +207,8 @@ export function ReviewBoard({
 }: ReviewBoardProps) {
   const [added, setAdded] = useState<string[]>([])
   const [sendState, setSendState] = useState<"idle" | "needs-backend">("idle")
+  /** Where the sheet starts: below the demo guide and site header, so they stay on screen. */
+  const sheetTop = useSheetChromeTop(chrome === "sheet")
 
   // Removing is a soft delete: the look leaves the board but stays in the bin until it is
   // restored. Nothing is persisted, so the seeded board comes back on reload.
@@ -229,6 +288,7 @@ export function ReviewBoard({
           ? "fixed inset-0 z-50 overflow-y-auto bg-background"
           : "relative bg-background"
       }
+      style={chrome === "sheet" ? { top: sheetTop } : undefined}
     >
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         {/* Left: what the job is. Right: when it is due and where it goes. */}

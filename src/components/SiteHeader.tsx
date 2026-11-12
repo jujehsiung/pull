@@ -34,7 +34,7 @@ export async function SiteHeader() {
   const notices = await noticesForHeader()
 
   return (
-    <header className="border-b border-border">
+    <header data-site-header className="border-b border-border">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3 md:px-10">
         <Link
           href="/"
