@@ -14,7 +14,7 @@ export default async function StudioLayout({ children }: { children: React.React
       <header className="client-top" style={{ position: "sticky", top: 0, zIndex: 20 }}>
         <div className="container" style={{ display: "flex", alignItems: "center", gap: 24, height: 64 }}>
           <Link href="/studio" className="wordmark">
-            Pull.
+            PULL.
           </Link>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
             <AgentProviderBadge />

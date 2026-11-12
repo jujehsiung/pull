@@ -103,9 +103,10 @@ step: `clamp(28px, 3.6vw, 44px)` / `-0.03em` / `1.08` — the same values `/desi
 dialog title (`DialogTitle`) reads them, so a surface leader is an H2 without the primitive
 hard-coding a size, and the step changes in one place. **44px at 1440.**
 
-**The wordmark is `Pull.`** — title case, one capital, the period kept (2026-11-07). It is the one
-mark that is neither all caps nor a label: the period makes it a mark, so it stays as drawn, and its
-wide tracking went with the caps (`0.01em` now, not `0.22em`).
+**The wordmark is `PULL.`** — all caps, the period kept (2026-11-12). It is the one mark set in
+caps: the period is what makes it a mark rather than a label, so the caps are the mark's own
+letterform, not emphasis borrowed from the page — and the tracking stays tight (`0.01em`, not the
+reference's `0.22em`).
 
 Two deliberate deltas from the canvas specimen: the title is set **extrabold** (the wordmark's
 weight, asked for explicitly), where the canvas H2 runs `font-medium`; and the hero keeps its own,
@@ -130,7 +131,7 @@ Reach for these instead, in this order:
 4. **A hairline or a gap** — separate with the rule, not with shouting.
 
 What keeps its casing: **data** — season and month codes (`AW26`, `SS26`), currency (`USD`), country
-codes and dedupe keys; **initialisms** (`CSV`, `UTC`, `OK`); the **wordmark** (`Pull.`), which is a
+codes and dedupe keys; **initialisms** (`CSV`, `UTC`, `OK`); the **wordmark** (`PULL.`), which is a
 mark; and **source content** (a brand that writes itself in caps). Everything that is *our words* is
 sentence case — a label, a heading, a status, a tag.
 

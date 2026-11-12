@@ -50,7 +50,7 @@ export function ClientHeader({
   return (
     <>
       <div className="client-top">
-        <span className="wordmark">Pull.</span>
+        <span className="wordmark">PULL.</span>
         <span className={`mono ${styles.topName}`}>for {clientName}</span>
         <span className={`mono ${styles.topCount}`}>
           {lookCount} {lookCount === 1 ? "look" : "looks"}
