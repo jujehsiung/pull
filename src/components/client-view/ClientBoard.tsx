@@ -11,13 +11,15 @@
  *
  * Static surface: decisions live in this page's state and nothing is sent.
  */
-import { useMemo, useState } from "react"
+import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
 import { Brush, Check, Eye, EyeOff, X } from "lucide-react"
 
 import { ShareButton } from "./ShareButton"
 
 import { Button } from "@/components/ui/button"
 import type { Look } from "@/components/start-job/ReviewBoard"
+import { readDemoReview, saveDemoReview } from "@/lib/demo-session"
 
 import { LookMarkupDialog } from "./LookMarkupDialog"
 
@@ -57,6 +59,28 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
   const [markupLook, setMarkupLook] = useState<Look | null>(null)
   /** One switch for every markup layer: the eye in the page bar. */
   const [markupVisible, setMarkupVisible] = useState(true)
+
+  // A reopened link keeps the decisions the client already sent.
+  useEffect(() => {
+    const review = readDemoReview()
+    if (!review) return
+    const ids = new Set(looks.map((look) => look.id))
+    setApproved(review.approved.filter((id) => ids.has(id)))
+    setPassed(review.passed.filter((id) => ids.has(id)))
+    setSent(true)
+    // Runs once: the review is read when the link is opened, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Hand the decisions to the request screen — the demo's "sent to the stylist". */
+  const submit = () => {
+    saveDemoReview({
+      approved,
+      passed,
+      submittedAt: new Date().toISOString(),
+    })
+    setSent(true)
+  }
 
   const grouped = useMemo(() => groupByBrand(looks), [looks])
   const remaining = looks.length - approved.length - passed.length
@@ -154,9 +178,17 @@ export function ClientBoard({ job, looks }: { job: ClientBoardJob; looks: Look[]
                 <b className="font-medium text-foreground">{remaining}</b> to review
               </span>
               {sent ? (
-                <span className="text-[12px] text-success">Sent to your stylist</span>
+                <span className="flex flex-col items-end gap-1 text-[12px] text-success">
+                  Sent to your stylist
+                  <Link
+                    href="/requests"
+                    className="text-[11px] font-normal text-muted-foreground underline underline-offset-2"
+                  >
+                    See the request emails →
+                  </Link>
+                </span>
               ) : (
-                <Button onClick={() => setSent(true)} disabled={approved.length === 0}>
+                <Button onClick={submit} disabled={approved.length === 0}>
                   Send approvals
                 </Button>
               )}

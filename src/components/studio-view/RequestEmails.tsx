@@ -54,6 +54,8 @@ interface Draft {
 }
 
 function formatDate(iso: string): string {
+  // The landing demo has one delivery date and may not set it; never print a bare label.
+  if (!iso) return "TBC"
   const date = new Date(`${iso}T00:00:00`)
   if (Number.isNaN(date.getTime())) return iso
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -221,7 +223,8 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 md:ml-auto md:flex-col md:items-end md:gap-2">
             <span className="text-[11px] tracking-[0.02em] text-muted-foreground">
-              <b className="font-medium text-foreground">{brands.length}</b> brands ·{" "}
+              <b className="font-medium text-foreground">{brands.length}</b> brand
+              {brands.length === 1 ? "" : "s"} ·{" "}
               <b className="font-medium text-foreground">{counts.queued}</b> approved ·{" "}
               <b className="font-medium text-foreground">{counts.sent}</b> sent
             </span>
