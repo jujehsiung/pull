@@ -39,6 +39,9 @@ export interface RequestJob {
   callInDate: string
   returnDate: string
   shipTo: string
+  /** Optional demo schedule detail; the request falls back to the call-in date. */
+  clothesInDate?: string
+  fittingDate?: string
 }
 
 type Status = "draft" | "queued" | "sent"
@@ -53,12 +56,12 @@ interface Draft {
   savedAt?: number
 }
 
-function formatDate(iso: string): string {
-  // The landing demo has one delivery date and may not set it; never print a bare label.
+function formatDay(iso: string): string {
+  // The landing demo may not set a date; never print a bare label.
   if (!iso) return "TBC"
   const date = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+  if (Number.isNaN(date.getTime())) return "TBC"
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
 }
 
 /** Good enough to know a human typed an address; the send action re-checks. */
@@ -66,48 +69,140 @@ function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 }
 
+/** "Spring 2027 ready to wear" / "Fall 2026 menswear" → SS27 / AW26. */
+function seasonCode(looks: RequestLook[]): string {
+  for (const look of looks) {
+    const text = look.season ?? ""
+    const year = text.match(/\b(20\d{2})\b/)?.[1]
+    if (!year) continue
+    if (/spring|resort/i.test(text)) return `SS${year.slice(-2)}`
+    if (/fall|winter|pre-fall/i.test(text)) return `AW${year.slice(-2)}`
+  }
+  return ""
+}
+
+/**
+ * One request, written the way the studio writes them: the engagement, the specific looks, the
+ * fitting window, the delivery address. The approved looks are the request — the email carries
+ * their numbers, and the draft card shows their clean images under the look line.
+ */
 function draftFor(
   brand: RequestBrand,
   job: RequestJob,
 ): { to: string; subject: string; body: string } {
-  const list = brand.looks
-    .slice()
-    .sort((a, b) => a.lookNo - b.lookNo)
-    .map((look) => `• Look ${look.lookNo}${look.season ? ` (${look.season})` : ""}`)
-    .join("\n")
+  const looks = brand.looks.slice().sort((a, b) => a.lookNo - b.lookNo)
+  const numbers = looks.map((look) => look.lookNo).join(", ")
+  const season = seasonCode(looks)
+  const eventDate = formatDay(job.shootDate)
+  const clothesIn = formatDay(job.clothesInDate ?? job.callInDate)
+  const fitting = formatDay(job.fittingDate ?? job.callInDate)
+  const returns = formatDay(job.returnDate)
+  const when = eventDate === "TBC" ? "" : ` on ${eventDate}`
 
   return {
     to: brand.contactEmail,
-    subject: `Pull request — ${brand.brand} · ${job.client} · ${brand.looks.length} look${
-      brand.looks.length === 1 ? "" : "s"
-    }`,
-    body: `Hi ${brand.brand} PR team,
+    subject: `Look request — ${brand.brand} · ${job.client}`,
+    body: `Hi ${brand.brand} team,
 
-I am pulling for ${job.client} on ${job.title}. Requesting:
+How are you?
 
-${list}
+Juje is styling ${job.client} for ${job.title}${when}, along with supporting press dates and imagery in NYC the same week.
 
-Shoot details
-  Shoot date:    ${formatDate(job.shootDate)}
-  Call-in date:  ${formatDate(job.callInDate)}
-  Return date:   ${formatDate(job.returnDate)}
-  Ship to:       ${job.shipTo}
+We would like to request looks for this and for our fitting, would we be able to look at ${
+      season ? `${season} lookbooks` : "the new season's lookbooks"
+    } / what is available in NYC for this opportunity?
 
-Please ship on your own account — we do not need a label.
+Look ${numbers}
 
-Thank you,
+Please see details below:
+TALENT: ${job.client}
+STYLIST: Juje
+EVENT: ${job.title}
+DATE: ${eventDate}
+CLOTHES IN: ${clothesIn}
+FIRST FITTING: ${fitting}
+RETURN: ${returns}
+
+DELIVERY ADDRESS, NYC:
+${job.shipTo}
+
+Please confirm receipt of this request, looking forward to hearing from you!
+
+Best,
 Juje`,
   }
 }
 
-/** What the agent's polish pass does to a draft: tighter greeting and sign-off. */
+/** What the agent's polish pass does to a draft: a warmer close, nothing else. */
 function polished(body: string): string {
-  return body
-    .replace(/^Hi (.+) PR team,/m, "Hi $1 team,")
-    .replace(/\n\nThank you,\nJuje$/, "\n\nThank you for the help — Juje")
+  return body.replace(
+    "Please confirm receipt of this request, looking forward to hearing from you!",
+    "Please confirm receipt of this request — happy to answer anything you need on our side, and looking forward to hearing from you!",
+  )
 }
 
 const STATUS_LABEL: Record<Status, string> = { draft: "Draft", queued: "Approved", sent: "Sent" }
+
+/**
+ * The email as it will look: the copy, then the approved looks' clean images under the look line.
+ * The red client markup never travels — these are the original look images.
+ */
+function DraftPreview({
+  brand,
+  to,
+  subject,
+  body,
+}: {
+  brand: RequestBrand
+  to: string
+  subject: string
+  body: string
+}) {
+  const paragraphs = body.split(/\n{2,}/)
+  const lookIndex = paragraphs.findIndex((paragraph) => /^Look\s+[\d,\s]+$/i.test(paragraph.trim()))
+  const looks = brand.looks.slice().sort((a, b) => a.lookNo - b.lookNo)
+  const images = (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {looks.map((look) => (
+        <figure key={look.id} className="w-[132px] border border-border bg-background">
+          {look.src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={look.src}
+              alt={`${brand.brand} look ${look.lookNo}`}
+              className="aspect-[3/4] w-full object-cover"
+            />
+          ) : null}
+          <figcaption className="px-1.5 py-1 text-[10px] tracking-[0.02em] text-muted-foreground">
+            Look {look.lookNo}
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="mt-5 border border-border bg-card">
+      <div className="flex flex-col gap-1 border-b border-border px-4 py-3 text-[11px] tracking-[0.02em] text-muted-foreground">
+        <p>
+          <span className="text-foreground">To</span> {to || brand.contactEmail}
+        </p>
+        <p>
+          <span className="text-foreground">Subject</span> {subject}
+        </p>
+      </div>
+      <div className="px-4 py-4 text-[13px] leading-relaxed text-foreground">
+        {paragraphs.map((paragraph, index) => (
+          <div key={index} className={index ? "mt-3" : undefined}>
+            <p className="whitespace-pre-line">{paragraph}</p>
+            {index === lookIndex ? images : null}
+            {lookIndex === -1 && index === paragraphs.length - 1 ? images : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function RequestEmails({ job, brands }: { job: RequestJob; brands: RequestBrand[] }) {
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
@@ -292,18 +387,7 @@ export function RequestEmails({ job, brands }: { job: RequestJob; brands: Reques
                   </span>
                 </div>
 
-                {/* The looks being requested, as the client approved them. */}
-                <div className="mt-4 flex w-fit gap-px bg-border">
-                  {brand.looks.map((look) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={look.id}
-                      src={look.src}
-                      alt={`${brand.brand} look ${look.lookNo}`}
-                      className="size-12 object-cover"
-                    />
-                  ))}
-                </div>
+                <DraftPreview brand={brand} to={draft.to} subject={draft.subject} body={draft.body} />
 
                 <div className="mt-5 flex flex-col gap-3">
                   <div className="flex flex-col gap-1">

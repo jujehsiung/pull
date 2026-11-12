@@ -18,16 +18,38 @@ function contactFor(brand: string): string {
   return `pr@${brand.toLowerCase().replace(/[^a-z]/g, "")}.demo`
 }
 
-/** The landing form has one date; the draft repeats it as the shoot window. */
+/** The request's delivery address — the studio's, as the template has it. */
+const DELIVERY_ADDRESS = `ATTN: Juje Hsiung
++1 408 505 5817
+202 Hester St, Apt 6
+New York, NY 10013`
+
+function shiftDay(iso: string, days: number): string {
+  if (!iso) return ""
+  const date = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return ""
+  date.setDate(date.getDate() + days)
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+/**
+ * The landing form has one delivery date. The request treats it as the event date and builds the
+ * fitting window around it — clothes in the day before, the fitting two days before, return a week
+ * after — so the email reads like a studio request rather than a form dump.
+ */
 function jobFromBoard(board: DemoBoard): RequestJob {
-  const due = board.job.dueDate
+  const event = board.job.dueDate
   return {
     client: board.job.client,
     title: board.job.title,
-    shootDate: due,
-    callInDate: due,
-    returnDate: due,
-    shipTo: "Pull Studio · 12 Mercer St, New York, NY 10013",
+    shootDate: event,
+    clothesInDate: shiftDay(event, -1),
+    fittingDate: shiftDay(event, -2),
+    callInDate: shiftDay(event, -1),
+    returnDate: shiftDay(event, 7),
+    shipTo: DELIVERY_ADDRESS,
   }
 }
 
