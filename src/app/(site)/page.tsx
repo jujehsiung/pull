@@ -114,8 +114,6 @@ export default function LandingPage() {
   return (
     <main>
       <section className="mx-auto max-w-[1440px] px-6 pt-14 md:px-10 md:pt-20">
-        <p className="text-[11px] tracking-[0.02em] text-muted-foreground">Sample trafficking</p>
-
         <h1 className="mt-8 text-[clamp(52px,8.6vw,128px)] font-bold leading-[0.88] tracking-[-0.06em] text-foreground">
           From screenshots to signed-off looks.
         </h1>
