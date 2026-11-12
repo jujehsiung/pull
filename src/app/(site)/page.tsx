@@ -37,8 +37,8 @@ function stripImages(): string[] {
 const STEPS: HowStep[] = [
   {
     n: "01",
-    title: "Read the floor",
-    body: "Drop the folder of screenshots. Pull trims the chrome, reads the look number and the season, and files every look under its house.",
+    title: "Read the runway",
+    body: "Drop the folder of screenshots. Pull trims the image, reads the look number and the season, and files every look under its brand.",
     label: "The board — every look, filed by house",
     screen: "/landing/screen-board.png",
     alt: "The board: looks grouped by house, one shortlisted, one in a hairline grid",
@@ -46,15 +46,15 @@ const STEPS: HowStep[] = [
   {
     n: "02",
     title: "Send one link",
-    body: "Your client opens it with nothing to install and no account. They approve what they love, pass the rest, and circle the pieces they actually want.",
+    body: "Your client opens it with nothing to install and no account. They prioritize what they love and circle the pieces they actually want.",
     label: "The client's page — approve, pass, circle",
     screen: "/landing/screen-client.png",
     alt: "The client's page: looks approved, passed and circled with a red pen",
   },
   {
     n: "03",
-    title: "Let the requests go",
-    body: "The agent drafts one email per showroom with the approved looks and the shoot dates. You approve it and it sends. Boxes, weights and labels follow the same board.",
+    title: "Send the requests out",
+    body: "The agent drafts emails per showroom with the approved looks and the shoot details. You approve it and it sends. Boxes and weight information, and labels follow.",
     label: "Request emails — one per showroom, drafted",
     screen: "/landing/screen-requests.png",
     alt: "Request emails: the agent's run, then one draft per house with the looks and shoot dates",
@@ -149,7 +149,7 @@ export default function LandingPage() {
         </div>
 
         <h2 className="mt-8 max-w-[16ch] text-[clamp(32px,4.6vw,64px)] font-semibold leading-[0.95] tracking-[-0.04em] text-foreground">
-          Screenshots in. Requests out.
+          Selects in. Requests out.
         </h2>
 
         <HowItWorks steps={STEPS} />
